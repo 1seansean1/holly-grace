@@ -1,0 +1,77 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ecom-postgres
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_USER: ecom
+      POSTGRES_PASSWORD: ecom_dev_password
+      POSTGRES_DB: ecom_agents
+    volumes:
+      - ecom_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ecom -d ecom_agents"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: ecom-redis
+    ports:
+      - "6381:6379"
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: ecom-chromadb
+    ports:
+      - "8100:8000"
+    volumes:
+      - ecom_chromadata:/chroma/chroma
+    environment:
+      ANONYMIZED_TELEMETRY: "false"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/heartbeat')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ecom-ollama
+    ports:
+      - "11435:11434"
+    volumes:
+      - ecom_ollama:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:11434/api/tags || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+volumes:
+  ecom_pgdata:
+  ecom_chromadata:
+  ecom_ollama:
+
+networks:
+  default:
+    name: ecom-agents
+    driver: bridge
