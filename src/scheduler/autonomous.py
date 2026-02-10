@@ -41,6 +41,59 @@ class AutonomousScheduler:
         self._scheduler = BackgroundScheduler()
         self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=2)
 
+    def _start_tower_run(
+        self,
+        trigger_source: str,
+        task_description: str,
+        payload: dict | None = None,
+        *,
+        exploratory: bool = False,
+        workflow_id: str = "default",
+        run_name: str | None = None,
+    ):
+        """Start a durable Tower run instead of direct graph.invoke().
+
+        Tower runs support interrupt/resume, so they can pause for human
+        approval and resume later. Use this for tasks that may need HITL
+        (tool approval gates, high-risk actions).
+
+        Returns immediately after creating the run. The Tower worker handles
+        execution, interrupt detection, and ticket creation.
+        """
+        if exploratory:
+            try:
+                from src.aps.revenue_epsilon import is_exploration_allowed
+                if not is_exploration_allowed():
+                    logger.info(
+                        "Skipping exploratory Tower run (revenue epsilon too low): %s",
+                        trigger_source,
+                    )
+                    return
+            except Exception:
+                pass
+
+        try:
+            from src.tower.store import create_run
+
+            input_state = {
+                "messages": [{"type": "human", "content": task_description}],
+                "trigger_source": trigger_source,
+                "trigger_payload": payload or {"task": task_description},
+                "retry_count": 0,
+            }
+
+            run_id = create_run(
+                workflow_id=workflow_id,
+                run_name=run_name or trigger_source,
+                input_state=input_state,
+                metadata={"trigger_source": trigger_source, "exploratory": exploratory},
+                created_by="scheduler",
+            )
+            logger.info("Tower run created: %s (trigger=%s)", run_id, trigger_source)
+        except Exception:
+            logger.exception("Failed to create Tower run for %s, falling back to direct invoke", trigger_source)
+            self._invoke_task(trigger_source, task_description, payload, exploratory=exploratory)
+
     def _invoke_task(
         self,
         trigger_source: str,
@@ -171,32 +224,32 @@ class AutonomousScheduler:
             replace_existing=True,
         )
 
-        # Instagram post at 9am and 3pm daily
+        # Instagram post at 9am and 3pm daily — Tower runs (may need tool approval)
         # Content creation is exploratory — gated by revenue epsilon
         for hour in [9, 15]:
             self._scheduler.add_job(
-                self._invoke_task,
+                self._start_tower_run,
                 trigger=CronTrigger(hour=hour, minute=0),
                 args=[
-                    "scheduler",
+                    "scheduler:instagram",
                     "Create and publish an engaging Instagram post for our store",
                 ],
-                kwargs={"exploratory": True},
+                kwargs={"exploratory": True, "run_name": f"Instagram Post ({hour}:00)"},
                 id=f"instagram_post_{hour}",
                 replace_existing=True,
             )
 
-        # Full campaign on Monday 9am
+        # Full campaign on Monday 9am — Tower run (may need tool approval)
         # Campaigns are exploratory — skipped when revenue epsilon is too low
         self._scheduler.add_job(
-            self._invoke_task,
+            self._start_tower_run,
             trigger=CronTrigger(day_of_week="mon", hour=9, minute=0),
             args=[
-                "scheduler",
+                "scheduler:campaign",
                 "Plan and execute a full marketing campaign for this week",
                 {"task": "full_campaign", "scope": "weekly"},
             ],
-            kwargs={"exploratory": True},
+            kwargs={"exploratory": True, "run_name": "Weekly Campaign"},
             id="weekly_campaign",
             replace_existing=True,
         )
@@ -291,11 +344,23 @@ class AutonomousScheduler:
             replace_existing=True,
         )
 
+        # Tower ticket expiry every 5 minutes
+        self._scheduler.add_job(
+            self._expire_tower_tickets,
+            trigger=IntervalTrigger(minutes=5),
+            id="tower_ticket_expiry",
+            replace_existing=True,
+        )
+
         self._scheduler.start()
         logger.info("Autonomous scheduler started with %d jobs", len(self._scheduler.get_jobs()))
 
     def _handle_inbound_message(self, msg):
-        """Handle an inbound message from the IMAP IDLE listener."""
+        """Handle an inbound message from the IMAP IDLE listener.
+
+        Creates a Tower run so that any tool calls (email send, SMS reply)
+        can be interrupted for approval if needed.
+        """
         label = "sms_reply" if msg.source == "sms" else "email_inbound"
         task_desc = (
             f"Sean sent you a message via {msg.source}. "
@@ -303,7 +368,7 @@ class AutonomousScheduler:
             f"Message: {msg.body}\n\n"
             f"Reply to Sean via {msg.source}."
         )
-        self._invoke_task(
+        self._start_tower_run(
             f"sage_inbox:{label}",
             task_desc,
             {
@@ -312,7 +377,19 @@ class AutonomousScheduler:
                 "sender": msg.sender,
                 "body": msg.body,
             },
+            run_name=f"Sage: {label} from {msg.sender or 'unknown'}",
         )
+
+    def _expire_tower_tickets(self):
+        """Expire stale Tower tickets."""
+        try:
+            from src.tower.store import expire_stale_tickets
+
+            count = expire_stale_tickets()
+            if count > 0:
+                logger.info("Expired %d stale Tower tickets", count)
+        except Exception:
+            logger.exception("Tower ticket expiry job failed")
 
     def _health_check(self):
         """Run health checks on all services."""

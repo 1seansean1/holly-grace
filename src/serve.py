@@ -51,8 +51,19 @@ graph = build_graph(router)
 # Create the callback handler for Holly Grace events
 holly_callback = HollyEventCallbackHandler()
 
-# Compile graph with the callback handler
-compiled_graph = graph.compile()
+# Compile graph WITH Tower checkpointer for durable interrupt/resume
+from src.tower.checkpointer import setup_checkpointer, get_checkpointer, shutdown_checkpointer
+
+_tower_checkpointer = None
+if os.environ.get("TESTING") != "1":
+    try:
+        setup_checkpointer()
+        _tower_checkpointer = get_checkpointer()
+        logger.info("Tower checkpointer initialized (PostgresSaver)")
+    except Exception as e:
+        logger.warning("Tower checkpointer unavailable, compiling without: %s", e)
+
+compiled_graph = graph.compile(checkpointer=_tower_checkpointer)
 
 # Create the scheduler
 scheduler = AutonomousScheduler(compiled_graph.invoke)
@@ -94,11 +105,26 @@ async def lifespan(app: FastAPI):
     get_workflow_registry().seed_defaults()
     logger.info("Workflow registry initialized (default + app_factory workflows seeded)")
 
+    # Initialize Tower tables (tower_runs, tower_tickets, tower_effects, tower_run_events)
+    from src.tower.store import init_tower_tables
+    init_tower_tables()
+    logger.info("Tower tables initialized")
+
+    # Start Tower worker (claims and executes durable runs)
+    from src.tower.worker import TowerWorker
+    tower_worker = TowerWorker(compiled_graph)
+    tower_worker.start()
+    logger.info("Tower worker started (poll interval: 2s)")
+
     scheduler.start()
     logger.info("Autonomous scheduler started — store is now running 24/7")
     yield
     scheduler.stop()
     logger.info("Autonomous scheduler stopped")
+    tower_worker.stop()
+    logger.info("Tower worker stopped")
+    shutdown_checkpointer()
+    logger.info("Tower checkpointer shutdown")
 
 
 app = FastAPI(
@@ -1378,6 +1404,193 @@ async def delete_af_project(project_id: str):
         pass
 
     return JSONResponse({"status": "deleted", "project_id": project_id})
+
+
+# ---------------------------------------------------------------------------
+# Tower (Control Tower) API endpoints — durable runs, tickets, effects
+# ---------------------------------------------------------------------------
+
+
+@app.post("/tower/runs/start")
+async def tower_start_run(request: Request):
+    """Start a new Tower run. The worker will pick it up and execute it."""
+    from src.tower.runner import start_run
+
+    body = await request.json()
+    input_state = body.get("input_state", {})
+    if not input_state:
+        return JSONResponse({"error": "input_state is required"}, status_code=400)
+
+    run_id = start_run(
+        compiled_graph,
+        input_state=input_state,
+        workflow_id=body.get("workflow_id", "default"),
+        run_name=body.get("run_name"),
+        metadata=body.get("metadata"),
+        created_by=body.get("created_by", "api"),
+    )
+    return JSONResponse({"run_id": run_id, "status": "queued"}, status_code=201)
+
+
+@app.get("/tower/runs")
+async def tower_list_runs(
+    status: str | None = None,
+    workflow_id: str | None = None,
+    limit: int = 50,
+):
+    """List Tower runs with optional status/workflow filters."""
+    from src.tower.store import list_runs
+
+    runs = list_runs(status=status, workflow_id=workflow_id, limit=limit)
+    return JSONResponse({"runs": runs, "count": len(runs)})
+
+
+@app.get("/tower/runs/{run_id}")
+async def tower_get_run(run_id: str):
+    """Get a Tower run by ID."""
+    from src.tower.store import get_run
+
+    run = get_run(run_id)
+    if run is None:
+        return JSONResponse({"error": "Run not found"}, status_code=404)
+    return JSONResponse(run)
+
+
+@app.get("/tower/runs/{run_id}/events")
+async def tower_get_events(run_id: str):
+    """Get event timeline for a Tower run."""
+    from src.tower.store import get_events
+
+    events = get_events(run_id)
+    return JSONResponse({"run_id": run_id, "events": events, "count": len(events)})
+
+
+@app.get("/tower/runs/{run_id}/snapshot")
+async def tower_get_snapshot(run_id: str):
+    """Get the current LangGraph state snapshot for a Tower run."""
+    from src.tower.runner import get_run_snapshot
+
+    snapshot = get_run_snapshot(compiled_graph, run_id)
+    if snapshot is None:
+        return JSONResponse({"error": "Snapshot not available"}, status_code=404)
+    return JSONResponse(snapshot)
+
+
+@app.post("/tower/runs/{run_id}/resume")
+async def tower_resume_run(run_id: str, request: Request):
+    """Resume a Tower run after a ticket decision.
+
+    Body: { "ticket_id": int, "decision": "approve"|"reject",
+            "decided_by": str, "decision_payload": dict,
+            "expected_checkpoint_id": str }
+    """
+    from src.tower.runner import resume_run
+
+    body = await request.json()
+    ticket_id = body.get("ticket_id")
+    decision = body.get("decision")
+
+    if not ticket_id or not decision:
+        return JSONResponse(
+            {"error": "ticket_id and decision are required"}, status_code=400
+        )
+    if decision not in ("approve", "reject"):
+        return JSONResponse(
+            {"error": "decision must be 'approve' or 'reject'"}, status_code=400
+        )
+
+    try:
+        status = resume_run(
+            compiled_graph,
+            run_id,
+            ticket_id,
+            decision,
+            decided_by=body.get("decided_by", "console"),
+            decision_payload=body.get("decision_payload"),
+            expected_checkpoint_id=body.get("expected_checkpoint_id"),
+        )
+        return JSONResponse({"run_id": run_id, "status": status})
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=409)
+
+
+@app.get("/tower/inbox")
+async def tower_inbox(
+    status: str = "pending",
+    risk_level: str | None = None,
+    limit: int = 50,
+):
+    """Get Tower ticket inbox (pending tickets needing decisions)."""
+    from src.tower.store import list_tickets
+
+    tickets = list_tickets(status=status, risk_level=risk_level, limit=limit)
+    return JSONResponse({"tickets": tickets, "count": len(tickets)})
+
+
+@app.get("/tower/tickets/{ticket_id}")
+async def tower_get_ticket(ticket_id: int):
+    """Get a Tower ticket by ID."""
+    from src.tower.store import get_ticket
+
+    ticket = get_ticket(ticket_id)
+    if ticket is None:
+        return JSONResponse({"error": "Ticket not found"}, status_code=404)
+    return JSONResponse(ticket)
+
+
+@app.post("/tower/tickets/{ticket_id}/decide")
+async def tower_decide_ticket(ticket_id: int, request: Request):
+    """Decide a Tower ticket (approve/reject) and resume the run.
+
+    Body: { "decision": "approve"|"reject", "decided_by": str,
+            "decision_payload": dict, "expected_checkpoint_id": str }
+    """
+    from src.tower.store import decide_ticket, get_ticket
+
+    body = await request.json()
+    decision = body.get("decision")
+    if decision not in ("approve", "reject"):
+        return JSONResponse(
+            {"error": "decision must be 'approve' or 'reject'"}, status_code=400
+        )
+
+    try:
+        ticket = get_ticket(ticket_id)
+        if ticket is None:
+            return JSONResponse({"error": "Ticket not found"}, status_code=404)
+
+        result = decide_ticket(
+            ticket_id,
+            decision,
+            decided_by=body.get("decided_by", "console"),
+            decision_payload=body.get("decision_payload"),
+            expected_checkpoint_id=body.get("expected_checkpoint_id"),
+        )
+
+        # Auto-resume the run if ticket has a run_id
+        run_id = ticket.get("run_id")
+        if run_id:
+            from src.tower.store import update_run_status, log_event
+            update_run_status(run_id, "queued")
+            log_event(run_id, "run.resume_queued", {
+                "ticket_id": ticket_id,
+                "decision": decision,
+            })
+
+        return JSONResponse({"ticket_id": ticket_id, "status": result["status"]})
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=409)
+
+
+@app.get("/tower/effects/{effect_id}")
+async def tower_get_effect(effect_id: str):
+    """Get a Tower effect by ID."""
+    from src.tower.store import get_effect
+
+    effect = get_effect(effect_id)
+    if effect is None:
+        return JSONResponse({"error": "Effect not found"}, status_code=404)
+    return JSONResponse(effect)
 
 
 # Register webhook inbound routes (before security middleware)

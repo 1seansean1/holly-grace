@@ -342,16 +342,24 @@ class MorphogeneticCascade:
                 risk_level="high",
             )
 
+            # Also create a Tower ticket for the Control Tower inbox
+            tower_ticket_id = self._create_tower_ticket(
+                result, trigger, goal, proposal,
+                ticket_type="morphogenetic_tier2",
+                risk_level="high",
+            )
+
             result.adaptation = {
                 "type": "boundary_expansion_proposed",
                 "approval_id": approval_id,
+                "tower_ticket_id": tower_ticket_id,
                 "proposal": proposal,
             }
             result.outcome = "approval_pending"
 
             logger.info(
-                "Tier 2: approval requested (id=%s) for %s boundary expansion",
-                approval_id, trigger.channel_id,
+                "Tier 2: approval requested (approval=%s, tower_ticket=%s) for %s",
+                approval_id, tower_ticket_id, trigger.channel_id,
             )
             return False  # Cascade pauses until approval
 
@@ -448,16 +456,24 @@ class MorphogeneticCascade:
                 risk_level="high",
             )
 
+            # Also create a Tower ticket for the Control Tower inbox
+            tower_ticket_id = self._create_tower_ticket(
+                result, trigger, goal, proposal,
+                ticket_type="morphogenetic_tier3",
+                risk_level="high",
+            )
+
             result.adaptation = {
                 "type": "scale_reorganization_proposed",
                 "approval_id": approval_id,
+                "tower_ticket_id": tower_ticket_id,
                 "proposal": proposal,
             }
             result.outcome = "approval_pending"
 
             logger.info(
-                "Tier 3: approval requested (id=%s) for %s scale reorganization",
-                approval_id, trigger.channel_id,
+                "Tier 3: approval requested (approval=%s, tower_ticket=%s) for %s",
+                approval_id, tower_ticket_id, trigger.channel_id,
             )
             return False
 
@@ -523,6 +539,49 @@ class MorphogeneticCascade:
             "Cached competency: id=%s type=%s tier=%d AI=%.1f",
             comp_id, comp_type, tier, ai,
         )
+
+    def _create_tower_ticket(
+        self,
+        result: CascadeResult,
+        trigger: TriggerResult,
+        goal: GoalSpec,
+        proposal: dict,
+        *,
+        ticket_type: str = "morphogenetic",
+        risk_level: str = "high",
+    ) -> int | None:
+        """Create a Tower ticket for cascade approvals.
+
+        This puts the cascade proposal into the Control Tower inbox
+        alongside tool-call tickets, giving operators a unified view.
+        """
+        try:
+            from src.tower.store import create_ticket
+
+            return create_ticket(
+                run_id=result.cascade_id,  # Use cascade_id as pseudo-run
+                ticket_type=ticket_type,
+                risk_level=risk_level,
+                proposed_action=proposal,
+                context_pack={
+                    "tldr": f"Cascade {ticket_type.split('_')[-1]}: {goal.display_name}",
+                    "why_stopped": (
+                        f"Channel {trigger.channel_id} failing at p_fail={trigger.p_fail:.3f} "
+                        f"(threshold ε={trigger.epsilon_g:.3f}). "
+                        f"Cascade reached {ticket_type} needing approval."
+                    ),
+                    "impact": f"Will modify agent boundary/structure for {trigger.channel_id}",
+                    "risk_flags": [
+                        f"p_fail:{trigger.p_fail:.3f}",
+                        f"goal:{trigger.goal_id}",
+                        f"channel:{trigger.channel_id}",
+                    ],
+                    "options": {"approve": True, "reject": True},
+                },
+            )
+        except Exception as e:
+            logger.warning("Failed to create Tower ticket for cascade: %s", e)
+            return None
 
     def _log_event(self, result: CascadeResult, trigger: TriggerResult) -> None:
         """Log cascade event to database."""

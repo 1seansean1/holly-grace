@@ -5,7 +5,8 @@ Builds a LangGraph node function from an AgentConfig that:
 2. Optionally binds tools via model.bind_tools()
 3. Invokes the LLM with system prompt + task description
 4. Handles tool calls (execute tools, feed results back for final response)
-5. Writes results to state["agent_results"][agent_id]
+5. For tools requiring approval: calls interrupt() to pause for HITL
+6. Writes results to state["agent_results"][agent_id]
 """
 
 from __future__ import annotations
@@ -18,6 +19,7 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, Tool
 
 from src.agent_registry import AgentConfigRegistry
 from src.agents.constitution import build_system_prompt
+from src.approval import ApprovalGate
 from src.llm.config import ModelID
 from src.llm.fallback import get_model_with_fallbacks
 from src.llm.router import LLMRouter
@@ -45,8 +47,17 @@ def _extract_task_description(state: AgentState) -> str:
 def _execute_tool_calls(
     tool_calls: list[dict[str, Any]],
     tools_by_name: dict[str, Any],
+    *,
+    agent_id: str = "",
 ) -> list[ToolMessage]:
-    """Execute tool calls and return ToolMessage results."""
+    """Execute tool calls and return ToolMessage results.
+
+    For tools that require approval (medium/high risk), calls interrupt()
+    to pause execution and wait for human decision. On resume, the decision
+    determines whether the tool executes or is skipped.
+    """
+    from langgraph.types import interrupt
+
     results = []
     for call in tool_calls:
         name = call.get("name", "")
@@ -63,6 +74,35 @@ def _execute_tool_calls(
             )
             continue
 
+        # Check if this tool requires approval
+        if ApprovalGate.requires_approval(name, args):
+            risk = ApprovalGate.classify_risk(name, args)
+            logger.info("Tool %s requires approval (risk=%s), interrupting", name, risk)
+
+            # Pause execution — this returns only after resume
+            decision = interrupt({
+                "ticket_type": "tool_call",
+                "risk_level": risk,
+                "tldr": f"Execute {name}",
+                "why_stopped": f"Tool {name} is {risk}-risk and requires human approval",
+                "proposed_action": {"tool": name, "params": args},
+                "impact": f"Will execute {name} with provided parameters",
+                "risk_flags": [f"risk:{risk}", f"tool:{name}"],
+                "agent_id": agent_id,
+            })
+
+            # decision comes from Command(resume=...)
+            if isinstance(decision, dict) and decision.get("rejected"):
+                reason = decision.get("reason", "Operator rejected")
+                results.append(
+                    ToolMessage(
+                        content=f"Tool {name} was rejected by operator: {reason}",
+                        tool_call_id=call_id,
+                    )
+                )
+                continue
+
+        # Execute the tool
         try:
             output = tool.invoke(args)
             content = output if isinstance(output, str) else json.dumps(output, default=str)
@@ -143,7 +183,7 @@ def build_dynamic_node(
                     round_num + 1,
                 )
                 messages.append(response)
-                tool_results = _execute_tool_calls(response.tool_calls, tools_by_name)
+                tool_results = _execute_tool_calls(response.tool_calls, tools_by_name, agent_id=agent_id)
                 messages.extend(tool_results)
 
                 if round_num == MAX_TOOL_ROUNDS:

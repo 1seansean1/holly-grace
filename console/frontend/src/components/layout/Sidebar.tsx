@@ -13,12 +13,14 @@ import {
   Dna,
   Archive,
   MessageSquare,
+  Radar,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
   { to: '/', icon: Workflow, label: 'Canvas' },
   { to: '/workflows', icon: Network, label: 'Workflows' },
   { to: '/agents', icon: Bot, label: 'Agents' },
+  { to: '/tower', icon: Radar, label: 'Tower' },
   { to: '/approvals', icon: ShieldCheck, label: 'Approvals' },
   { to: '/eval', icon: FlaskConical, label: 'Eval' },
   { to: '/morph', icon: Dna, label: 'Morph' },

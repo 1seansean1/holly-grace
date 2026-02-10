@@ -16,6 +16,7 @@ import EvalPage from '@/pages/EvalPage';
 import MorphPage from '@/pages/MorphPage';
 import SystemPage from '@/pages/SystemPage';
 import ChatPage from '@/pages/ChatPage';
+import TowerPage from '@/pages/TowerPage';
 
 export default function App() {
   return (
@@ -28,6 +29,7 @@ export default function App() {
           <Route index element={<WorkflowPage />} />
           <Route path="workflows" element={<WorkflowsPage />} />
           <Route path="agents" element={<AgentsPage />} />
+          <Route path="tower" element={<TowerPage />} />
           <Route path="approvals" element={<ApprovalsPage />} />
           <Route path="eval" element={<EvalPage />} />
           <Route path="morph" element={<MorphPage />} />
