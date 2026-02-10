@@ -14,13 +14,17 @@ import {
   Archive,
   MessageSquare,
   Radar,
+  Layers,
+  Sparkles,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
-  { to: '/', icon: Workflow, label: 'Canvas' },
+  { to: '/', icon: Sparkles, label: 'Holly' },
+  { to: '/canvas', icon: Workflow, label: 'Canvas' },
   { to: '/workflows', icon: Network, label: 'Workflows' },
   { to: '/agents', icon: Bot, label: 'Agents' },
   { to: '/tower', icon: Radar, label: 'Tower' },
+  { to: '/hierarchy', icon: Layers, label: 'Hierarchy' },
   { to: '/approvals', icon: ShieldCheck, label: 'Approvals' },
   { to: '/eval', icon: FlaskConical, label: 'Eval' },
   { to: '/morph', icon: Dna, label: 'Morph' },

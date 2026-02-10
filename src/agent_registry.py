@@ -142,7 +142,7 @@ _HARDCODED_DEFAULTS: dict[str, AgentConfig] = {
         agent_id="revenue",
         channel_id="K4",
         display_name="Revenue & Analytics",
-        description="Financial analysis, pricing strategy, and chargeback monitoring",
+        description="Financial analysis, pricing strategy, chargeback monitoring, and Solana mining",
         model_id=ModelID.CLAUDE_OPUS.value,
         system_prompt=(
             "You are a senior revenue analyst and pricing strategist for a\n"
@@ -151,10 +151,11 @@ _HARDCODED_DEFAULTS: dict[str, AgentConfig] = {
             "- Daily revenue reports (sales, costs, margins, trends)\n"
             "- Pricing recommendations based on market data and margins\n"
             "- Chargeback monitoring and dispute strategy\n"
-            "- Long-term revenue optimization\n\n"
+            "- Long-term revenue optimization\n"
+            "- Solana mining profitability monitoring and validator health\n\n"
             "Always provide data-driven analysis. Respond in JSON:\n"
             "{{\n"
-            '  "report_type": "daily_revenue|pricing_recommendation|chargeback_alert",\n'
+            '  "report_type": "daily_revenue|pricing_recommendation|chargeback_alert|solana_mining",\n'
             '  "summary": "...",\n'
             '  "metrics": {{...}},\n'
             '  "recommendations": [...],\n'
@@ -162,6 +163,11 @@ _HARDCODED_DEFAULTS: dict[str, AgentConfig] = {
             '  "lesson_for_memory": "..."\n'
             "}}"
         ),
+        tool_ids=[
+            "stripe_revenue_query", "stripe_list_products",
+            "solana_check_profitability", "solana_validator_health", "solana_mining_report",
+            "hierarchy_gate_status", "hierarchy_predicate_status",
+        ],
         is_builtin=True,
     ),
     "content_writer": AgentConfig(

@@ -79,6 +79,15 @@ def _execute_tool_calls(
             risk = ApprovalGate.classify_risk(name, args)
             logger.info("Tool %s requires approval (risk=%s), interrupting", name, risk)
 
+            # Publish to message bus before interrupting (fire-and-forget)
+            from src.bus import STREAM_TOWER_EVENTS, publish
+            publish(STREAM_TOWER_EVENTS, "tool.approval_requested", {
+                "tool": name,
+                "risk": risk,
+                "agent_id": agent_id,
+                "args_preview": str(args)[:200],
+            }, source="dynamic_executor")
+
             # Pause execution — this returns only after resume
             decision = interrupt({
                 "ticket_type": "tool_call",

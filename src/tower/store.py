@@ -104,6 +104,48 @@ CREATE TABLE IF NOT EXISTS tower_effects (
 CREATE INDEX IF NOT EXISTS idx_tower_effects_run
     ON tower_effects (run_id, created_at DESC);
 
+-- Dead letter queue for unprocessable Redis Streams messages
+CREATE TABLE IF NOT EXISTS bus_dead_letters (
+    id          BIGSERIAL PRIMARY KEY,
+    stream      TEXT NOT NULL,
+    entry_id    TEXT NOT NULL,
+    msg_type    TEXT NOT NULL,
+    payload     JSONB NOT NULL DEFAULT '{}'::JSONB,
+    error       TEXT,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    resolved_at TIMESTAMPTZ,
+    UNIQUE (stream, entry_id)
+);
+
+-- Holly Grace conversation sessions
+CREATE TABLE IF NOT EXISTS holly_sessions (
+    id              BIGSERIAL PRIMARY KEY,
+    session_id      TEXT NOT NULL UNIQUE,
+    messages        JSONB NOT NULL DEFAULT '[]'::JSONB,
+    metadata        JSONB NOT NULL DEFAULT '{}'::JSONB,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    message_count   INT NOT NULL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_holly_sessions_updated
+    ON holly_sessions (updated_at DESC);
+
+-- Holly Grace notification queue (events waiting to be surfaced)
+CREATE TABLE IF NOT EXISTS holly_notifications (
+    id              BIGSERIAL PRIMARY KEY,
+    msg_type        TEXT NOT NULL,
+    payload         JSONB NOT NULL DEFAULT '{}'::JSONB,
+    priority        TEXT NOT NULL DEFAULT 'normal',
+    status          TEXT NOT NULL DEFAULT 'pending',
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    surfaced_at     TIMESTAMPTZ,
+    session_id      TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_holly_notifications_status
+    ON holly_notifications (status, priority, created_at);
+
 """
 
 
@@ -156,6 +198,17 @@ def create_run(
             ),
         )
     log_event(run_id, "run.queued", {"workflow_id": workflow_id})
+
+    # Publish to message bus (fire-and-forget)
+    from src.bus import STREAM_TOWER_EVENTS, publish
+    publish(STREAM_TOWER_EVENTS, "run.queued", {
+        "run_id": run_id,
+        "workflow_id": workflow_id,
+        "status": "queued",
+        "run_name": run_name,
+        "created_by": created_by,
+    }, source="tower.store")
+
     return run_id
 
 
@@ -186,7 +239,8 @@ def update_run_status(
     if status == "running":
         sets.append("started_at = COALESCE(started_at, %s)")
         vals.append(now)
-    if status in ("completed", "failed", "canceled"):
+    # Accept both spellings; console/types currently prefer "cancelled".
+    if status in ("completed", "failed", "cancelled", "canceled"):
         sets.append("finished_at = %s")
         vals.append(now)
     if last_checkpoint_id is not None:
@@ -205,18 +259,32 @@ def update_run_status(
     with _get_conn() as conn:
         conn.execute(sql, tuple(vals))
 
+    # Publish to message bus (fire-and-forget)
+    from src.bus import STREAM_TOWER_EVENTS, publish
+    publish(STREAM_TOWER_EVENTS, "run." + status, {
+        "run_id": run_id,
+        "status": status,
+        "last_error": last_error,
+    }, source="tower.store")
+
 
 def list_runs(
     *,
     status: str | None = None,
+    workflow_id: str | None = None,
     limit: int = 50,
 ) -> list[dict]:
-    """List runs, optionally filtered by status."""
-    where = ""
+    """List runs, optionally filtered by status/workflow_id."""
+    conditions = []
     params: list[Any] = []
     if status:
-        where = "WHERE status = %s"
+        conditions.append("status = %s")
         params.append(status)
+    if workflow_id:
+        conditions.append("workflow_id = %s")
+        params.append(workflow_id)
+
+    where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
     params.append(limit)
     sql = "SELECT * FROM tower_runs " + where + " ORDER BY updated_at DESC LIMIT %s"
     with _get_conn() as conn:
@@ -341,6 +409,18 @@ def create_ticket(
         "ticket_type": ticket_type,
         "risk_level": risk_level,
     })
+
+    # Publish to message bus (fire-and-forget)
+    from src.bus import STREAM_TOWER_TICKETS, publish
+    publish(STREAM_TOWER_TICKETS, "ticket.created", {
+        "ticket_id": ticket_id,
+        "run_id": run_id,
+        "ticket_type": ticket_type,
+        "risk_level": risk_level,
+        "tldr": (context_pack or {}).get("tldr", "Approval required"),
+        "proposed_action": proposed_action or {},
+    }, source="tower.store")
+
     return ticket_id
 
 
@@ -406,12 +486,22 @@ def decide_ticket(
         "decided_by": decided_by,
     })
 
+    # Publish to message bus (fire-and-forget)
+    from src.bus import STREAM_TOWER_TICKETS, publish
+    publish(STREAM_TOWER_TICKETS, "ticket.decided", {
+        "ticket_id": ticket_id,
+        "run_id": ticket["run_id"],
+        "status": status,
+        "decided_by": decided_by,
+    }, source="tower.store")
+
     return {**ticket, "status": status, "decided_at": now, "decided_by": decided_by}
 
 
 def list_tickets(
     *,
     status: str | None = "pending",
+    risk_level: str | None = None,
     run_id: str | None = None,
     limit: int = 50,
 ) -> list[dict]:
@@ -421,6 +511,9 @@ def list_tickets(
     if status:
         conditions.append("status = %s")
         params.append(status)
+    if risk_level:
+        conditions.append("risk_level = %s")
+        params.append(risk_level)
     if run_id:
         conditions.append("run_id = %s")
         params.append(run_id)

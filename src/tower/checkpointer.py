@@ -36,6 +36,7 @@ def setup_checkpointer() -> None:
 
     _pool = ConnectionPool(
         conninfo=_DB_URL,
+        open=True,
         min_size=2,
         max_size=5,
         kwargs={"autocommit": True, "prepare_threshold": 0},

@@ -103,6 +103,32 @@ class MorphogeneticCascade:
         result = CascadeResult(trigger.goal_id, trigger.channel_id)
         start_tier = trigger.recommended_tier
 
+        # Check hierarchy gate — if a higher-level constraint is violated,
+        # do not escalate the cascade (Tier 2+ can change things that matter)
+        try:
+            from src.hierarchy.engine import evaluate_gate
+            from src.hierarchy.store import get_all_predicates
+            preds = get_all_predicates()
+            if preds:
+                gate = evaluate_gate(preds)
+                # Gate level 5 must be open for profit/readiness cascades
+                gate5 = gate.get(5)
+                if gate5 and not gate5.is_open:
+                    logger.warning(
+                        "Hierarchy gate closed at L5 (failing: %s), blocking cascade for %s",
+                        gate5.failing_predicates, trigger.goal_id,
+                    )
+                    result.outcome = "gate_blocked"
+                    result.diagnostics.append({
+                        "tier": -1,
+                        "question": "Is the hierarchy gate open?",
+                        "answer": f"NO — L5 gate closed, failing predicates: {gate5.failing_predicates}",
+                    })
+                    self._log_event(result, trigger)
+                    return result
+        except Exception:
+            logger.debug("Hierarchy gate check unavailable, proceeding with cascade")
+
         # First check assembly cache for a known solution
         ctx_fp = generate_context_fingerprint(trigger.channel_id, metrics)
         cached = lookup_competency(trigger.channel_id, ctx_fp)
@@ -601,6 +627,16 @@ class MorphogeneticCascade:
             "competency_id": result.competency_id,
             "outcome": result.outcome,
         })
+
+        # Publish to message bus (fire-and-forget)
+        from src.bus import STREAM_SYSTEM_HEALTH, publish
+        publish(STREAM_SYSTEM_HEALTH, "cascade.completed", {
+            "cascade_id": result.cascade_id,
+            "goal_id": trigger.goal_id,
+            "channel_id": trigger.channel_id,
+            "outcome": result.outcome,
+            "tier_succeeded": result.tier_succeeded,
+        }, source="morphogenetic.cascade")
 
 
 # Module-level singleton

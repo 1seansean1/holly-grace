@@ -63,6 +63,17 @@ _TOOL_DEFINITIONS: list[ToolDefinition] = [
     ToolDefinition("af_docker_stop", "Docker Stop", "Clean up project workspace", "src.tools.app_factory_tools", "af_docker_stop", "app_factory"),
     ToolDefinition("af_play_store", "Play Store", "Upload AAB to Google Play Store (high risk)", "src.tools.app_factory_tools", "af_play_store", "app_factory"),
     ToolDefinition("af_state", "Project State", "Read/update App Factory project state", "src.tools.app_factory_tools", "af_state", "app_factory"),
+    # Goal Hierarchy (read-only)
+    ToolDefinition("hierarchy_gate_status", "Gate Status", "Check if the lexicographic gate is open at a given level", "src.tools.hierarchy_tool", "hierarchy_gate_status", "hierarchy"),
+    ToolDefinition("hierarchy_feasibility_check", "Feasibility Check", "Run full feasibility verification (Statement 55)", "src.tools.hierarchy_tool", "hierarchy_feasibility_check", "hierarchy"),
+    ToolDefinition("hierarchy_predicate_status", "Predicate Status", "Get current status of one or all predicates", "src.tools.hierarchy_tool", "hierarchy_predicate_status", "hierarchy"),
+    ToolDefinition("hierarchy_eigenspectrum", "Eigenspectrum", "Get eigenspectrum decomposition with cod(G)", "src.tools.hierarchy_tool", "hierarchy_eigenspectrum", "hierarchy"),
+    ToolDefinition("hierarchy_module_list", "Module List", "List all Terrestrial modules with status", "src.tools.hierarchy_tool", "hierarchy_module_list", "hierarchy"),
+    ToolDefinition("hierarchy_upward_coupling_budget", "Coupling Budget", "Check upward coupling budget and O3 rank", "src.tools.hierarchy_tool", "hierarchy_upward_coupling_budget", "hierarchy"),
+    # Solana Mining (read-only)
+    ToolDefinition("solana_check_profitability", "SOL Profitability", "Check Solana mining/staking profitability and ROI", "src.tools.solana_tool", "solana_check_profitability", "solana"),
+    ToolDefinition("solana_validator_health", "SOL Validator Health", "Check Solana validator uptime, skip rate, and delinquency", "src.tools.solana_tool", "solana_validator_health", "solana"),
+    ToolDefinition("solana_mining_report", "SOL Mining Report", "Generate comprehensive mining report with profitability, health, and gate status", "src.tools.solana_tool", "solana_mining_report", "solana"),
 ]
 
 # Lazy-loaded tool instances keyed by tool_id

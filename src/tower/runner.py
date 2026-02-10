@@ -262,6 +262,16 @@ def _handle_interrupt_from_snapshot(
         "interrupt_id": str(interrupt_id) if interrupt_id else None,
     })
 
+    # Publish to message bus (fire-and-forget)
+    from src.bus import STREAM_TOWER_EVENTS, publish
+    publish(STREAM_TOWER_EVENTS, "run.waiting_approval", {
+        "run_id": run_id,
+        "ticket_id": ticket_id,
+        "ticket_type": ticket_type,
+        "risk_level": risk_level,
+        "checkpoint_id": checkpoint_id,
+    }, source="tower.runner")
+
     logger.info(
         "Tower run %s interrupted — ticket %d created (type=%s, risk=%s)",
         run_id, ticket_id, ticket_type, risk_level,

@@ -368,6 +368,107 @@ CREATE TABLE IF NOT EXISTS app_factory_projects (
     created_at      TIMESTAMPTZ DEFAULT NOW(),
     updated_at      TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- ======================================================================
+-- Goal Hierarchy tables
+-- ======================================================================
+
+CREATE TABLE IF NOT EXISTS hierarchy_predicates (
+    index           INTEGER PRIMARY KEY,
+    name            VARCHAR(128) NOT NULL,
+    level           INTEGER NOT NULL,
+    block           VARCHAR(8) NOT NULL,
+    pass_condition  TEXT NOT NULL DEFAULT '',
+    variance        REAL NOT NULL DEFAULT 0.0,
+    epsilon_dmg     REAL NOT NULL DEFAULT 0.0,
+    agent_id        VARCHAR(16) NOT NULL,
+    module_id       VARCHAR(64),
+    current_value   REAL,
+    last_observed   TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS hierarchy_blocks (
+    block_id        VARCHAR(8) PRIMARY KEY,
+    name            VARCHAR(128) NOT NULL,
+    level           INTEGER NOT NULL,
+    predicate_indices INTEGER[] NOT NULL DEFAULT '{}',
+    rank            INTEGER NOT NULL DEFAULT 0,
+    module_id       VARCHAR(64)
+);
+
+CREATE TABLE IF NOT EXISTS hierarchy_coupling_axes (
+    id              BIGSERIAL PRIMARY KEY,
+    source_idx      INTEGER NOT NULL,
+    target_idx      INTEGER NOT NULL,
+    rho             REAL NOT NULL,
+    axis_type       VARCHAR(32) NOT NULL,
+    channel_id      VARCHAR(16)
+);
+CREATE INDEX IF NOT EXISTS idx_hca_source ON hierarchy_coupling_axes (source_idx);
+CREATE INDEX IF NOT EXISTS idx_hca_target ON hierarchy_coupling_axes (target_idx);
+
+CREATE TABLE IF NOT EXISTS hierarchy_agents (
+    agent_id        VARCHAR(16) PRIMARY KEY,
+    name            VARCHAR(128) NOT NULL,
+    predicates      INTEGER[] NOT NULL DEFAULT '{}',
+    rank            INTEGER NOT NULL DEFAULT 0,
+    capacity        INTEGER NOT NULL DEFAULT 0,
+    sigma_max       REAL NOT NULL DEFAULT 0.0,
+    layer           VARCHAR(16) NOT NULL DEFAULT 'celestial'
+);
+
+CREATE TABLE IF NOT EXISTS hierarchy_orchestrators (
+    orchestrator_id VARCHAR(16) PRIMARY KEY,
+    name            VARCHAR(128) NOT NULL,
+    rank            INTEGER NOT NULL DEFAULT 0,
+    governed_agents TEXT[] NOT NULL DEFAULT '{}',
+    role            TEXT NOT NULL DEFAULT ''
+);
+
+CREATE TABLE IF NOT EXISTS terrestrial_modules (
+    module_id       VARCHAR(64) PRIMARY KEY,
+    name            VARCHAR(128) NOT NULL,
+    level           INTEGER NOT NULL,
+    status          VARCHAR(16) NOT NULL DEFAULT 'Active',
+    predicate_indices INTEGER[] NOT NULL DEFAULT '{}',
+    agent_id        VARCHAR(16) NOT NULL,
+    upward_channels TEXT[] NOT NULL DEFAULT '{}'
+);
+
+CREATE TABLE IF NOT EXISTS hierarchy_eigenvalues (
+    index           INTEGER PRIMARY KEY,
+    value           REAL NOT NULL,
+    dominant_predicates INTEGER[] NOT NULL DEFAULT '{}',
+    interpretation  TEXT NOT NULL DEFAULT '',
+    layer           VARCHAR(16) NOT NULL DEFAULT 'celestial'
+);
+
+CREATE TABLE IF NOT EXISTS hierarchy_feasibility_log (
+    id              BIGSERIAL PRIMARY KEY,
+    timestamp       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    rank_coverage   BOOLEAN NOT NULL,
+    coupling_coverage BOOLEAN NOT NULL,
+    epsilon_check   BOOLEAN NOT NULL,
+    overall         BOOLEAN NOT NULL,
+    details         JSONB NOT NULL DEFAULT '{}'::JSONB
+);
+
+CREATE TABLE IF NOT EXISTS hierarchy_gate_status (
+    level           INTEGER PRIMARY KEY,
+    is_open         BOOLEAN NOT NULL DEFAULT TRUE,
+    failing_predicates INTEGER[] NOT NULL DEFAULT '{}',
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS hierarchy_observations (
+    id              BIGSERIAL PRIMARY KEY,
+    predicate_index INTEGER NOT NULL,
+    value           REAL NOT NULL,
+    source          VARCHAR(32) NOT NULL DEFAULT 'manual',
+    metadata        JSONB NOT NULL DEFAULT '{}'::JSONB,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_hobs_pred ON hierarchy_observations (predicate_index, created_at DESC);
 """
 
 

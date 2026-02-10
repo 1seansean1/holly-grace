@@ -17,6 +17,8 @@ import MorphPage from '@/pages/MorphPage';
 import SystemPage from '@/pages/SystemPage';
 import ChatPage from '@/pages/ChatPage';
 import TowerPage from '@/pages/TowerPage';
+import HierarchyPage from '@/pages/HierarchyPage';
+import HollyPage from '@/pages/HollyPage';
 
 export default function App() {
   return (
@@ -26,10 +28,12 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route element={<AuthGuard><Shell /></AuthGuard>}>
-          <Route index element={<WorkflowPage />} />
+          <Route index element={<HollyPage />} />
+          <Route path="canvas" element={<WorkflowPage />} />
           <Route path="workflows" element={<WorkflowsPage />} />
           <Route path="agents" element={<AgentsPage />} />
           <Route path="tower" element={<TowerPage />} />
+          <Route path="hierarchy" element={<HierarchyPage />} />
           <Route path="approvals" element={<ApprovalsPage />} />
           <Route path="eval" element={<EvalPage />} />
           <Route path="morph" element={<MorphPage />} />

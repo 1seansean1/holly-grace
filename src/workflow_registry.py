@@ -227,6 +227,36 @@ APP_FACTORY_WORKFLOW = WorkflowDefinition(
 
 
 # ---------------------------------------------------------------------------
+# Solana Mining workflow definition
+# ---------------------------------------------------------------------------
+
+
+SOLANA_MINING_WORKFLOW = WorkflowDefinition(
+    workflow_id="solana_mining",
+    display_name="Solana Mining",
+    description=(
+        "Monitors Solana mining profitability, validator health, and hierarchy "
+        "gate status. Runs every 6 hours, gated by L5 Celestial gate."
+    ),
+    nodes=[
+        WorkflowNodeDef("orchestrator", "orchestrator", {"x": 400, "y": 50}, is_entry_point=True),
+        WorkflowNodeDef("revenue_analytics", "revenue", {"x": 400, "y": 250}),
+    ],
+    edges=[
+        WorkflowEdgeDef(
+            "sm_e1", "orchestrator", "revenue_analytics", "conditional",
+            conditions=[
+                {"target": "revenue_analytics", "type": "field_equals", "field": "route_to", "value": "revenue_analytics"},
+                {"target": "revenue_analytics", "type": "default"},
+            ],
+        ),
+        WorkflowEdgeDef("sm_e2", "revenue_analytics", "__end__", "direct"),
+    ],
+    error_config={"max_retries": 2},
+)
+
+
+# ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
 
@@ -334,8 +364,12 @@ class WorkflowRegistry:
         )
 
     def seed_defaults(self) -> None:
-        """Seed the default and App Factory workflows into the DB."""
-        for wf, active in [(DEFAULT_WORKFLOW, True), (APP_FACTORY_WORKFLOW, False)]:
+        """Seed the default, App Factory, and Solana Mining workflows into the DB."""
+        for wf, active in [
+            (DEFAULT_WORKFLOW, True),
+            (APP_FACTORY_WORKFLOW, False),
+            (SOLANA_MINING_WORKFLOW, False),
+        ]:
             defn = wf.to_dict()
             seed_workflow(
                 workflow_id=wf.workflow_id,

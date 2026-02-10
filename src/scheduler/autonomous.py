@@ -90,6 +90,15 @@ class AutonomousScheduler:
                 created_by="scheduler",
             )
             logger.info("Tower run created: %s (trigger=%s)", run_id, trigger_source)
+
+            # Publish to message bus (fire-and-forget)
+            from src.bus import STREAM_SYSTEM_HEALTH, publish
+            publish(STREAM_SYSTEM_HEALTH, "scheduler.fired", {
+                "trigger_source": trigger_source,
+                "run_id": run_id,
+                "exploratory": exploratory,
+                "workflow_id": workflow_id,
+            }, source="scheduler")
         except Exception:
             logger.exception("Failed to create Tower run for %s, falling back to direct invoke", trigger_source)
             self._invoke_task(trigger_source, task_description, payload, exploratory=exploratory)
@@ -310,6 +319,24 @@ class AutonomousScheduler:
             replace_existing=True,
         )
 
+        # Hierarchy observation every 15 minutes
+        from src.hierarchy.observer import hierarchy_observation_job
+        self._scheduler.add_job(
+            hierarchy_observation_job,
+            trigger=IntervalTrigger(minutes=15),
+            id="hierarchy_observation",
+            replace_existing=True,
+        )
+
+        # Solana mining profitability check every 6 hours
+        # Gated by hierarchy L5 gate (Celestial must pass)
+        self._scheduler.add_job(
+            self._solana_mining_check,
+            trigger=IntervalTrigger(hours=6),
+            id="solana_mining_check",
+            replace_existing=True,
+        )
+
         # Sage inbox listener — persistent IMAP IDLE (instant, not polled)
         from src.tools.email_inbox import start_inbox_listener
         start_inbox_listener(self._handle_inbound_message)
@@ -378,6 +405,36 @@ class AutonomousScheduler:
                 "body": msg.body,
             },
             run_name=f"Sage: {label} from {msg.sender or 'unknown'}",
+        )
+
+    def _solana_mining_check(self):
+        """Check Solana mining profitability. Gated by hierarchy L5 gate."""
+        try:
+            from src.hierarchy.store import get_gate_status
+            gates = get_gate_status(5)
+            if gates and not gates[0].is_open:
+                failing = gates[0].failing_predicates
+                logger.info(
+                    "Solana mining check skipped — L5 gate closed (failing: %s)",
+                    failing,
+                )
+                return
+        except Exception:
+            logger.debug("Hierarchy gate check unavailable, proceeding with mining check")
+
+        self._start_tower_run(
+            "scheduler:solana_mining",
+            (
+                "Run a comprehensive Solana mining profitability check. "
+                "Use the solana_check_profitability tool to assess ROI, "
+                "solana_validator_health to check validator status, and "
+                "solana_mining_report to generate a full report. "
+                "Summarize findings and recommend whether to continue, "
+                "pause, or halt mining operations."
+            ),
+            {"task": "solana_mining_check"},
+            workflow_id="solana_mining",
+            run_name="Solana Mining Check",
         )
 
     def _expire_tower_tickets(self):

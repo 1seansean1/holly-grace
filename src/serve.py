@@ -110,17 +110,41 @@ async def lifespan(app: FastAPI):
     init_tower_tables()
     logger.info("Tower tables initialized")
 
+    # Seed goal hierarchy (37 predicates, 10 blocks, coupling axes, agents, orchestrators)
+    try:
+        from src.hierarchy.seed import seed_hierarchy
+        seed_hierarchy()
+        logger.info("Goal hierarchy seeded")
+    except Exception:
+        logger.warning("Failed to seed goal hierarchy", exc_info=True)
+
+    # Initialize Redis Streams message bus (5 streams + consumer groups)
+    from src.bus import ensure_consumer_groups
+    try:
+        ensure_consumer_groups()
+        logger.info("Redis Streams message bus initialized (5 streams)")
+    except Exception:
+        logger.warning("Redis Streams bus init failed (non-fatal)", exc_info=True)
+
     # Start Tower worker (claims and executes durable runs)
     from src.tower.worker import TowerWorker
     tower_worker = TowerWorker(compiled_graph)
     tower_worker.start()
     logger.info("Tower worker started (poll interval: 2s)")
 
+    # Start Holly Grace bus consumer (triages events → notifications)
+    from src.holly.consumer import HollyConsumer
+    holly_consumer = HollyConsumer()
+    holly_consumer.start()
+    logger.info("Holly Grace bus consumer started")
+
     scheduler.start()
     logger.info("Autonomous scheduler started — store is now running 24/7")
     yield
     scheduler.stop()
     logger.info("Autonomous scheduler stopped")
+    holly_consumer.stop()
+    logger.info("Holly Grace bus consumer stopped")
     tower_worker.stop()
     logger.info("Tower worker stopped")
     shutdown_checkpointer()
@@ -1591,6 +1615,430 @@ async def tower_get_effect(effect_id: str):
     if effect is None:
         return JSONResponse({"error": "Effect not found"}, status_code=404)
     return JSONResponse(effect)
+
+
+# ==========================================================================
+# Goal Hierarchy endpoints
+# ==========================================================================
+
+@app.get("/hierarchy/gate")
+async def hierarchy_gate_all():
+    """Get gate status for all levels."""
+    from src.hierarchy.engine import evaluate_gate
+    from src.hierarchy.store import get_all_predicates
+    predicates = get_all_predicates()
+    if not predicates:
+        return JSONResponse({"error": "Hierarchy not seeded"}, status_code=503)
+    gate = evaluate_gate(predicates)
+    return JSONResponse([{
+        "level": gs.level, "is_open": gs.is_open,
+        "failing_predicates": gs.failing_predicates,
+    } for gs in sorted(gate.values(), key=lambda x: x.level)])
+
+
+@app.get("/hierarchy/gate/{level}")
+async def hierarchy_gate_level(level: int):
+    """Get gate status for a specific level."""
+    from src.hierarchy.engine import evaluate_gate
+    from src.hierarchy.store import get_all_predicates
+    predicates = get_all_predicates()
+    gate = evaluate_gate(predicates)
+    gs = gate.get(level)
+    if gs is None:
+        return JSONResponse({"error": f"No gate data for level {level}"}, status_code=404)
+    return JSONResponse({
+        "level": gs.level, "is_open": gs.is_open,
+        "failing_predicates": gs.failing_predicates,
+    })
+
+
+@app.get("/hierarchy/predicates")
+async def hierarchy_predicates_all():
+    """Get all predicates with current values."""
+    from src.hierarchy.store import get_all_predicates
+    predicates = get_all_predicates()
+    return JSONResponse([{
+        "index": p.index, "name": p.name, "level": p.level, "block": p.block,
+        "pass_condition": p.pass_condition, "variance": p.variance,
+        "epsilon_dmg": p.epsilon_dmg, "agent_id": p.agent_id,
+        "module_id": p.module_id, "current_value": p.current_value,
+        "last_observed": p.last_observed.isoformat() if p.last_observed else None,
+    } for p in predicates])
+
+
+@app.get("/hierarchy/predicates/{index}")
+async def hierarchy_predicate_detail(index: int):
+    """Get a single predicate with its observation history."""
+    from src.hierarchy.store import get_observations, get_predicate
+    p = get_predicate(index)
+    if p is None:
+        return JSONResponse({"error": f"No predicate with index {index}"}, status_code=404)
+    observations = get_observations(index, limit=20)
+    return JSONResponse({
+        "index": p.index, "name": p.name, "level": p.level, "block": p.block,
+        "pass_condition": p.pass_condition, "variance": p.variance,
+        "epsilon_dmg": p.epsilon_dmg, "agent_id": p.agent_id,
+        "module_id": p.module_id, "current_value": p.current_value,
+        "last_observed": p.last_observed.isoformat() if p.last_observed else None,
+        "recent_observations": observations,
+    })
+
+
+@app.post("/hierarchy/predicates/{index}/observe")
+async def hierarchy_observe_predicate(index: int, request: Request):
+    """Submit an observation for a predicate (admin only)."""
+    body = await request.json()
+    value = body.get("value")
+    source = body.get("source", "manual")
+    metadata = body.get("metadata", {})
+    if value is None or not isinstance(value, (int, float)):
+        return JSONResponse({"error": "value is required (0.0-1.0)"}, status_code=400)
+    if not 0.0 <= value <= 1.0:
+        return JSONResponse({"error": "value must be between 0.0 and 1.0"}, status_code=400)
+    from src.hierarchy.store import get_predicate, update_predicate_observation
+    p = get_predicate(index)
+    if p is None:
+        return JSONResponse({"error": f"No predicate with index {index}"}, status_code=404)
+    update_predicate_observation(index, float(value), source, metadata)
+    return JSONResponse({"status": "observed", "predicate": index, "value": value})
+
+
+@app.get("/hierarchy/blocks")
+async def hierarchy_blocks():
+    """Get block decomposition."""
+    from src.hierarchy.store import get_all_blocks
+    blocks = get_all_blocks()
+    return JSONResponse([{
+        "block_id": b.block_id, "name": b.name, "level": b.level,
+        "predicate_indices": b.predicate_indices, "rank": b.rank,
+        "module_id": b.module_id,
+    } for b in blocks])
+
+
+@app.get("/hierarchy/eigenspectrum")
+async def hierarchy_eigenspectrum():
+    """Get the full eigenspectrum."""
+    from src.hierarchy.store import get_all_eigenvalues
+    eigenvalues = get_all_eigenvalues()
+    return JSONResponse({
+        "cod_g": len(eigenvalues),
+        "eigenvalues": [{
+            "index": e.index, "value": e.value, "layer": e.layer,
+            "dominant_predicates": e.dominant_predicates,
+            "interpretation": e.interpretation,
+        } for e in eigenvalues],
+    })
+
+
+@app.get("/hierarchy/feasibility")
+async def hierarchy_feasibility():
+    """Run feasibility check and return result."""
+    from src.hierarchy.engine import verify_feasibility
+    from src.hierarchy.store import (
+        get_all_agents, get_all_blocks, get_all_coupling_axes,
+        get_all_eigenvalues, get_all_orchestrators, get_all_predicates,
+    )
+    predicates = get_all_predicates()
+    result = verify_feasibility(
+        predicates, get_all_blocks(), get_all_agents(),
+        get_all_orchestrators(), get_all_eigenvalues(), get_all_coupling_axes(),
+    )
+    return JSONResponse({
+        "overall": result.overall, "rank_coverage": result.rank_coverage,
+        "coupling_coverage": result.coupling_coverage,
+        "epsilon_check": result.epsilon_check, "details": result.details,
+    })
+
+
+@app.get("/hierarchy/agents")
+async def hierarchy_agents():
+    """Get agent assignments."""
+    from src.hierarchy.store import get_all_agents
+    agents = get_all_agents()
+    return JSONResponse([{
+        "agent_id": a.agent_id, "name": a.name, "predicates": a.predicates,
+        "rank": a.rank, "capacity": a.capacity, "sigma_max": a.sigma_max,
+        "layer": a.layer,
+    } for a in agents])
+
+
+@app.get("/hierarchy/orchestrators")
+async def hierarchy_orchestrators():
+    """Get orchestrator assignments."""
+    from src.hierarchy.store import get_all_orchestrators
+    orchestrators = get_all_orchestrators()
+    return JSONResponse([{
+        "orchestrator_id": o.orchestrator_id, "name": o.name, "rank": o.rank,
+        "governed_agents": o.governed_agents, "role": o.role,
+    } for o in orchestrators])
+
+
+@app.get("/hierarchy/modules")
+async def hierarchy_modules():
+    """List Terrestrial modules."""
+    from src.hierarchy.store import list_modules
+    modules = list_modules()
+    return JSONResponse([{
+        "module_id": m.module_id, "name": m.name, "level": m.level,
+        "status": m.status, "predicate_count": len(m.predicate_indices),
+        "predicate_indices": m.predicate_indices,
+        "agent_id": m.agent_id, "upward_channels": m.upward_channels,
+    } for m in modules])
+
+
+@app.get("/hierarchy/modules/{module_id}")
+async def hierarchy_module_detail(module_id: str):
+    """Get a single module."""
+    from src.hierarchy.store import get_module
+    m = get_module(module_id)
+    if m is None:
+        return JSONResponse({"error": f"Module '{module_id}' not found"}, status_code=404)
+    return JSONResponse({
+        "module_id": m.module_id, "name": m.name, "level": m.level,
+        "status": m.status, "predicate_indices": m.predicate_indices,
+        "agent_id": m.agent_id, "upward_channels": m.upward_channels,
+    })
+
+
+@app.post("/hierarchy/modules")
+async def hierarchy_add_module(request: Request):
+    """Add a new Terrestrial module (triggers recomputation)."""
+    body = await request.json()
+    required = ["module_id", "name", "level", "predicate_indices", "agent_id"]
+    for field in required:
+        if field not in body:
+            return JSONResponse({"error": f"Missing required field: {field}"}, status_code=400)
+    from src.hierarchy.models import TerrestrialModule
+    from src.hierarchy.store import upsert_module
+    m = TerrestrialModule(
+        module_id=body["module_id"], name=body["name"], level=body["level"],
+        status=body.get("status", "Active"),
+        predicate_indices=body["predicate_indices"],
+        agent_id=body["agent_id"],
+        upward_channels=body.get("upward_channels", []),
+    )
+    upsert_module(m)
+    return JSONResponse({"status": "created", "module_id": m.module_id}, status_code=201)
+
+
+@app.delete("/hierarchy/modules/{module_id}")
+async def hierarchy_delete_module(module_id: str):
+    """Deactivate a Terrestrial module."""
+    from src.hierarchy.store import delete_module, get_module
+    m = get_module(module_id)
+    if m is None:
+        return JSONResponse({"error": f"Module '{module_id}' not found"}, status_code=404)
+    delete_module(module_id)
+    return JSONResponse({"status": "deactivated", "module_id": module_id})
+
+
+@app.get("/hierarchy/coupling")
+async def hierarchy_coupling():
+    """Get full coupling data."""
+    from src.hierarchy.store import get_all_coupling_axes
+    axes = get_all_coupling_axes()
+    return JSONResponse([{
+        "source": a.source_predicate, "target": a.target_predicate,
+        "rho": a.rho, "axis_type": a.axis_type, "channel_id": a.channel_id,
+    } for a in axes])
+
+
+@app.get("/hierarchy/coupling/upward-budget")
+async def hierarchy_coupling_budget():
+    """Get upward coupling budget status."""
+    from src.hierarchy.engine import check_o3_rank
+    from src.hierarchy.store import get_all_coupling_axes, get_all_orchestrators, list_modules
+    axes = get_all_coupling_axes()
+    orchestrators = get_all_orchestrators()
+    upward = [a for a in axes if a.axis_type == "upward"]
+    cross_module = [a for a in axes if a.axis_type == "terrestrial-internal"]
+    o3 = next((o for o in orchestrators if o.orchestrator_id == "O3"), None)
+    rank_check = check_o3_rank(len(upward), len(cross_module), o3.rank if o3 else 0)
+    modules = list_modules()
+    return JSONResponse({
+        "upward_channels": {"used": len(upward), "max": 2},
+        "o3_rank_check": rank_check,
+        "modules_with_upward": [{"module_id": m.module_id, "channels": m.upward_channels}
+                                 for m in modules if m.upward_channels],
+    })
+
+
+@app.post("/hierarchy/recompute")
+async def hierarchy_recompute():
+    """Force full recomputation of eigenspectrum, feasibility, and gate (admin only)."""
+    from src.hierarchy.engine import evaluate_gate, verify_feasibility
+    from src.hierarchy.store import (
+        get_all_agents, get_all_blocks, get_all_coupling_axes,
+        get_all_eigenvalues, get_all_orchestrators, get_all_predicates,
+        log_feasibility, update_gate_status,
+    )
+    predicates = get_all_predicates()
+    feasibility = verify_feasibility(
+        predicates, get_all_blocks(), get_all_agents(),
+        get_all_orchestrators(), get_all_eigenvalues(), get_all_coupling_axes(),
+    )
+    log_feasibility(feasibility)
+    gate = evaluate_gate(predicates)
+    for gs in gate.values():
+        update_gate_status(gs)
+    return JSONResponse({
+        "status": "recomputed",
+        "feasibility": {"overall": feasibility.overall, "details": feasibility.details},
+        "gate": [{
+            "level": gs.level, "is_open": gs.is_open,
+            "failing_predicates": gs.failing_predicates,
+        } for gs in sorted(gate.values(), key=lambda x: x.level)],
+    })
+
+
+# ---------------------------------------------------------------------------
+# Holly Grace API endpoints — super-orchestrator chat interface
+# ---------------------------------------------------------------------------
+
+
+@app.post("/holly/message")
+async def holly_message(request: Request):
+    """Send a message to Holly Grace and get her response."""
+    body = await request.json()
+    message = body.get("message", "").strip()
+    if not message:
+        return JSONResponse({"error": "message is required"}, status_code=400)
+
+    session_id = body.get("session_id", "default")
+
+    from src.holly.agent import handle_message
+    try:
+        response = handle_message(message, session_id=session_id)
+        return JSONResponse({
+            "response": response,
+            "session_id": session_id,
+        })
+    except Exception as e:
+        logger.exception("Holly Grace message error")
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@app.get("/holly/session")
+async def holly_session(session_id: str = "default"):
+    """Get Holly Grace conversation session history."""
+    from src.holly.session import get_messages
+    messages = get_messages(session_id)
+    return JSONResponse({"session_id": session_id, "messages": messages})
+
+
+@app.post("/holly/clear")
+async def holly_clear(request: Request):
+    """Clear Holly Grace conversation session."""
+    body = await request.json() if request.headers.get("content-type") == "application/json" else {}
+    session_id = body.get("session_id", "default")
+
+    from src.holly.session import clear_session
+    clear_session(session_id)
+    return JSONResponse({"status": "cleared", "session_id": session_id})
+
+
+@app.get("/holly/greeting")
+async def holly_greeting(session_id: str = "default"):
+    """Get Holly Grace's greeting with current system status."""
+    from src.holly.agent import generate_greeting
+    greeting = generate_greeting(session_id)
+    return JSONResponse({"greeting": greeting, "session_id": session_id})
+
+
+@app.get("/holly/notifications")
+async def holly_notifications(limit: int = 20):
+    """Get pending Holly Grace notifications (unsurfaced events)."""
+    from src.holly.consumer import get_pending_notifications
+    notifications = get_pending_notifications(limit=limit)
+    return JSONResponse({"notifications": notifications, "count": len(notifications)})
+
+
+@app.websocket("/ws/holly")
+async def ws_holly(websocket: WebSocket):
+    """WebSocket endpoint for real-time Holly Grace chat streaming.
+
+    Auth: token passed as query parameter ?token=<jwt>
+    Protocol:
+      Client → Server: { "type": "message", "content": "..." }
+      Server → Client: { "type": "token", "content": "..." }
+                       { "type": "tool_call", "name": "...", "input": {...} }
+                       { "type": "tool_result", "name": "...", "result": {...} }
+                       { "type": "done", "content": "..." }
+                       { "type": "error", "content": "..." }
+    """
+    from src.security.auth import verify_token
+
+    # Validate origin
+    origin = websocket.headers.get("origin", "")
+    allowed_origins = os.environ.get(
+        "CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:8050"
+    ).split(",")
+    if origin and origin not in allowed_origins:
+        await websocket.close(code=4003, reason="Origin not allowed")
+        return
+
+    # Validate token
+    token = websocket.query_params.get("token")
+    if not token:
+        await websocket.close(code=4001, reason="Authentication required")
+        return
+
+    try:
+        verify_token(token)
+    except ValueError:
+        await websocket.close(code=4001, reason="Invalid or expired token")
+        return
+
+    await websocket.accept()
+    session_id = websocket.query_params.get("session_id", "default")
+
+    try:
+        while True:
+            data = await websocket.receive_text()
+            msg = json.loads(data)
+
+            if msg.get("type") != "message" or not msg.get("content"):
+                await websocket.send_text(json.dumps({
+                    "type": "error",
+                    "content": "Expected: { type: 'message', content: '...' }",
+                }))
+                continue
+
+            user_message = msg["content"]
+
+            # Stream Holly's response
+            from src.holly.agent import handle_message_stream
+            async for event_type, event_data in handle_message_stream(
+                user_message, session_id=session_id,
+            ):
+                if event_type == "token":
+                    await websocket.send_text(json.dumps({
+                        "type": "token", "content": event_data,
+                    }))
+                elif event_type == "tool_call":
+                    await websocket.send_text(json.dumps({
+                        "type": "tool_call", **event_data,
+                    }))
+                elif event_type == "tool_result":
+                    await websocket.send_text(json.dumps({
+                        "type": "tool_result",
+                        "name": event_data["name"],
+                        "result": event_data["result"],
+                    }, default=str))
+                elif event_type == "done":
+                    await websocket.send_text(json.dumps({
+                        "type": "done", "content": event_data,
+                    }))
+                elif event_type == "error":
+                    await websocket.send_text(json.dumps({
+                        "type": "error", "content": event_data,
+                    }))
+
+    except WebSocketDisconnect:
+        pass
+    except Exception as e:
+        error_msg = str(e).replace(token, "[REDACTED]") if token else str(e)
+        logger.debug("Holly WS error: %s", error_msg)
 
 
 # Register webhook inbound routes (before security middleware)

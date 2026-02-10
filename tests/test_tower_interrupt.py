@@ -33,7 +33,7 @@ from src.tower.store import (
 from src.tower.runner import get_run_snapshot
 
 
-class TestState(TypedDict):
+class TowerState(TypedDict):
     messages: Annotated[list[BaseMessage], add_messages]
     approved_action: str
 
@@ -41,12 +41,12 @@ class TestState(TypedDict):
 def build_test_graph():
     """Build a simple graph that interrupts for approval, then completes."""
 
-    def think_node(state: TestState) -> dict:
+    def think_node(state: TowerState) -> dict:
         return {
             "messages": [AIMessage(content="I want to create a Stripe product for $500.")],
         }
 
-    def approval_gate(state: TestState) -> dict:
+    def approval_gate(state: TowerState) -> dict:
         """Interrupt for human approval before executing the risky action."""
         decision = interrupt({
             "ticket_type": "tool_call",
@@ -72,7 +72,7 @@ def build_test_graph():
             "approved_action": "approved",
         }
 
-    def execute_node(state: TestState) -> dict:
+    def execute_node(state: TowerState) -> dict:
         if state.get("approved_action") == "rejected":
             return {
                 "messages": [AIMessage(content="Skipped execution due to rejection.")],
@@ -81,7 +81,7 @@ def build_test_graph():
             "messages": [AIMessage(content="Product created successfully: prod_xyz123")],
         }
 
-    graph = StateGraph(TestState)
+    graph = StateGraph(TowerState)
     graph.add_node("think", think_node)
     graph.add_node("approval_gate", approval_gate)
     graph.add_node("execute", execute_node)
