@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  forge-backend:
+    build: ./backend
+    ports:
+      - "8060:8060"
+    environment:
+      - FORGE_ECOM_AGENTS_URL=http://host.docker.internal:8050
+      - FORGE_LANGSMITH_API_KEY=${FORGE_LANGSMITH_API_KEY}
+      - FORGE_LANGSMITH_PROJECT=ecom-agents
+    restart: unless-stopped
+
+  forge-frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - forge-backend
+    restart: unless-stopped

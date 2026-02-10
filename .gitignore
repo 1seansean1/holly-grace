@@ -10,3 +10,17 @@ build/
 .ruff_cache/
 .coverage
 htmlcov/
+
+# Console frontend
+node_modules/
+console/frontend/dist/
+console/frontend/dist-ssr/
+*.local
+
+# Terraform
+*.tfstate
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+terraform.tfvars
+*.auto.tfvars

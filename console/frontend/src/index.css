@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #0a0a0a;
+  --color-bg-card: #141414;
+  --color-bg-hover: #1a1a1a;
+  --color-border: #262626;
+  --color-text: #e0e0e0;
+  --color-text-muted: #888888;
+  --color-accent: #e94560;
+  --color-accent-hover: #c73652;
+  --color-ollama: #4ade80;
+  --color-openai: #60a5fa;
+  --color-anthropic: #a78bfa;
+  --color-error: #f87171;
+  --color-warning: #fb923c;
+  --color-success: #4ade80;
+  --color-surface: #1a1a1a;
+}
+
+html {
+  background-color: #0a0a0a;
+  overflow: hidden;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  overflow: hidden;
+}
+
+/* React Flow dark theme overrides */
+.react-flow__background { background-color: var(--color-bg) !important; }
+.react-flow__minimap { background-color: var(--color-bg-card) !important; border: 1px solid var(--color-border) !important; border-radius: 8px !important; }
+.react-flow__controls { border: 1px solid var(--color-border) !important; border-radius: 8px !important; overflow: hidden; }
+.react-flow__controls button { background-color: var(--color-bg-card) !important; border-color: var(--color-border) !important; fill: var(--color-text-muted) !important; }
+.react-flow__controls button:hover { background-color: var(--color-bg-hover) !important; }
+
+@keyframes node-pulse {
+  0%, 100% { box-shadow: 0 0 8px 2px rgba(74, 222, 128, 0.3); }
+  50% { box-shadow: 0 0 24px 8px rgba(74, 222, 128, 0.6); }
+}
+.node-active { animation: node-pulse 1.5s ease-in-out infinite; }
+
+/* Global focus indicator for keyboard navigation */
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
