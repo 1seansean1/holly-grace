@@ -1,6 +1,6 @@
 # Holly Grace
 
-Autonomous e-commerce agent orchestration platform. Multi-agent system with LangGraph, 4 LLM providers, real-time dashboard, and integrated multi-model chat.
+Autonomous agent orchestration platform. Multi-agent system with LangGraph, 4 LLM providers, real-time dashboard, and integrated multi-model chat.
 
 ## Architecture
 
