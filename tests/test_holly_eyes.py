@@ -149,7 +149,7 @@ class TestSeedGitHubReader:
         call_kwargs = mock_create.call_args
         assert call_kwargs.kwargs["server_id"] == "github-reader"
         assert call_kwargs.kwargs["transport"] == "stdio"
-        assert call_kwargs.kwargs["stdio_command"] == "python"
+        assert call_kwargs.kwargs["stdio_command"] == "python3"
 
     @patch("src.mcp.store.get_server")
     @patch("src.mcp.store.create_server")

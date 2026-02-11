@@ -382,9 +382,9 @@ class TestToolRegistration(unittest.TestCase):
         for name in expected:
             self.assertIn(name, schema_names, f"{name} missing from HOLLY_TOOL_SCHEMAS")
 
-    def test_holly_now_has_17_tools(self):
+    def test_holly_now_has_18_tools(self):
         from src.holly.tools import HOLLY_TOOLS
-        self.assertEqual(len(HOLLY_TOOLS), 17)
+        self.assertEqual(len(HOLLY_TOOLS), 18)
 
 
 if __name__ == "__main__":
