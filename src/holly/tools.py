@@ -236,24 +236,30 @@ def query_run_detail(run_id: str) -> dict:
 
 def query_system_health() -> dict:
     """Check the health of all system services (Postgres, Redis, Ollama, ChromaDB)."""
+    import os
     health = {}
 
-    # Redis
+    # Redis — use the same env var as the bus module
     try:
         import redis
-        r = redis.from_url("redis://localhost:6381/0", decode_responses=True)
+        redis_url = os.environ.get("REDIS_URL", "redis://localhost:6381/0")
+        r = redis.from_url(redis_url, decode_responses=True)
         r.ping()
         health["redis"] = "healthy"
     except Exception as e:
         health["redis"] = f"unhealthy: {e}"
 
-    # Postgres
+    # Postgres — use the same env var as the session module
     try:
         import psycopg
-        with psycopg.connect(
-            "postgresql://holly:holly_dev_password@localhost:5434/holly_grace",
-            autocommit=True,
-        ) as conn:
+        pg_dsn = os.environ.get(
+            "DATABASE_URL",
+            os.environ.get(
+                "POSTGRES_DSN",
+                "postgresql://holly:holly_dev_password@localhost:5434/holly_grace",
+            ),
+        )
+        with psycopg.connect(pg_dsn, autocommit=True) as conn:
             conn.execute("SELECT 1")
         health["postgres"] = "healthy"
     except Exception as e:
@@ -262,7 +268,8 @@ def query_system_health() -> dict:
     # Ollama
     try:
         import urllib.request
-        urllib.request.urlopen("http://localhost:11435/api/tags", timeout=3)
+        ollama_url = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11435")
+        urllib.request.urlopen(f"{ollama_url}/api/tags", timeout=3)
         health["ollama"] = "healthy"
     except Exception:
         health["ollama"] = "unreachable"
@@ -270,7 +277,8 @@ def query_system_health() -> dict:
     # ChromaDB
     try:
         import urllib.request
-        urllib.request.urlopen("http://localhost:8100/api/v1/heartbeat", timeout=3)
+        chroma_url = os.environ.get("CHROMA_URL", "http://localhost:8100")
+        urllib.request.urlopen(f"{chroma_url}/api/v1/heartbeat", timeout=3)
         health["chromadb"] = "healthy"
     except Exception:
         health["chromadb"] = "unreachable"

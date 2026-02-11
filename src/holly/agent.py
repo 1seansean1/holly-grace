@@ -386,6 +386,12 @@ async def handle_message_stream(
                 "tool_use_id": tu.id,
                 "content": json.dumps(result, default=str),
             })
+            logger.info(
+                "Holly tool call (stream): %s(%s) → %s",
+                tu.name,
+                json.dumps(tu.input, default=str)[:200],
+                json.dumps(result, default=str)[:200],
+            )
             yield ("tool_result", {"name": tu.name, "result": result})
 
         messages.append({"role": "user", "content": tool_results})
