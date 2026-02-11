@@ -23,7 +23,7 @@ from src.events import (
 from src.graph import build_graph
 from src.llm.config import LLMSettings
 from src.llm.router import LLMRouter
-from src.scheduler.autonomous import AutonomousScheduler
+from src.scheduler.autonomous import AutonomousScheduler, set_global_scheduler
 
 load_dotenv()
 
@@ -67,6 +67,7 @@ compiled_graph = graph.compile(checkpointer=_tower_checkpointer)
 
 # Create the scheduler
 scheduler = AutonomousScheduler(compiled_graph.invoke)
+set_global_scheduler(scheduler)
 
 
 @asynccontextmanager

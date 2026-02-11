@@ -393,6 +393,197 @@ def list_crew_agents() -> dict:
 
 
 # ---------------------------------------------------------------------------
+# System introspection tools
+# ---------------------------------------------------------------------------
+
+def query_registered_tools(category: str | None = None) -> dict:
+    """List all registered tools (Python + MCP), optionally filtered by category.
+
+    Args:
+        category: Filter by category (e.g., 'shopify', 'stripe', 'mcp', 'hierarchy').
+    """
+    from src.tool_registry import get_tool_registry
+
+    registry = get_tool_registry()
+    all_tools = registry.to_dicts()
+
+    if category:
+        all_tools = [t for t in all_tools if t.get("category") == category]
+
+    summary = [
+        {
+            "tool_id": t["tool_id"],
+            "display_name": t.get("display_name", t["tool_id"]),
+            "description": t.get("description", ""),
+            "category": t.get("category", ""),
+            "provider": t.get("provider", ""),
+        }
+        for t in all_tools
+    ]
+
+    categories = sorted(set(t.get("category", "") for t in all_tools))
+    return {"tools": summary, "count": len(summary), "categories": categories}
+
+
+def query_mcp_servers() -> dict:
+    """List all registered MCP servers with their health status and tool counts."""
+    from src.mcp.store import list_servers, list_tools
+
+    try:
+        servers = list_servers()
+        summary = []
+        for s in servers:
+            tools = list_tools(s["server_id"])
+            summary.append({
+                "server_id": s["server_id"],
+                "display_name": s.get("display_name", s["server_id"]),
+                "transport": s.get("transport", ""),
+                "enabled": s.get("enabled", True),
+                "health_status": s.get("last_health_status", "unknown"),
+                "health_error": s.get("last_health_error", "") or "",
+                "tool_count": len(tools),
+                "enabled_tool_count": sum(1 for t in tools if t.get("enabled")),
+            })
+        return {"servers": summary, "count": len(summary)}
+    except Exception as e:
+        return {"error": f"MCP store unavailable: {e}"}
+
+
+def query_agents(agent_id: str | None = None) -> dict:
+    """List agent configurations, or get details for a specific agent.
+
+    Args:
+        agent_id: Optional specific agent ID to look up.
+    """
+    from src.agent_registry import get_registry
+
+    registry = get_registry()
+
+    if agent_id:
+        configs = registry.get_all()
+        match = [c for c in configs if c.agent_id == agent_id]
+        if not match:
+            return {"error": f"Agent '{agent_id}' not found"}
+        c = match[0]
+        return {
+            "agent_id": c.agent_id,
+            "display_name": c.display_name,
+            "description": c.description,
+            "model_id": c.model_id,
+            "channel_id": c.channel_id,
+            "tool_ids": c.tool_ids,
+            "version": c.version,
+            "is_builtin": c.is_builtin,
+        }
+
+    configs = registry.get_all()
+    summary = [
+        {
+            "agent_id": c.agent_id,
+            "display_name": c.display_name,
+            "description": c.description,
+            "model_id": c.model_id,
+            "tool_count": len(c.tool_ids),
+            "is_builtin": c.is_builtin,
+        }
+        for c in configs
+    ]
+    return {"agents": summary, "count": len(summary)}
+
+
+def query_workflows(workflow_id: str | None = None) -> dict:
+    """List workflow definitions, or get details for a specific workflow.
+
+    Args:
+        workflow_id: Optional specific workflow ID to look up.
+    """
+    from src.workflow_registry import get_workflow_registry
+
+    registry = get_workflow_registry()
+
+    if workflow_id:
+        wf = registry.get(workflow_id)
+        if not wf:
+            return {"error": f"Workflow '{workflow_id}' not found"}
+        defn = wf.get("definition", {})
+        return {
+            "workflow_id": wf["workflow_id"],
+            "display_name": wf.get("display_name", ""),
+            "description": wf.get("description", ""),
+            "is_active": wf.get("is_active", False),
+            "version": wf.get("version", 1),
+            "node_count": len(defn.get("nodes", [])) if isinstance(defn, dict) else 0,
+            "edge_count": len(defn.get("edges", [])) if isinstance(defn, dict) else 0,
+        }
+
+    workflows = registry.get_all()
+    summary = [
+        {
+            "workflow_id": w["workflow_id"],
+            "display_name": w.get("display_name", ""),
+            "description": w.get("description", ""),
+            "is_active": w.get("is_active", False),
+            "version": w.get("version", 1),
+        }
+        for w in workflows
+    ]
+    return {"workflows": summary, "count": len(summary)}
+
+
+def query_hierarchy_gate() -> dict:
+    """Check the lexicographic gate status at all levels (L0-L6)."""
+    from src.hierarchy.store import get_all_predicates, get_gate_status
+
+    try:
+        gates = get_gate_status()
+        predicates = get_all_predicates()
+
+        gate_summary = [
+            {
+                "level": g.level,
+                "is_open": g.is_open,
+                "failing_predicates": g.failing_predicates,
+                "failing_count": len(g.failing_predicates),
+            }
+            for g in gates
+        ]
+
+        all_open = all(g.is_open for g in gates)
+        total_failing = sum(len(g.failing_predicates) for g in gates)
+
+        return {
+            "overall": "open" if all_open else "blocked",
+            "total_predicates": len(predicates),
+            "total_failing": total_failing,
+            "levels": gate_summary,
+        }
+    except Exception as e:
+        return {"error": f"Hierarchy store unavailable: {e}"}
+
+
+def query_scheduled_jobs() -> dict:
+    """List all scheduled jobs with their next run times and triggers."""
+    from src.scheduler.autonomous import get_global_scheduler
+
+    try:
+        sched = get_global_scheduler()
+        if sched is None:
+            return {"error": "Scheduler not initialized"}
+
+        jobs = [
+            {
+                "id": job.id,
+                "next_run": str(job.next_run_time) if job.next_run_time else "paused",
+                "trigger": str(job.trigger),
+            }
+            for job in sched.jobs
+        ]
+        return {"jobs": jobs, "count": len(jobs)}
+    except Exception as e:
+        return {"error": f"Scheduler unavailable: {e}"}
+
+
+# ---------------------------------------------------------------------------
 # Tool registry for the agent
 # ---------------------------------------------------------------------------
 
@@ -408,6 +599,12 @@ HOLLY_TOOLS = {
     "send_notification": send_notification,
     "dispatch_crew": dispatch_crew,
     "list_crew_agents": list_crew_agents,
+    "query_registered_tools": query_registered_tools,
+    "query_mcp_servers": query_mcp_servers,
+    "query_agents": query_agents,
+    "query_workflows": query_workflows,
+    "query_hierarchy_gate": query_hierarchy_gate,
+    "query_scheduled_jobs": query_scheduled_jobs,
 }
 
 # Anthropic tool schemas for function calling
@@ -522,6 +719,51 @@ HOLLY_TOOL_SCHEMAS = [
     {
         "name": "list_crew_agents",
         "description": "List all available Construction Crew agents and their roles.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "query_registered_tools",
+        "description": "List all registered tools (Python and MCP), optionally filtered by category.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "category": {"type": "string", "description": "Filter by category (shopify, stripe, mcp, hierarchy, etc.)"},
+            },
+        },
+    },
+    {
+        "name": "query_mcp_servers",
+        "description": "List all registered MCP servers with health status and tool counts.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "query_agents",
+        "description": "List all agent configurations, or get details for a specific agent including model, tools, and description.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "agent_id": {"type": "string", "description": "Optional specific agent ID to look up"},
+            },
+        },
+    },
+    {
+        "name": "query_workflows",
+        "description": "List all workflow definitions, or get details for a specific workflow including node/edge counts.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "workflow_id": {"type": "string", "description": "Optional specific workflow ID to look up"},
+            },
+        },
+    },
+    {
+        "name": "query_hierarchy_gate",
+        "description": "Check the lexicographic gate status at all levels (L0-L6). Shows which levels are open/blocked and which predicates are failing.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "query_scheduled_jobs",
+        "description": "List all scheduled jobs with their next run times and triggers.",
         "input_schema": {"type": "object", "properties": {}},
     },
 ]

@@ -471,3 +471,19 @@ class AutonomousScheduler:
     @property
     def jobs(self):
         return self._scheduler.get_jobs()
+
+
+# ---------------------------------------------------------------------------
+# Global accessor — avoids circular imports (serve.py → holly → serve.py)
+# ---------------------------------------------------------------------------
+
+_global_scheduler: AutonomousScheduler | None = None
+
+
+def set_global_scheduler(s: AutonomousScheduler) -> None:
+    global _global_scheduler
+    _global_scheduler = s
+
+
+def get_global_scheduler() -> AutonomousScheduler | None:
+    return _global_scheduler

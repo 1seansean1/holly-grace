@@ -17,10 +17,6 @@ export default function Header({ title, subtitle, right }: HeaderProps) {
       </div>
       <div className="flex items-center gap-2">
         {right}
-        <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-muted)]">
-          <div className="w-2 h-2 rounded-full bg-[var(--color-success)] animate-pulse" />
-          Holly Grace
-        </div>
       </div>
     </header>
   );
