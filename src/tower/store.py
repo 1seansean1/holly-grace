@@ -626,9 +626,23 @@ def get_effect(effect_id: str) -> dict | None:
 # ---------------------------------------------------------------------------
 
 def _row_to_dict(row: Any, conn: Any = None) -> dict:
-    """Convert a psycopg row to dict. With dict_row factory, rows are already dicts."""
+    """Convert a psycopg row to dict. With dict_row factory, rows are already dicts.
+
+    Also converts datetime objects to ISO strings for JSON serialization.
+    """
     if row is None:
         return {}
     if isinstance(row, dict):
-        return row
-    return dict(row) if hasattr(row, "keys") else {}
+        d = row
+    elif hasattr(row, "keys"):
+        d = dict(row)
+    else:
+        return {}
+    # Convert datetime objects to ISO strings for JSON serialization
+    from datetime import datetime, date
+    for k, v in d.items():
+        if isinstance(v, datetime):
+            d[k] = v.isoformat()
+        elif isinstance(v, date):
+            d[k] = v.isoformat()
+    return d

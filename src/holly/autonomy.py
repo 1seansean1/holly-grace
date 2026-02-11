@@ -42,8 +42,10 @@ STATUS_KEY = "holly:autonomy:status"
 SESSION_ID = "autonomous"
 POLL_INTERVAL_S = float(os.environ.get("HOLLY_POLL_INTERVAL", "8"))
 MONITORING_INTERVAL_S = float(os.environ.get("HOLLY_MONITOR_INTERVAL", "300"))
+MONITORING_MAX_INTERVAL_S = 3600.0  # 1 hour max backoff
 COOLDOWN_AFTER_TASK_S = 3.0  # Brief pause between tasks to avoid rate limits
 MAX_CONSECUTIVE_ERRORS = 5
+MAX_IDLE_SWEEPS_BEFORE_BACKOFF = 3  # After this many "no change" sweeps, start backing off
 
 
 # ── Redis helpers ─────────────────────────────────────────────────────────
@@ -148,6 +150,9 @@ class HollyAutonomyLoop:
         self._consecutive_errors = 0
         self._tasks_completed = 0
         self._current_task: dict | None = None
+        self._idle_sweeps = 0  # Consecutive sweeps with no state change
+        self._current_monitor_interval = MONITORING_INTERVAL_S
+        self._last_state_hash: str = ""  # Quick hash of system state for change detection
 
     @property
     def running(self) -> bool:
@@ -183,6 +188,8 @@ class HollyAutonomyLoop:
                 if task:
                     self._execute_task(task)
                     self._consecutive_errors = 0
+                    self._idle_sweeps = 0  # Reset backoff — state changed
+                    self._current_monitor_interval = MONITORING_INTERVAL_S
                     time.sleep(COOLDOWN_AFTER_TASK_S)
                     continue
 
@@ -192,16 +199,43 @@ class HollyAutonomyLoop:
                     time.sleep(COOLDOWN_AFTER_TASK_S)
                     continue
 
-                # Phase 3: Periodic monitoring sweep
+                # Phase 3: Periodic monitoring sweep (with adaptive backoff)
                 now = time.time()
-                if now - self._last_monitoring > MONITORING_INTERVAL_S:
-                    self._run_monitoring_cycle()
+                if now - self._last_monitoring > self._current_monitor_interval:
+                    changed = self._quick_state_check()
+                    if changed or self._idle_sweeps < MAX_IDLE_SWEEPS_BEFORE_BACKOFF:
+                        # State changed or haven't reached backoff threshold — full LLM sweep
+                        self._run_monitoring_cycle()
+                        if changed:
+                            self._idle_sweeps = 0
+                            self._current_monitor_interval = MONITORING_INTERVAL_S
+                        else:
+                            self._idle_sweeps += 1
+                    else:
+                        # No change, backed off — just log and skip the expensive LLM call
+                        self._idle_sweeps += 1
+                        self._current_monitor_interval = min(
+                            self._current_monitor_interval * 1.5,
+                            MONITORING_MAX_INTERVAL_S,
+                        )
+                        logger.info(
+                            "Monitoring skipped (no state change, %d idle sweeps). "
+                            "Next check in %ds",
+                            self._idle_sweeps,
+                            int(self._current_monitor_interval),
+                        )
+                        _update_status(
+                            "idle_monitoring",
+                            f"No state change ({self._idle_sweeps} idle sweeps). "
+                            f"Next full check in {int(self._current_monitor_interval)}s",
+                        )
                     self._last_monitoring = now
                     self._consecutive_errors = 0
                     continue
 
                 # Phase 4: Nothing to do — sleep
-                _update_status("idle", f"Queue empty. {self._tasks_completed} tasks done. Next monitor in {int(MONITORING_INTERVAL_S - (now - self._last_monitoring))}s")
+                remaining = int(self._current_monitor_interval - (now - self._last_monitoring))
+                _update_status("idle", f"Queue empty. {self._tasks_completed} tasks done. Next monitor in {remaining}s")
                 time.sleep(POLL_INTERVAL_S)
 
             except Exception as e:
@@ -344,22 +378,66 @@ class HollyAutonomyLoop:
             logger.exception("Failed to check urgent notifications")
             return False
 
+    def _quick_state_check(self) -> bool:
+        """Lightweight local state check — no LLM call.
+
+        Returns True if system state has changed since last check.
+        Checks: queue depth, pending tickets, running tasks, service health.
+        """
+        try:
+            parts = []
+            # Check queue depth
+            depth = get_queue_depth()
+            parts.append(f"q={depth}")
+
+            # Check for pending tickets
+            try:
+                from src.tower.store import list_tickets
+                tickets = list_tickets(status="pending", limit=1)
+                parts.append(f"tix={len(tickets)}")
+            except Exception:
+                parts.append("tix=?")
+
+            # Check running tower runs
+            try:
+                from src.tower.store import list_runs
+                runs = list_runs(status="running", limit=1)
+                parts.append(f"runs={len(runs)}")
+            except Exception:
+                parts.append("runs=?")
+
+            # Check bus for new messages (just count)
+            try:
+                r = _get_redis()
+                bus_len = r.xlen("holly:tower:events") or 0
+                parts.append(f"bus={bus_len}")
+            except Exception:
+                parts.append("bus=?")
+
+            state_hash = "|".join(parts)
+            changed = state_hash != self._last_state_hash
+            if changed:
+                logger.info("State change detected: %s -> %s", self._last_state_hash, state_hash)
+            self._last_state_hash = state_hash
+            return changed
+        except Exception:
+            logger.exception("Quick state check failed")
+            return True  # On error, assume changed to trigger full check
+
     def _run_monitoring_cycle(self) -> None:
-        """Periodic monitoring sweep — check system health, hierarchy, financials."""
-        logger.info("Running autonomous monitoring cycle")
-        _update_status("monitoring", "Periodic system health sweep")
+        """Periodic monitoring sweep — check system health, hierarchy, financials.
+
+        Cost-aware: keeps prompt minimal. The LLM decides which tools to call.
+        """
+        logger.info("Running autonomous monitoring cycle (sweep %d, interval %ds)",
+                     self._idle_sweeps + 1, int(self._current_monitor_interval))
+        _update_status("monitoring", f"Sweep {self._idle_sweeps + 1}")
 
         prompt = (
             "[MONITORING CYCLE — Autonomous]\n"
-            "Run your monitoring duties:\n"
-            "1. query_hierarchy_gate() — check L0-L6 gate status\n"
-            "2. query_system_health() — Redis, Postgres, Ollama, ChromaDB\n"
-            "3. query_financial_health() — revenue phase, epsilon, budgets\n"
-            "4. query_tickets(status='pending') — any tickets needing review\n"
-            "5. query_runs(status='running') — active workflows\n"
-            "6. query_scheduled_jobs() — scheduler health\n\n"
-            "Report any anomalies. If everything is nominal, respond briefly.\n"
-            "If you detect issues, take autonomous Tier 0/1 action or escalate."
+            "Quick sweep. Check: hierarchy gate, system health, pending tickets, active runs.\n"
+            "If nothing changed from last sweep, respond in ≤10 words.\n"
+            "Only call tools if you need fresh data. Be cost-conscious."
         )
 
         try:
@@ -367,19 +445,23 @@ class HollyAutonomyLoop:
             response = handle_message(prompt, session_id=SESSION_ID)
             logger.info("Monitoring cycle: %.300s", response)
 
-            try:
-                from src.holly.memory import store_episode
-                store_episode(
-                    summary=f"Monitoring sweep: {response[:400]}",
-                    objective="periodic_monitoring",
-                    outcome="completed",
-                    session_id=SESSION_ID,
-                )
-            except Exception:
-                pass
+            # Store episode only every 10th sweep to save DB writes
+            if (self._idle_sweeps + 1) % 10 == 0:
+                try:
+                    from src.holly.memory import store_episode
+                    store_episode(
+                        summary=f"Monitoring sweep {self._idle_sweeps + 1}: {response[:400]}",
+                        objective="periodic_monitoring",
+                        outcome="completed",
+                        session_id=SESSION_ID,
+                    )
+                except Exception:
+                    pass
 
-        except Exception:
-            logger.exception("Monitoring cycle failed")
+        except Exception as e:
+            logger.error("Monitoring cycle failed: %s", e)
+            # Don't re-raise — increment idle to back off faster
+            self._idle_sweeps += 2  # Penalize failures to back off sooner
 
 
 # ── Singleton ─────────────────────────────────────────────────────────────

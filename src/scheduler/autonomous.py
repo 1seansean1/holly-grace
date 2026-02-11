@@ -17,6 +17,7 @@ from __future__ import annotations
 import concurrent.futures
 import logging
 import traceback
+import uuid
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -145,7 +146,8 @@ class AutonomousScheduler:
             "_revenue_cost_budget": cost_budget,
         }
 
-        future = self._executor.submit(self._invoke, state)
+        config = {"configurable": {"thread_id": f"sched-{uuid.uuid4().hex[:8]}"}}
+        future = self._executor.submit(self._invoke, state, config)
         try:
             result = future.result(timeout=TASK_TIMEOUT_SECONDS)
             logger.info(
@@ -201,7 +203,8 @@ class AutonomousScheduler:
                         "trigger_payload": p.get("original_payload") or {},
                         "retry_count": 0,
                     }
-                    future = self._executor.submit(self._invoke, state)
+                    dlq_config = {"configurable": {"thread_id": f"dlq-{uuid.uuid4().hex[:8]}"}}
+                    future = self._executor.submit(self._invoke, state, dlq_config)
                     future.result(timeout=TASK_TIMEOUT_SECONDS)
                     dlq_resolve(entry["id"])
                     logger.info("DLQ entry %d resolved successfully", entry["id"])
