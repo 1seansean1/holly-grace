@@ -1,0 +1,60 @@
+{
+  "family": "holly-grace-holly-grace",
+  "taskRoleArn": "arn:aws:iam::327416545926:role/holly-grace-ecs-task",
+  "executionRoleArn": "arn:aws:iam::327416545926:role/holly-grace-ecs-execution",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "1024",
+  "memory": "2048",
+  "containerDefinitions": [
+    {
+      "name": "holly-grace",
+      "image": "327416545926.dkr.ecr.us-east-2.amazonaws.com/holly-grace/holly-grace:v10",
+      "cpu": 0,
+      "essential": true,
+      "portMappings": [
+        { "containerPort": 80, "hostPort": 80, "protocol": "tcp" },
+        { "containerPort": 8050, "hostPort": 8050, "protocol": "tcp" }
+      ],
+      "environment": [
+        { "name": "HOLLY_AUTONOMOUS", "value": "1" },
+        { "name": "PORT", "value": "8050" },
+        { "name": "HOST", "value": "0.0.0.0" },
+        { "name": "HOLLY_AGENTS_URL", "value": "http://127.0.0.1:8050" },
+        { "name": "SHOPIFY_API_VERSION", "value": "2026-01" },
+        { "name": "SHOPIFY_SHOP_URL", "value": "liberty-forge-2.myshopify.com" },
+        { "name": "LANGSMITH_PROJECT", "value": "holly-grace" },
+        { "name": "LANGSMITH_TRACING_V2", "value": "true" },
+        { "name": "OLLAMA_BASE_URL", "value": "" },
+        { "name": "CHROMA_URL", "value": "http://chromadb.holly-grace.local:8000" },
+        { "name": "REDIS_URL", "value": "redis://holly-grace-redis.1bufji.0001.use2.cache.amazonaws.com:6379/0" }
+      ],
+      "secrets": [
+        { "name": "LANGSMITH_API_KEY", "valueFrom": "arn:aws:secretsmanager:us-east-2:327416545926:secret:holly-grace/production/secrets-TVmKFm:LANGSMITH_API_KEY::" },
+        { "name": "OPENAI_API_KEY", "valueFrom": "arn:aws:secretsmanager:us-east-2:327416545926:secret:holly-grace/production/secrets-TVmKFm:OPENAI_API_KEY::" },
+        { "name": "ANTHROPIC_API_KEY", "valueFrom": "arn:aws:secretsmanager:us-east-2:327416545926:secret:holly-grace/production/secrets-TVmKFm:ANTHROPIC_API_KEY::" },
+        { "name": "SHOPIFY_ACCESS_TOKEN", "valueFrom": "arn:aws:secretsmanager:us-east-2:327416545926:secret:holly-grace/production/secrets-TVmKFm:SHOPIFY_ACCESS_TOKEN::" },
+        { "name": "STRIPE_SECRET_KEY", "valueFrom": "arn:aws:secretsmanager:us-east-2:327416545926:secret:holly-grace/production/secrets-TVmKFm:STRIPE_SECRET_KEY::" },
+        { "name": "PRINTFUL_API_KEY", "valueFrom": "arn:aws:secretsmanager:us-east-2:327416545926:secret:holly-grace/production/secrets-TVmKFm:PRINTFUL_API_KEY::" },
+        { "name": "DATABASE_URL", "valueFrom": "arn:aws:secretsmanager:us-east-2:327416545926:secret:holly-grace/production/secrets-TVmKFm:DATABASE_URL::" },
+        { "name": "AUTH_SECRET_KEY", "valueFrom": "arn:aws:secretsmanager:us-east-2:327416545926:secret:holly-grace/production/secrets-TVmKFm:AUTH_SECRET_KEY::" },
+        { "name": "HOLLY_CONSOLE_JWT_SECRET", "valueFrom": "arn:aws:secretsmanager:us-east-2:327416545926:secret:holly-grace/production/secrets-TVmKFm:AUTH_SECRET_KEY::" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/holly-grace/holly-grace",
+          "awslogs-region": "us-east-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8050/health')\" || exit 1"],
+        "interval": 30,
+        "timeout": 10,
+        "retries": 3,
+        "startPeriod": 120
+      }
+    }
+  ]
+}

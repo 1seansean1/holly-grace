@@ -161,8 +161,11 @@ def get_autonomy_status() -> dict:
 
 def _get_pg_dsn() -> str:
     return os.environ.get(
-        "POSTGRES_DSN",
-        "postgresql://postgres:postgres@localhost:5434/ecom_agents",
+        "DATABASE_URL",
+        os.environ.get(
+            "POSTGRES_DSN",
+            "postgresql://postgres:postgres@localhost:5434/ecom_agents",
+        ),
     )
 
 
