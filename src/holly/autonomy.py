@@ -132,15 +132,197 @@ def _update_status(status: str, detail: str = "") -> None:
 
 
 def get_autonomy_status() -> dict:
-    """Read current autonomy loop status."""
+    """Read current autonomy loop status including loop metadata."""
+    base: dict[str, Any] = {}
     try:
         r = _get_redis()
         raw = r.hgetall(STATUS_KEY)
-        if not raw:
-            return {"status": "unknown"}
-        return {k: v for k, v in raw.items()}
+        if raw:
+            base = {k: v for k, v in raw.items()}
+        else:
+            base["status"] = "unknown"
     except Exception:
-        return {"status": "error"}
+        base["status"] = "error"
+
+    # Enrich with loop instance data if available
+    loop = _loop
+    if loop:
+        base["running"] = loop.running
+        base["paused"] = loop.paused
+        base["tasks_completed"] = loop.tasks_completed
+        base["consecutive_errors"] = loop.consecutive_errors
+        base["idle_sweeps"] = loop.idle_sweeps
+        base["monitor_interval"] = int(loop.monitor_interval)
+        base["queue_depth"] = get_queue_depth()
+    return base
+
+
+# ── Audit table ──────────────────────────────────────────────────────────
+
+def _get_pg_dsn() -> str:
+    return os.environ.get(
+        "POSTGRES_DSN",
+        "postgresql://postgres:postgres@localhost:5434/ecom_agents",
+    )
+
+
+def init_autonomy_tables() -> None:
+    """Create the holly_autonomy_audit table if it doesn't exist."""
+    import psycopg
+    with psycopg.connect(_get_pg_dsn(), autocommit=True) as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS holly_autonomy_audit (
+                id            SERIAL PRIMARY KEY,
+                task_id       TEXT NOT NULL,
+                task_type     TEXT NOT NULL DEFAULT 'objective',
+                objective     TEXT NOT NULL DEFAULT '',
+                priority      TEXT NOT NULL DEFAULT 'normal',
+                outcome       TEXT NOT NULL DEFAULT 'completed',
+                error_message TEXT DEFAULT '',
+                started_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+                finished_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+                duration_sec  REAL DEFAULT 0,
+                metadata      JSONB DEFAULT '{}'
+            )
+        """)
+    logger.info("holly_autonomy_audit table initialized")
+
+
+def _log_audit(
+    task: dict,
+    outcome: str,
+    started_at: float,
+    error_message: str = "",
+) -> None:
+    """Write an audit row after task execution."""
+    import psycopg
+    from psycopg.rows import dict_row
+    duration = time.time() - started_at
+    try:
+        with psycopg.connect(_get_pg_dsn(), autocommit=True, row_factory=dict_row) as conn:
+            conn.execute(
+                "INSERT INTO holly_autonomy_audit "
+                "(task_id, task_type, objective, priority, outcome, error_message, "
+                " started_at, finished_at, duration_sec, metadata) "
+                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                (
+                    task.get("id", "?"),
+                    task.get("type", "objective"),
+                    task.get("objective", "")[:2000],
+                    task.get("priority", "normal"),
+                    outcome,
+                    error_message[:2000],
+                    datetime.fromtimestamp(started_at, tz=timezone.utc).isoformat(),
+                    datetime.now(timezone.utc).isoformat(),
+                    round(duration, 2),
+                    json.dumps(task.get("metadata", {}), default=str),
+                ),
+            )
+    except Exception:
+        logger.warning("Failed to write audit log for task %s", task.get("id"), exc_info=True)
+
+
+def list_audit_logs(limit: int = 50, offset: int = 0) -> dict:
+    """Query audit logs. Returns {logs: [...], total: int}."""
+    import psycopg
+    from psycopg.rows import dict_row
+    try:
+        with psycopg.connect(_get_pg_dsn(), autocommit=True, row_factory=dict_row) as conn:
+            row = conn.execute("SELECT count(*) AS cnt FROM holly_autonomy_audit").fetchone()
+            total = row["cnt"] if row else 0
+            rows = conn.execute(
+                "SELECT * FROM holly_autonomy_audit ORDER BY finished_at DESC LIMIT %s OFFSET %s",
+                (limit, offset),
+            ).fetchall()
+            # Serialize datetimes
+            logs = []
+            for r in rows:
+                entry = dict(r)
+                for k in ("started_at", "finished_at"):
+                    if hasattr(entry.get(k), "isoformat"):
+                        entry[k] = entry[k].isoformat()
+                logs.append(entry)
+            return {"logs": logs, "total": total}
+    except Exception:
+        logger.warning("Failed to query audit logs", exc_info=True)
+        return {"logs": [], "total": 0}
+
+
+# ── Queue inspection ─────────────────────────────────────────────────────
+
+def list_queued_tasks(limit: int = 50) -> list[dict]:
+    """Peek at queued tasks without popping them."""
+    try:
+        r = _get_redis()
+        raw_items = r.lrange(TASK_QUEUE_KEY, 0, limit - 1)
+        tasks = []
+        for raw in raw_items:
+            try:
+                tasks.append(json.loads(raw))
+            except Exception:
+                pass
+        return tasks
+    except Exception:
+        logger.warning("Failed to list queued tasks", exc_info=True)
+        return []
+
+
+def cancel_task(task_id: str) -> bool:
+    """Remove a specific task from the queue by ID."""
+    try:
+        r = _get_redis()
+        all_items = r.lrange(TASK_QUEUE_KEY, 0, -1)
+        for raw in all_items:
+            try:
+                task = json.loads(raw)
+                if task.get("id") == task_id:
+                    removed = r.lrem(TASK_QUEUE_KEY, 1, raw)
+                    if removed:
+                        logger.info("Cancelled task %s from queue", task_id)
+                        return True
+            except Exception:
+                continue
+        return False
+    except Exception:
+        logger.warning("Failed to cancel task %s", task_id, exc_info=True)
+        return False
+
+
+def clear_queue() -> int:
+    """Clear all tasks from the queue. Returns count of tasks cleared."""
+    try:
+        r = _get_redis()
+        depth = r.llen(TASK_QUEUE_KEY) or 0
+        if depth > 0:
+            r.delete(TASK_QUEUE_KEY)
+            logger.info("Cleared %d tasks from autonomy queue", depth)
+        return depth
+    except Exception:
+        logger.warning("Failed to clear queue", exc_info=True)
+        return 0
+
+
+# ── Error alerting ────────────────────────────────────────────────────────
+
+SEED_FLAG_KEY = "holly:autonomy:seeded"
+
+
+def _send_error_alert(error_count: int, last_error: str) -> None:
+    """Send a notification when the autonomy loop hits max consecutive errors."""
+    try:
+        from src.channels.protocol import dock
+        dock.send(
+            channel="email",
+            subject="Holly Autonomy Loop — Error Alert",
+            body=(
+                f"Holly's autonomy loop hit {error_count} consecutive errors.\n\n"
+                f"Last error: {last_error[:500]}\n\n"
+                "The loop is backing off for 5 minutes and will retry automatically."
+            ),
+        )
+        logger.info("Error alert sent (consecutive_errors=%d)", error_count)
+    except Exception:
+        logger.warning("Failed to send error alert", exc_info=True)
 
 
 # ── The Loop ─────────────────────────────────────────────────────────────
@@ -155,6 +337,7 @@ class HollyAutonomyLoop:
 
     def __init__(self):
         self._running = False
+        self._paused = False
         self._thread: threading.Thread | None = None
         self._last_monitoring = 0.0
         self._consecutive_errors = 0
@@ -169,10 +352,31 @@ class HollyAutonomyLoop:
     def running(self) -> bool:
         return self._running
 
+    @property
+    def paused(self) -> bool:
+        return self._paused
+
+    @property
+    def tasks_completed(self) -> int:
+        return self._tasks_completed
+
+    @property
+    def consecutive_errors(self) -> int:
+        return self._consecutive_errors
+
+    @property
+    def idle_sweeps(self) -> int:
+        return self._idle_sweeps
+
+    @property
+    def monitor_interval(self) -> float:
+        return self._current_monitor_interval
+
     def start(self) -> None:
         if self._running:
             return
         self._running = True
+        self._paused = False
         self._thread = threading.Thread(
             target=self._run_loop, daemon=True, name="holly-autonomy",
         )
@@ -186,6 +390,18 @@ class HollyAutonomyLoop:
         _update_status("stopped", "Autonomy loop stopped")
         logger.info("Holly autonomy loop STOPPED (%d tasks completed)", self._tasks_completed)
 
+    def pause(self) -> None:
+        """Pause the autonomy loop. Tasks stay queued but won't be processed."""
+        self._paused = True
+        _update_status("paused", "Autonomy loop paused by operator")
+        logger.info("Holly autonomy loop PAUSED")
+
+    def resume(self) -> None:
+        """Resume the autonomy loop after pause."""
+        self._paused = False
+        _update_status("running", "Autonomy loop resumed by operator")
+        logger.info("Holly autonomy loop RESUMED")
+
     def _run_loop(self) -> None:
         """Main daemon loop — runs until stopped."""
         # Give other services a moment to initialize
@@ -194,6 +410,12 @@ class HollyAutonomyLoop:
 
         while self._running:
             try:
+                # Phase -1: If paused by operator, sleep and skip all work
+                if self._paused:
+                    _update_status("paused", f"Paused by operator. {get_queue_depth()} tasks queued.")
+                    time.sleep(5)
+                    continue
+
                 # Phase 0: If credits exhausted, sleep long and skip all LLM work
                 if self._credit_exhausted:
                     _update_status("paused_credits",
@@ -268,6 +490,7 @@ class HollyAutonomyLoop:
 
                 if self._consecutive_errors >= MAX_CONSECUTIVE_ERRORS:
                     logger.critical("Autonomy loop hit max consecutive errors — backing off 5min")
+                    _send_error_alert(self._consecutive_errors, str(e))
                     time.sleep(300)
                     self._consecutive_errors = 0
                 else:
@@ -280,6 +503,7 @@ class HollyAutonomyLoop:
         objective = task.get("objective", "")
         priority = task.get("priority", "normal")
         task_type = task.get("type", "objective")
+        started_at = time.time()
 
         logger.info("Executing task %s [%s]: %.200s", task_id, priority, objective)
         _update_status("executing", f"Task {task_id}: {objective[:200]}")
@@ -292,6 +516,7 @@ class HollyAutonomyLoop:
             self._tasks_completed += 1
             logger.info("Task %s DONE (%d total): %.300s", task_id, self._tasks_completed, response)
             _update_status("completed", f"Task {task_id} done: {response[:200]}")
+            _log_audit(task, "completed", started_at)
 
             # Store episode in medium-term memory
             try:
@@ -315,9 +540,11 @@ class HollyAutonomyLoop:
                 _requeue_task(task)
                 _update_status("paused_credits", "API credits exhausted. Pausing autonomy loop.")
                 self._credit_exhausted = True
+                _log_audit(task, "credit_paused", started_at, error_str)
             else:
                 logger.error("Task %s FAILED: %s", task_id, e, exc_info=True)
                 _update_status("task_failed", f"Task {task_id}: {e}")
+                _log_audit(task, "failed", started_at, error_str[:2000])
 
                 try:
                     from src.holly.memory import store_episode
@@ -518,10 +745,16 @@ def get_autonomy_loop() -> HollyAutonomyLoop:
 def seed_startup_objectives() -> None:
     """Seed the initial autonomous objectives from Principal's directive.
 
-    Called once at startup.  Skips if tasks already queued (idempotent).
+    Called once at startup.  Uses a Redis flag for true idempotency —
+    won't re-seed even if the queue has been drained.
     """
-    if get_queue_depth() > 0:
-        logger.info("Autonomy queue already has %d tasks — skipping seed", get_queue_depth())
+    try:
+        r = _get_redis()
+        if r.exists(SEED_FLAG_KEY):
+            logger.info("Autonomy objectives already seeded (flag exists) — skipping")
+            return
+    except Exception:
+        logger.warning("Redis unavailable for seed check — skipping seed")
         return
 
     objectives = [
@@ -629,5 +862,12 @@ def seed_startup_objectives() -> None:
             priority=obj["priority"],
             task_type=obj["type"],
         )
+
+    # Set the seed flag so we never re-seed on restart
+    try:
+        r = _get_redis()
+        r.set(SEED_FLAG_KEY, datetime.now(timezone.utc).isoformat())
+    except Exception:
+        pass
 
     logger.info("Seeded %d autonomous objectives", len(objectives))

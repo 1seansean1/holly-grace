@@ -190,6 +190,15 @@ export default function WorkflowPage() {
           {connected ? 'Live' : 'Connecting...'}
         </span>
       </div>
+      {/* Workflow description panel */}
+      {selectedWorkflow?.description && (
+        <div className="px-4 py-2 bg-[var(--color-bg)] border-b border-[var(--color-border)]">
+          <div className="flex items-start gap-2 text-xs text-[var(--color-text-muted)]">
+            <span className="shrink-0 mt-0.5 opacity-60">&#128196;</span>
+            <span>{selectedWorkflow.description}</span>
+          </div>
+        </div>
+      )}
       <div className="flex flex-1 min-h-0">
         <div className="flex-1">
           <WorkflowCanvas

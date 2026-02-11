@@ -16,6 +16,7 @@ import {
   MessageSquare,
   Radar,
   Layers,
+  Activity,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -33,6 +34,7 @@ const NAV_ITEMS = [
   { to: '/tools', icon: Wrench, label: 'Tools' },
   { to: '/mcp', icon: Plug, label: 'MCP' },
   { to: '/health', icon: HeartPulse, label: 'Health' },
+  { to: '/autonomy', icon: Activity, label: 'Autonomy' },
   { to: '/system', icon: Archive, label: 'System' },
   { to: '/chat', icon: MessageSquare, label: 'Chat' },
 ];

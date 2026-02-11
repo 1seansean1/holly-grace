@@ -265,10 +265,10 @@ SIGNAL_GENERATOR_WORKFLOW = WorkflowDefinition(
     workflow_id="signal_generator",
     display_name="Signal Generator",
     description=(
-        "Cheap, high-volume signal for epsilon tuning. Every 2 hours: "
-        "fetch Shopify products, score descriptions, generate variants via "
-        "GPT-4o-mini, pick winners, auto-update if >10pt improvement, "
-        "log APS eval results."
+        "Fetches all Shopify products every 2 hours, scores their descriptions "
+        "for readability and SEO quality, generates improved variants using "
+        "GPT-4o-mini, and automatically updates any description that scores "
+        "10 or more points higher than the original."
     ),
     nodes=[
         WorkflowNodeDef("orchestrator", "orchestrator", {"x": 400, "y": 50}, is_entry_point=True),
@@ -297,9 +297,10 @@ REVENUE_ENGINE_WORKFLOW = WorkflowDefinition(
     workflow_id="revenue_engine",
     display_name="Revenue Engine",
     description=(
-        "Daily SEO optimization + content marketing pipeline. Audits product "
-        "SEO, fixes issues via GPT-4o-mini, generates social media content, "
-        "drafts re-engagement emails, tracks via APS evals."
+        "Runs daily to audit every Shopify product for SEO issues (thin descriptions, "
+        "missing structure, weak titles), auto-fixes problems using GPT-4o-mini, "
+        "generates social media posts and re-engagement email drafts, and tracks "
+        "all improvements through evaluation metrics."
     ),
     nodes=[
         WorkflowNodeDef("orchestrator", "orchestrator", {"x": 400, "y": 50}, is_entry_point=True),

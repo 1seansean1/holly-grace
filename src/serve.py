@@ -170,6 +170,13 @@ async def lifespan(app: FastAPI):
     except Exception:
         logger.warning("Failed to init Holly memory tables (non-fatal)", exc_info=True)
 
+    # Initialize Holly autonomy audit table
+    try:
+        from src.holly.autonomy import init_autonomy_tables
+        init_autonomy_tables()
+    except Exception:
+        logger.warning("Failed to init autonomy audit tables (non-fatal)", exc_info=True)
+
     # Start Holly autonomy loop (continuous execution daemon)
     from src.holly.autonomy import get_autonomy_loop, seed_startup_objectives
     holly_autonomy = get_autonomy_loop()
@@ -2058,6 +2065,74 @@ async def holly_notifications(limit: int = 20):
     from src.holly.consumer import get_pending_notifications
     notifications = get_pending_notifications(limit=limit)
     return JSONResponse({"notifications": notifications, "count": len(notifications)})
+
+
+# ---------------------------------------------------------------------------
+# Holly Autonomy Control API endpoints
+# ---------------------------------------------------------------------------
+
+
+@app.get("/holly/autonomy/status")
+async def holly_autonomy_status():
+    """Get current autonomy loop status, queue depth, and metrics."""
+    from src.holly.autonomy import get_autonomy_status
+    return JSONResponse(get_autonomy_status())
+
+
+@app.post("/holly/autonomy/pause")
+async def holly_autonomy_pause():
+    """Pause the autonomy loop. Tasks stay queued."""
+    from src.holly.autonomy import get_autonomy_loop
+    loop = get_autonomy_loop()
+    if not loop.running:
+        return JSONResponse({"error": "Loop is not running"}, status_code=400)
+    loop.pause()
+    return JSONResponse({"status": "paused"})
+
+
+@app.post("/holly/autonomy/resume")
+async def holly_autonomy_resume():
+    """Resume the autonomy loop after pause."""
+    from src.holly.autonomy import get_autonomy_loop
+    loop = get_autonomy_loop()
+    if not loop.paused:
+        return JSONResponse({"error": "Loop is not paused"}, status_code=400)
+    loop.resume()
+    return JSONResponse({"status": "resumed"})
+
+
+@app.get("/holly/autonomy/queue")
+async def holly_autonomy_queue(limit: int = 50):
+    """List queued tasks without consuming them."""
+    from src.holly.autonomy import list_queued_tasks
+    tasks = list_queued_tasks(limit=limit)
+    return JSONResponse({"tasks": tasks, "count": len(tasks)})
+
+
+@app.delete("/holly/autonomy/queue/{task_id}")
+async def holly_autonomy_cancel_task(task_id: str):
+    """Cancel a specific queued task by ID."""
+    from src.holly.autonomy import cancel_task
+    removed = cancel_task(task_id)
+    if not removed:
+        return JSONResponse({"error": "Task not found in queue"}, status_code=404)
+    return JSONResponse({"status": "cancelled", "task_id": task_id})
+
+
+@app.delete("/holly/autonomy/queue")
+async def holly_autonomy_clear_queue():
+    """Clear all tasks from the autonomy queue."""
+    from src.holly.autonomy import clear_queue
+    cleared = clear_queue()
+    return JSONResponse({"status": "cleared", "count": cleared})
+
+
+@app.get("/holly/autonomy/audit")
+async def holly_autonomy_audit(limit: int = 50, offset: int = 0):
+    """Query the autonomy audit log."""
+    from src.holly.autonomy import list_audit_logs
+    result = list_audit_logs(limit=limit, offset=offset)
+    return JSONResponse(result)
 
 
 @app.websocket("/ws/holly")

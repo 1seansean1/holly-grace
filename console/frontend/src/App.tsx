@@ -19,6 +19,7 @@ import SystemPage from '@/pages/SystemPage';
 import ChatPage from '@/pages/ChatPage';
 import TowerPage from '@/pages/TowerPage';
 import HierarchyPage from '@/pages/HierarchyPage';
+import AutonomyPage from '@/pages/AutonomyPage';
 export default function App() {
   return (
     <ErrorBoundary>
@@ -42,6 +43,7 @@ export default function App() {
           <Route path="tools" element={<ToolsPage />} />
           <Route path="mcp" element={<McpPage />} />
           <Route path="health" element={<HealthPage />} />
+          <Route path="autonomy" element={<AutonomyPage />} />
           <Route path="system" element={<SystemPage />} />
           <Route path="chat" element={<ChatPage />} />
         </Route>
