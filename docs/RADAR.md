@@ -34,7 +34,7 @@
 |----|----------|------|----------|
 | I-1 | Reliability | **Secrets in git history** | API keys were committed in early development (.env checked in). Keys rotated, but old values persist in git history. |
 | I-2 | Correctness | **docs/SYSTEM.md is 2,256 lines and stale** | Last accurate ~Feb 8. Missing Holly, Tower, hierarchy, bus, crew, autonomy, MCP, solana tools. Now superseded by ARCHITECTURE.md. Scheduled for deletion. |
-| I-3 | Correctness | **Holly's prompt says 18 tools, actual count is 25** | `src/holly/prompts.py` §0 says "18 function-calling tools." Actual tools in `src/holly/tools.py`: 25. Drift from code additions. |
+| ~~I-3~~ | ~~Correctness~~ | ~~Holly's prompt says 18 tools~~ | Resolved 2026-02-11: Fixed to 25 |
 | I-4 | Reliability | **No CI/CD pipeline** | Manual 7-step deploy process. Cookie Secure flag bug was only caught in production (ADR-013). |
 | I-5 | Reliability | **No database backups configured** | RDS likely has automated snapshots (AWS default), but no explicit backup strategy documented or verified. |
 
@@ -120,4 +120,6 @@ curl http://localhost:8050/scheduler/jobs | python -c "import sys,json; print(js
 | 2026-02-11 | — | Console not deployed | Combined Dockerfile.production with nginx proxy |
 | 2026-02-11 | — | Rogue ALB listener rules | Deleted stale rules, verified single listener |
 | 2026-02-11 | I-2 | Stale docs | Replaced with 5 living docs (this sweep) |
+| 2026-02-11 | I-3 | Holly prompt says 18 tools, actual is 25 | Fixed prompt to say 25 tools (v2.1) |
 | 2026-02-11 | M-8 | Aspirational holly-human-dynamics | Deleted, content folded into INTERACTION.md |
+| 2026-02-11 | — | Autonomy task queue resilience gaps | Added retry-with-budget (MAX_RETRIES=2), thread watchdog (ensure_running), POST /holly/autonomy/submit endpoint |

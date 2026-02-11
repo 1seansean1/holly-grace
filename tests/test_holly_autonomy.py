@@ -222,11 +222,17 @@ class TestAutonomyLoop(unittest.TestCase):
         loop = HollyAutonomyLoop()
         self.assertFalse(loop.running)
 
-        # Mock the _run_loop to avoid actual execution
-        with patch.object(loop, "_run_loop"):
+        # Mock _run_loop to block until stopped (simulates real daemon behavior)
+        def fake_run():
+            while loop._running:
+                time.sleep(0.05)
+
+        with patch.object(loop, "_run_loop", side_effect=fake_run):
             loop.start()
+            time.sleep(0.1)  # Let thread start
             self.assertTrue(loop.running)
             loop.stop()
+            time.sleep(0.1)  # Let thread exit
             self.assertFalse(loop.running)
 
     def test_build_task_prompt_includes_objective(self):
@@ -249,9 +255,10 @@ class TestAutonomyLoop(unittest.TestCase):
         self.assertIn("AUTONOMOUS", prompt)
         self.assertIn("high", prompt)
 
+    @patch("src.holly.autonomy._log_audit")
     @patch("src.holly.memory.store_episode", return_value=1)
     @patch("src.holly.agent.handle_message", return_value="Task completed successfully")
-    def test_execute_task_calls_handle_message(self, mock_handle, mock_episode):
+    def test_execute_task_calls_handle_message(self, mock_handle, mock_episode, mock_audit):
         from src.holly.autonomy import HollyAutonomyLoop
 
         loop = HollyAutonomyLoop()
@@ -263,9 +270,11 @@ class TestAutonomyLoop(unittest.TestCase):
         mock_handle.assert_called_once()
         self.assertEqual(loop._tasks_completed, 1)
 
+    @patch("src.holly.autonomy._log_audit")
+    @patch("src.holly.autonomy._requeue_task")
     @patch("src.holly.memory.store_episode", return_value=1)
     @patch("src.holly.agent.handle_message", side_effect=RuntimeError("API error"))
-    def test_execute_task_handles_error(self, mock_handle, mock_episode):
+    def test_execute_task_handles_error(self, mock_handle, mock_episode, mock_requeue, mock_audit):
         from src.holly.autonomy import HollyAutonomyLoop
 
         loop = HollyAutonomyLoop()
@@ -274,8 +283,9 @@ class TestAutonomyLoop(unittest.TestCase):
         with patch("src.holly.memory.build_memory_context", return_value=""):
             loop._execute_task(task)
 
-        # Should not crash, should record 0 completed
+        # Should not crash, should record 0 completed, should requeue (retries < MAX)
         self.assertEqual(loop._tasks_completed, 0)
+        mock_requeue.assert_called_once()
 
 
 class TestSeedObjectives(unittest.TestCase):
@@ -286,7 +296,7 @@ class TestSeedObjectives(unittest.TestCase):
         from src.holly.autonomy import seed_startup_objectives
 
         r = MagicMock()
-        r.llen.return_value = 0
+        r.exists.return_value = 0  # Flag not set — allow seeding
         mock_redis.return_value = r
 
         seed_startup_objectives()
@@ -296,11 +306,11 @@ class TestSeedObjectives(unittest.TestCase):
         self.assertEqual(total_pushes, 6)
 
     @patch("src.holly.autonomy._get_redis")
-    def test_seed_skips_when_queue_not_empty(self, mock_redis):
+    def test_seed_skips_when_already_seeded(self, mock_redis):
         from src.holly.autonomy import seed_startup_objectives
 
         r = MagicMock()
-        r.llen.return_value = 3
+        r.exists.return_value = 1  # Flag set — skip seeding
         mock_redis.return_value = r
 
         seed_startup_objectives()
@@ -331,9 +341,9 @@ class TestAutonomyStatus(unittest.TestCase):
 class TestNewToolsRegistered(unittest.TestCase):
     """Verify the 4 new tools are properly registered."""
 
-    def test_holly_now_has_22_tools(self):
+    def test_holly_now_has_25_tools(self):
         from src.holly.tools import HOLLY_TOOLS
-        self.assertEqual(len(HOLLY_TOOLS), 22)
+        self.assertEqual(len(HOLLY_TOOLS), 25)
 
     def test_new_tools_in_registry(self):
         from src.holly.tools import HOLLY_TOOLS
@@ -376,3 +386,168 @@ class TestPromptPersonality(unittest.TestCase):
         from src.holly.prompts import HOLLY_GREETING
         self.assertIn("Hey.", HOLLY_GREETING)
         self.assertNotIn("I'm Holly Grace", HOLLY_GREETING)
+
+
+# ── Resilience fix tests ────────────────────────────────────────────────
+
+
+class TestTaskRetry(unittest.TestCase):
+    """Test retry-with-budget for failed tasks (Fix 1)."""
+
+    @patch("src.holly.autonomy._log_audit")
+    @patch("src.holly.autonomy._requeue_task")
+    @patch("src.holly.memory.build_memory_context", return_value="")
+    @patch("src.holly.agent.handle_message", side_effect=RuntimeError("API timeout"))
+    def test_first_failure_requeues_task(self, mock_handle, mock_mem, mock_requeue, mock_audit):
+        from src.holly.autonomy import HollyAutonomyLoop
+
+        loop = HollyAutonomyLoop()
+        task = {"id": "r1", "objective": "retry me", "priority": "normal", "type": "test", "metadata": {}}
+
+        loop._execute_task(task)
+
+        # Task should be requeued with retries=1
+        mock_requeue.assert_called_once()
+        requeued_task = mock_requeue.call_args[0][0]
+        self.assertEqual(requeued_task["retries"], 1)
+
+        # Audit should show "retrying"
+        mock_audit.assert_called_once()
+        self.assertEqual(mock_audit.call_args[0][1], "retrying")
+
+        # Should not count as completed
+        self.assertEqual(loop._tasks_completed, 0)
+
+    @patch("src.holly.autonomy._log_audit")
+    @patch("src.holly.autonomy._requeue_task")
+    @patch("src.holly.memory.build_memory_context", return_value="")
+    @patch("src.holly.agent.handle_message", side_effect=RuntimeError("API timeout"))
+    def test_second_failure_requeues_again(self, mock_handle, mock_mem, mock_requeue, mock_audit):
+        from src.holly.autonomy import HollyAutonomyLoop
+
+        loop = HollyAutonomyLoop()
+        task = {"id": "r2", "objective": "retry again", "priority": "normal",
+                "type": "test", "metadata": {}, "retries": 1}
+
+        loop._execute_task(task)
+
+        mock_requeue.assert_called_once()
+        requeued_task = mock_requeue.call_args[0][0]
+        self.assertEqual(requeued_task["retries"], 2)
+        self.assertEqual(mock_audit.call_args[0][1], "retrying")
+
+    @patch("src.holly.autonomy._log_audit")
+    @patch("src.holly.autonomy._requeue_task")
+    @patch("src.holly.memory.store_episode", return_value=1)
+    @patch("src.holly.memory.build_memory_context", return_value="")
+    @patch("src.holly.agent.handle_message", side_effect=RuntimeError("API timeout"))
+    def test_exhausted_retries_not_requeued(self, mock_handle, mock_mem, mock_episode,
+                                            mock_requeue, mock_audit):
+        from src.holly.autonomy import HollyAutonomyLoop, MAX_TASK_RETRIES
+
+        loop = HollyAutonomyLoop()
+        task = {"id": "r3", "objective": "give up", "priority": "normal",
+                "type": "test", "metadata": {}, "retries": MAX_TASK_RETRIES}
+
+        loop._execute_task(task)
+
+        # Should NOT requeue
+        mock_requeue.assert_not_called()
+
+        # Audit should show "exhausted_retries"
+        mock_audit.assert_called_once()
+        self.assertEqual(mock_audit.call_args[0][1], "exhausted_retries")
+
+    @patch("src.holly.autonomy._log_audit")
+    @patch("src.holly.autonomy._requeue_task")
+    @patch("src.holly.memory.build_memory_context", return_value="")
+    @patch("src.holly.agent.handle_message", side_effect=RuntimeError("credit balance is too low"))
+    def test_credit_error_still_requeues_without_retry_count(self, mock_handle, mock_mem,
+                                                              mock_requeue, mock_audit):
+        from src.holly.autonomy import HollyAutonomyLoop
+
+        loop = HollyAutonomyLoop()
+        task = {"id": "c1", "objective": "credit test", "priority": "normal",
+                "type": "test", "metadata": {}}
+
+        loop._execute_task(task)
+
+        # Credit errors use the existing requeue path, NOT the retry counter
+        mock_requeue.assert_called_once()
+        requeued_task = mock_requeue.call_args[0][0]
+        # retries should NOT be incremented for credit errors
+        self.assertEqual(requeued_task.get("retries", 0), 0)
+        self.assertTrue(loop._credit_exhausted)
+
+
+class TestEnsureRunning(unittest.TestCase):
+    """Test thread watchdog auto-restart (Fix 2)."""
+
+    def test_ensure_running_restarts_dead_thread(self):
+        from src.holly.autonomy import HollyAutonomyLoop
+
+        loop = HollyAutonomyLoop()
+        loop._running = True
+
+        # Simulate dead thread
+        dead_thread = MagicMock()
+        dead_thread.is_alive.return_value = False
+        loop._thread = dead_thread
+
+        with patch.object(loop, "_run_loop"):
+            restarted = loop.ensure_running()
+
+        self.assertTrue(restarted)
+        self.assertIsNotNone(loop._thread)
+        self.assertNotEqual(loop._thread, dead_thread)
+
+    def test_ensure_running_noop_when_alive(self):
+        from src.holly.autonomy import HollyAutonomyLoop
+
+        loop = HollyAutonomyLoop()
+        loop._running = True
+
+        alive_thread = MagicMock()
+        alive_thread.is_alive.return_value = True
+        loop._thread = alive_thread
+
+        restarted = loop.ensure_running()
+
+        self.assertFalse(restarted)
+        self.assertEqual(loop._thread, alive_thread)
+
+    def test_ensure_running_noop_when_not_running(self):
+        from src.holly.autonomy import HollyAutonomyLoop
+
+        loop = HollyAutonomyLoop()
+        loop._running = False
+        loop._thread = None
+
+        restarted = loop.ensure_running()
+
+        self.assertFalse(restarted)
+
+    def test_ensure_running_restarts_when_thread_is_none(self):
+        from src.holly.autonomy import HollyAutonomyLoop
+
+        loop = HollyAutonomyLoop()
+        loop._running = True
+        loop._thread = None
+
+        with patch.object(loop, "_run_loop"):
+            restarted = loop.ensure_running()
+
+        self.assertTrue(restarted)
+        self.assertIsNotNone(loop._thread)
+
+
+class TestMaxTaskRetries(unittest.TestCase):
+    """Test the MAX_TASK_RETRIES constant."""
+
+    def test_constant_is_positive(self):
+        from src.holly.autonomy import MAX_TASK_RETRIES
+        self.assertGreater(MAX_TASK_RETRIES, 0)
+
+    def test_constant_is_reasonable(self):
+        from src.holly.autonomy import MAX_TASK_RETRIES
+        self.assertLessEqual(MAX_TASK_RETRIES, 5)

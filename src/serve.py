@@ -236,10 +236,19 @@ async def health_check():
         else "degraded" if all_critical_healthy
         else "unhealthy"
     )
-    return JSONResponse(
-        {"status": status, "service": "holly-grace", "checks": health},
-        status_code=200 if all_critical_healthy else 503,
-    )
+
+    # Watchdog: restart autonomy thread if it died
+    autonomy_restarted = False
+    try:
+        from src.holly.autonomy import get_autonomy_loop
+        autonomy_restarted = get_autonomy_loop().ensure_running()
+    except Exception:
+        pass
+
+    result = {"status": status, "service": "holly-grace", "checks": health}
+    if autonomy_restarted:
+        result["autonomy_restarted"] = True
+    return JSONResponse(result, status_code=200 if all_critical_healthy else 503)
 
 
 @app.get("/scheduler/jobs")
@@ -2125,6 +2134,20 @@ async def holly_autonomy_clear_queue():
     from src.holly.autonomy import clear_queue
     cleared = clear_queue()
     return JSONResponse({"status": "cleared", "count": cleared})
+
+
+@app.post("/holly/autonomy/submit")
+async def holly_autonomy_submit(request: Request):
+    """Submit a task to Holly's autonomous queue via REST API."""
+    from src.holly.autonomy import submit_task
+    body = await request.json()
+    objective = body.get("objective", "").strip()
+    if not objective:
+        return JSONResponse({"error": "objective is required"}, status_code=400)
+    priority = body.get("priority", "normal")
+    task_type = body.get("type", "objective")
+    task_id = submit_task(objective, priority=priority, task_type=task_type)
+    return JSONResponse({"submitted": True, "task_id": task_id, "priority": priority})
 
 
 @app.get("/holly/autonomy/audit")

@@ -46,6 +46,7 @@ MONITORING_MAX_INTERVAL_S = 3600.0  # 1 hour max backoff
 COOLDOWN_AFTER_TASK_S = 3.0  # Brief pause between tasks to avoid rate limits
 MAX_CONSECUTIVE_ERRORS = 5
 MAX_IDLE_SWEEPS_BEFORE_BACKOFF = 3  # After this many "no change" sweeps, start backing off
+MAX_TASK_RETRIES = 2  # Max times a failed task is requeued before giving up
 
 
 # ── Redis helpers ─────────────────────────────────────────────────────────
@@ -154,6 +155,8 @@ def get_autonomy_status() -> dict:
         base["idle_sweeps"] = loop.idle_sweeps
         base["monitor_interval"] = int(loop.monitor_interval)
         base["queue_depth"] = get_queue_depth()
+        base["credit_exhausted"] = loop._credit_exhausted
+        base["thread_alive"] = loop._thread.is_alive() if loop._thread else False
     return base
 
 
@@ -185,8 +188,14 @@ def init_autonomy_tables() -> None:
                 started_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
                 finished_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
                 duration_sec  REAL DEFAULT 0,
-                metadata      JSONB DEFAULT '{}'
+                metadata      JSONB DEFAULT '{}',
+                retry_count   INTEGER DEFAULT 0
             )
+        """)
+        # Additive migration for existing tables
+        conn.execute("""
+            ALTER TABLE holly_autonomy_audit
+            ADD COLUMN IF NOT EXISTS retry_count INTEGER DEFAULT 0
         """)
     logger.info("holly_autonomy_audit table initialized")
 
@@ -206,8 +215,8 @@ def _log_audit(
             conn.execute(
                 "INSERT INTO holly_autonomy_audit "
                 "(task_id, task_type, objective, priority, outcome, error_message, "
-                " started_at, finished_at, duration_sec, metadata) "
-                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                " started_at, finished_at, duration_sec, metadata, retry_count) "
+                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                 (
                     task.get("id", "?"),
                     task.get("type", "objective"),
@@ -219,6 +228,7 @@ def _log_audit(
                     datetime.now(timezone.utc).isoformat(),
                     round(duration, 2),
                     json.dumps(task.get("metadata", {}), default=str),
+                    task.get("retries", 0),
                 ),
             )
     except Exception:
@@ -353,7 +363,7 @@ class HollyAutonomyLoop:
 
     @property
     def running(self) -> bool:
-        return self._running
+        return self._running and self._thread is not None and self._thread.is_alive()
 
     @property
     def paused(self) -> bool:
@@ -404,6 +414,18 @@ class HollyAutonomyLoop:
         self._paused = False
         _update_status("running", "Autonomy loop resumed by operator")
         logger.info("Holly autonomy loop RESUMED")
+
+    def ensure_running(self) -> bool:
+        """Check thread health and restart if dead. Returns True if restart occurred."""
+        if self._running and (self._thread is None or not self._thread.is_alive()):
+            logger.warning("Holly autonomy thread died — auto-restarting")
+            self._thread = threading.Thread(
+                target=self._run_loop, daemon=True, name="holly-autonomy",
+            )
+            self._thread.start()
+            _update_status("restarted", "Thread auto-restarted by watchdog")
+            return True
+        return False
 
     def _run_loop(self) -> None:
         """Main daemon loop — runs until stopped."""
@@ -545,20 +567,32 @@ class HollyAutonomyLoop:
                 self._credit_exhausted = True
                 _log_audit(task, "credit_paused", started_at, error_str)
             else:
-                logger.error("Task %s FAILED: %s", task_id, e, exc_info=True)
-                _update_status("task_failed", f"Task {task_id}: {e}")
-                _log_audit(task, "failed", started_at, error_str[:2000])
+                retries = task.get("retries", 0)
+                if retries < MAX_TASK_RETRIES:
+                    # Retry: requeue with incremented retry count
+                    task["retries"] = retries + 1
+                    _requeue_task(task)
+                    logger.warning("Task %s FAILED (retry %d/%d): %s — requeued",
+                                   task_id, retries + 1, MAX_TASK_RETRIES, e)
+                    _update_status("task_retrying",
+                                   f"Task {task_id} retry {retries + 1}/{MAX_TASK_RETRIES}")
+                    _log_audit(task, "retrying", started_at, error_str[:2000])
+                else:
+                    # Exhausted retries — log and drop
+                    logger.error("Task %s FAILED (retries exhausted): %s", task_id, e, exc_info=True)
+                    _update_status("task_failed", f"Task {task_id}: {e}")
+                    _log_audit(task, "exhausted_retries", started_at, error_str[:2000])
 
-                try:
-                    from src.holly.memory import store_episode
-                    store_episode(
-                        summary=f"Task FAILED [{priority}]: {objective[:200]} → {e}",
-                        objective=objective[:500],
-                        outcome="failed",
-                        session_id=SESSION_ID,
-                    )
-                except Exception:
-                    pass
+                    try:
+                        from src.holly.memory import store_episode
+                        store_episode(
+                            summary=f"Task FAILED [{priority}]: {objective[:200]} → {e}",
+                            objective=objective[:500],
+                            outcome="failed",
+                            session_id=SESSION_ID,
+                        )
+                    except Exception:
+                        pass
 
         finally:
             self._current_task = None
