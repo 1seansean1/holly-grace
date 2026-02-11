@@ -110,6 +110,14 @@ async def lifespan(app: FastAPI):
     init_tower_tables()
     logger.info("Tower tables initialized")
 
+    # Initialize MCP registry tables (mcp_servers, mcp_tools)
+    try:
+        from src.mcp.store import init_mcp_tables
+        init_mcp_tables()
+        logger.info("MCP registry tables initialized")
+    except Exception:
+        logger.warning("Failed to init MCP registry tables (non-fatal)", exc_info=True)
+
     # Seed goal hierarchy (37 predicates, 10 blocks, coupling axes, agents, orchestrators)
     try:
         from src.hierarchy.seed import seed_hierarchy
@@ -157,6 +165,13 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+# MCP registry routes
+try:
+    from src.mcp.routes import router as mcp_router
+    app.include_router(mcp_router)
+except Exception:
+    logger.warning("Failed to mount MCP router (non-fatal)", exc_info=True)
 
 
 @app.get("/")

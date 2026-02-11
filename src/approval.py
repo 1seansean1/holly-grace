@@ -62,6 +62,19 @@ class ApprovalGate:
         if tool_name in _AUTO_APPROVED_TOOLS:
             return "low"
 
+        # MCP tools default to medium unless explicitly configured otherwise.
+        if tool_name.startswith("mcp_"):
+            try:
+                from src.mcp.store import get_tool
+
+                row = get_tool(tool_name)
+                risk = (row or {}).get("risk_level") or "medium"
+                if risk not in ("low", "medium", "high"):
+                    risk = "medium"
+                return risk
+            except Exception:
+                return "medium"
+
         risk = _RISK_RULES.get(tool_name, "low")
 
         # Shopify: downgrade to medium if price <= $100

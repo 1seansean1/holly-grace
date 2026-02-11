@@ -49,4 +49,8 @@ export interface ToolDefinition {
   module_path: string;
   function_name: string;
   category: string;
+  provider?: 'python' | 'mcp';
+  server_id?: string | null;
+  mcp_tool_name?: string | null;
+  transport?: string | null;
 }

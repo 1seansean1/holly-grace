@@ -76,6 +76,11 @@ ADMIN_ONLY_PATHS: set[str] = {
     "/workflows",                       # POST (create)
     "/workflows/{workflow_id}",         # PUT, DELETE
     "/workflows/{workflow_id}/rollback",  # POST
+    # MCP registry
+    "/mcp/servers",                     # POST
+    "/mcp/servers/{server_id}",         # PATCH, DELETE
+    "/mcp/servers/{server_id}/sync",    # POST
+    "/mcp/tools/{tool_id}",             # PATCH
 }
 
 # Endpoints that operator can trigger

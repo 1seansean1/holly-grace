@@ -10,6 +10,7 @@ import TracesPage from '@/pages/TracesPage';
 import CostsPage from '@/pages/CostsPage';
 import AgentsPage from '@/pages/AgentsPage';
 import ToolsPage from '@/pages/ToolsPage';
+import McpPage from '@/pages/McpPage';
 import HealthPage from '@/pages/HealthPage';
 import ApprovalsPage from '@/pages/ApprovalsPage';
 import EvalPage from '@/pages/EvalPage';
@@ -41,6 +42,7 @@ export default function App() {
           <Route path="traces" element={<TracesPage />} />
           <Route path="costs" element={<CostsPage />} />
           <Route path="tools" element={<ToolsPage />} />
+          <Route path="mcp" element={<McpPage />} />
           <Route path="health" element={<HealthPage />} />
           <Route path="system" element={<SystemPage />} />
           <Route path="chat" element={<ChatPage />} />
