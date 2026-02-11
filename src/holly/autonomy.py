@@ -106,6 +106,16 @@ def _pop_task() -> dict | None:
         return None
 
 
+def _requeue_task(task: dict) -> None:
+    """Re-add a task to the front of the queue (for retry after credit pause)."""
+    try:
+        r = _get_redis()
+        r.lpush(TASK_QUEUE_KEY, json.dumps(task))
+        logger.info("Task %s requeued (front of queue)", task.get("id", "?"))
+    except Exception:
+        logger.exception("Failed to requeue task %s", task.get("id", "?"))
+
+
 # ── Status tracking ──────────────────────────────────────────────────────
 
 def _update_status(status: str, detail: str = "") -> None:
@@ -153,6 +163,7 @@ class HollyAutonomyLoop:
         self._idle_sweeps = 0  # Consecutive sweeps with no state change
         self._current_monitor_interval = MONITORING_INTERVAL_S
         self._last_state_hash: str = ""  # Quick hash of system state for change detection
+        self._credit_exhausted = False  # Pause loop when API credits run out
 
     @property
     def running(self) -> bool:
@@ -183,6 +194,17 @@ class HollyAutonomyLoop:
 
         while self._running:
             try:
+                # Phase 0: If credits exhausted, sleep long and skip all LLM work
+                if self._credit_exhausted:
+                    _update_status("paused_credits",
+                                   f"API credits exhausted. {get_queue_depth()} tasks queued. "
+                                   "Sleeping 30min. Will retry automatically.")
+                    logger.info("Autonomy loop paused (credits exhausted). Sleeping 30min. "
+                                "%d tasks in queue.", get_queue_depth())
+                    time.sleep(1800)  # 30 minutes
+                    self._credit_exhausted = False  # Retry after sleep
+                    continue
+
                 # Phase 1: Check for queued tasks
                 task = _pop_task()
                 if task:
@@ -284,19 +306,29 @@ class HollyAutonomyLoop:
                 logger.warning("Failed to store episode for task %s", task_id, exc_info=True)
 
         except Exception as e:
-            logger.error("Task %s FAILED: %s", task_id, e, exc_info=True)
-            _update_status("task_failed", f"Task {task_id}: {e}")
+            error_str = str(e)
+            is_credit_error = "credit balance is too low" in error_str
 
-            try:
-                from src.holly.memory import store_episode
-                store_episode(
-                    summary=f"Task FAILED [{priority}]: {objective[:200]} → {e}",
-                    objective=objective[:500],
-                    outcome="failed",
-                    session_id=SESSION_ID,
-                )
-            except Exception:
-                pass
+            if is_credit_error:
+                # Requeue the task — don't lose it
+                logger.warning("Task %s paused (API credits exhausted). Requeuing.", task_id)
+                _requeue_task(task)
+                _update_status("paused_credits", "API credits exhausted. Pausing autonomy loop.")
+                self._credit_exhausted = True
+            else:
+                logger.error("Task %s FAILED: %s", task_id, e, exc_info=True)
+                _update_status("task_failed", f"Task {task_id}: {e}")
+
+                try:
+                    from src.holly.memory import store_episode
+                    store_episode(
+                        summary=f"Task FAILED [{priority}]: {objective[:200]} → {e}",
+                        objective=objective[:500],
+                        outcome="failed",
+                        session_id=SESSION_ID,
+                    )
+                except Exception:
+                    pass
 
         finally:
             self._current_task = None
@@ -459,6 +491,11 @@ class HollyAutonomyLoop:
                     pass
 
         except Exception as e:
+            error_str = str(e)
+            if "credit balance is too low" in error_str:
+                logger.warning("Monitoring cycle paused (API credits exhausted)")
+                self._credit_exhausted = True
+                return
             logger.error("Monitoring cycle failed: %s", e)
             # Don't re-raise — increment idle to back off faster
             self._idle_sweeps += 2  # Penalize failures to back off sooner
