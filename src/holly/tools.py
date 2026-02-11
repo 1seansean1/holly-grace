@@ -584,6 +584,30 @@ def query_scheduled_jobs() -> dict:
 
 
 # ---------------------------------------------------------------------------
+# MCP tool bridge — call any registered MCP tool
+# ---------------------------------------------------------------------------
+
+def call_mcp_tool(server_id: str, tool_name: str, arguments: dict | None = None) -> dict:
+    """Call any tool on any registered MCP server.
+
+    Use query_mcp_servers first to discover available servers and tools,
+    then use this to invoke them.
+
+    Args:
+        server_id: The MCP server ID (e.g. "github-reader").
+        tool_name: The tool name on that server (e.g. "read_file").
+        arguments: Tool arguments as a dict (varies by tool).
+    """
+    from src.mcp.manager import get_mcp_manager
+
+    try:
+        result = get_mcp_manager().call_tool(server_id, tool_name, arguments or {})
+        return {"server_id": server_id, "tool": tool_name, "result": result}
+    except Exception as e:
+        return {"error": str(e), "server_id": server_id, "tool": tool_name}
+
+
+# ---------------------------------------------------------------------------
 # Tool registry for the agent
 # ---------------------------------------------------------------------------
 
@@ -605,6 +629,7 @@ HOLLY_TOOLS = {
     "query_workflows": query_workflows,
     "query_hierarchy_gate": query_hierarchy_gate,
     "query_scheduled_jobs": query_scheduled_jobs,
+    "call_mcp_tool": call_mcp_tool,
 }
 
 # Anthropic tool schemas for function calling
@@ -765,5 +790,18 @@ HOLLY_TOOL_SCHEMAS = [
         "name": "query_scheduled_jobs",
         "description": "List all scheduled jobs with their next run times and triggers.",
         "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "call_mcp_tool",
+        "description": "Call any tool on any registered MCP server. Use query_mcp_servers first to discover available servers and their tools, then invoke them here. For example: call_mcp_tool('github-reader', 'read_file', {'path': 'src/serve.py'}).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "server_id": {"type": "string", "description": "The MCP server ID (e.g. 'github-reader')"},
+                "tool_name": {"type": "string", "description": "The tool name on that server (e.g. 'read_file')"},
+                "arguments": {"type": "object", "description": "Tool arguments as key-value pairs (varies by tool)"},
+            },
+            "required": ["server_id", "tool_name"],
+        },
     },
 ]

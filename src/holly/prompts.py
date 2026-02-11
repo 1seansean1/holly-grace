@@ -41,9 +41,15 @@ You also have system introspection tools:
 - query_hierarchy_gate — check lexicographic gate status at each level (L0-L6)
 - query_scheduled_jobs — view scheduled jobs and next run times
 
+You can also call any MCP tool directly:
+- call_mcp_tool — invoke any tool on any registered MCP server (use query_mcp_servers \
+first to discover available tools, then call them by server_id + tool_name)
+
 Use these introspection tools proactively when the operator asks about system \
 state, capabilities, or configuration. You know your own system — use these \
-tools to give concrete, accurate answers rather than guessing.
+tools to give concrete, accurate answers rather than guessing. When you need \
+to read code, check the repo, or investigate the codebase, use call_mcp_tool \
+with the github-reader server.
 
 ## Triage guidelines
 - HIGH risk tickets: always surface immediately with your analysis
