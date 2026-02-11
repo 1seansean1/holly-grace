@@ -5,6 +5,12 @@ Simplified single-instance model:
 - Claims one run at a time via FOR UPDATE SKIP LOCKED
 - Executes until completion or interrupt
 - On interrupt: parks the run and releases compute
+
+Crew dispatch support:
+- Runs with workflow_id starting with "crew_solo_" get a dynamically
+  compiled single-agent graph (agent -> END) instead of the default graph.
+- The workflow_compiler handles tool resolution via ToolRegistry, which
+  includes MCP tools from Postgres.
 """
 
 from __future__ import annotations
@@ -24,17 +30,21 @@ logger = logging.getLogger(__name__)
 POLL_INTERVAL_SECONDS = 2
 EXECUTION_TIMEOUT_SECONDS = 600  # 10 minutes max per invocation
 
+_CREW_SOLO_PREFIX = "crew_solo_"
+
 
 class TowerWorker:
     """Background worker that claims and executes Tower runs."""
 
-    def __init__(self, compiled_graph: CompiledStateGraph):
+    def __init__(self, compiled_graph: CompiledStateGraph, router=None):
         self._graph = compiled_graph
+        self._router = router
         self._executor = concurrent.futures.ThreadPoolExecutor(
             max_workers=1, thread_name_prefix="tower-worker"
         )
         self._running = False
         self._poll_thread: threading.Thread | None = None
+        self._crew_graph_cache: dict[str, CompiledStateGraph] = {}
 
     def start(self) -> None:
         """Start the worker poll loop in a background thread."""
@@ -59,6 +69,58 @@ class TowerWorker:
         self._executor.shutdown(wait=False)
         logger.info("Tower worker stopped")
 
+    def _get_graph(self, run: dict) -> CompiledStateGraph:
+        """Select the right compiled graph for a run.
+
+        For crew solo runs (workflow_id like crew_solo_{agent_id}), compile
+        a single-agent graph so the crew agent executes with its own system
+        prompt and tools.  For all other runs, use the default graph.
+        """
+        wf_id = run.get("workflow_id", "default")
+
+        if wf_id.startswith(_CREW_SOLO_PREFIX) and self._router is not None:
+            agent_id = wf_id[len(_CREW_SOLO_PREFIX):]
+            if agent_id:
+                return self._get_crew_graph(agent_id)
+
+        return self._graph
+
+    def _get_crew_graph(self, agent_id: str) -> CompiledStateGraph:
+        """Compile (or return cached) a single-agent crew graph."""
+        if agent_id in self._crew_graph_cache:
+            return self._crew_graph_cache[agent_id]
+
+        from src.tower.checkpointer import get_checkpointer
+        from src.workflow_compiler import compile_workflow
+        from src.workflow_registry import (
+            WorkflowDefinition,
+            WorkflowEdgeDef,
+            WorkflowNodeDef,
+        )
+
+        defn = WorkflowDefinition(
+            workflow_id=f"crew_solo_{agent_id}",
+            display_name=f"Crew: {agent_id}",
+            description=f"Solo execution of crew agent {agent_id}",
+            nodes=[
+                WorkflowNodeDef(
+                    agent_id, agent_id, {"x": 400, "y": 150}, is_entry_point=True
+                ),
+            ],
+            edges=[
+                WorkflowEdgeDef(
+                    f"{agent_id}_end", agent_id, "__end__", "direct"
+                ),
+            ],
+        )
+
+        graph = compile_workflow(defn, self._router, use_cache=False)
+        compiled = graph.compile(checkpointer=get_checkpointer())
+
+        self._crew_graph_cache[agent_id] = compiled
+        logger.info("Compiled crew solo graph for agent: %s", agent_id)
+        return compiled
+
     def _poll_loop(self) -> None:
         """Main poll loop: claim and execute runs."""
         while self._running:
@@ -79,7 +141,8 @@ class TowerWorker:
 
     def _execute_with_timeout(self, run: dict) -> None:
         """Execute a run with a timeout guard."""
-        future = self._executor.submit(execute_run, self._graph, run)
+        graph = self._get_graph(run)
+        future = self._executor.submit(execute_run, graph, run)
         try:
             future.result(timeout=EXECUTION_TIMEOUT_SECONDS)
         except concurrent.futures.TimeoutError:

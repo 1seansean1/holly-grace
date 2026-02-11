@@ -138,7 +138,7 @@ class TestDispatchCrew:
 
         # Verify create_run was called with correct args
         call_args = mock_create_run.call_args
-        assert call_args.kwargs["workflow_id"] == "default"
+        assert call_args.kwargs["workflow_id"] == "crew_solo_crew_architect"
         assert "[Architect]" in call_args.kwargs["run_name"]
         assert call_args.kwargs["metadata"]["crew_agent"] == "crew_architect"
         assert call_args.kwargs["priority"] == 7

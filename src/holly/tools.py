@@ -365,7 +365,7 @@ def dispatch_crew(agent_id: str, task: str, context: str = "") -> dict:
     }
 
     run_id = create_run(
-        workflow_id="default",
+        workflow_id=f"crew_solo_{agent_id}",
         run_name=f"[{agent.display_name}] {task[:60]}",
         input_state=input_state,
         metadata={

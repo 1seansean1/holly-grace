@@ -118,6 +118,13 @@ async def lifespan(app: FastAPI):
     except Exception:
         logger.warning("Failed to init MCP registry tables (non-fatal)", exc_info=True)
 
+    # Seed built-in MCP servers (github-reader)
+    try:
+        from src.mcp.servers import seed_github_reader
+        seed_github_reader()
+    except Exception:
+        logger.warning("Failed to seed github-reader MCP server (non-fatal)", exc_info=True)
+
     # Seed goal hierarchy (37 predicates, 10 blocks, coupling axes, agents, orchestrators)
     try:
         from src.hierarchy.seed import seed_hierarchy
@@ -136,7 +143,7 @@ async def lifespan(app: FastAPI):
 
     # Start Tower worker (claims and executes durable runs)
     from src.tower.worker import TowerWorker
-    tower_worker = TowerWorker(compiled_graph)
+    tower_worker = TowerWorker(compiled_graph, router=router)
     tower_worker.start()
     logger.info("Tower worker started (poll interval: 2s)")
 
