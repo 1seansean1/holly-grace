@@ -9,7 +9,7 @@
   "containerDefinitions": [
     {
       "name": "holly-grace",
-      "image": "327416545926.dkr.ecr.us-east-2.amazonaws.com/holly-grace/holly-grace:v11",
+      "image": "327416545926.dkr.ecr.us-east-2.amazonaws.com/holly-grace/holly-grace:v12",
       "cpu": 0,
       "essential": true,
       "portMappings": [
