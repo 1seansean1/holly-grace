@@ -457,11 +457,21 @@ def im_rank_budget_and_regime(
     # Default agent pool if not provided
     if not agent_pool:
         agent_pool = _default_agent_pool(cod_pi_g)
-    if not orchestrator:
-        orchestrator = {"model_family": "Claude Opus 4.6", "jacobian_rank": 5,
-                       "steering_spectrum": [1.0, 0.8, 0.6, 0.4, 0.2]}
 
     cross_count = len(ws.cross_block_coupling)
+
+    if not orchestrator:
+        # Auto-size orchestrator rank to cover coupling needs.
+        # Hierarchical coupling_rank_c = max(1, cross_count // 2), so
+        # orchestrator must have rank >= that value plus margin.
+        min_coupling_rank = max(1, cross_count // 2) if cross_count > 0 else 0
+        orch_rank = max(5, min_coupling_rank + 1)
+        orchestrator = {
+            "model_family": "Claude Opus 4.6",
+            "jacobian_rank": orch_rank,
+            "steering_spectrum": [round(1.0 - i * (0.8 / max(1, orch_rank - 1)), 2)
+                                  for i in range(orch_rank)],
+        }
     result = compute_rank_budget(cod_pi_g, agent_pool, orchestrator, cross_count)
 
     ws.rank_budget = {
@@ -706,6 +716,15 @@ def im_get_workspace(workspace_id: str) -> dict:
         "codimension": ws.codimension.get("cod_pi_g"),
         "regime": ws.rank_budget.get("regime"),
         "verdict": ws.feasibility.get("verdict"),
+        "feasibility": {
+            "rank_coverage": ws.feasibility.get("rank_coverage"),
+            "coupling_coverage": ws.feasibility.get("coupling_coverage"),
+            "power_coverage": ws.feasibility.get("power_coverage"),
+            "governance_margin": ws.feasibility.get("governance_margin"),
+            "axes_violating_power": ws.feasibility.get("axes_violating_power", []),
+            "delta_norm": ws.feasibility.get("delta_norm"),
+            "remediation": ws.feasibility.get("remediation"),
+        } if ws.feasibility else None,
         "spawned_agents": ws.metadata.get("spawned_agents", []),
         "workflow_id": ws.metadata.get("workflow_id"),
         "initial_run_id": ws.metadata.get("initial_run_id"),

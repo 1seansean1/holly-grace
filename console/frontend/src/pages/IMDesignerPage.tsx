@@ -15,6 +15,16 @@ interface IMWorkspaceSummary {
   updated_at: string;
 }
 
+interface FeasibilityDetail {
+  rank_coverage: boolean | null;
+  coupling_coverage: boolean | null;
+  power_coverage: boolean | null;
+  governance_margin: number | null;
+  axes_violating_power: string[];
+  delta_norm: number | null;
+  remediation: { type: string; detail: string; minimum_additional_rank?: number | null; minimum_additional_power_axes?: number | null } | null;
+}
+
 interface IMWorkspaceDetail {
   workspace_id: string;
   stage: string;
@@ -29,6 +39,7 @@ interface IMWorkspaceDetail {
   codimension: number | null;
   regime: string | null;
   verdict: string | null;
+  feasibility: FeasibilityDetail | null;
   spawned_agents: string[];
   workflow_id: string | null;
   initial_run_id: string | null;
@@ -518,6 +529,49 @@ export default function IMDesignerPage() {
                     {selected.predicate_count} predicates / {selected.block_count} blocks
                   </span>
                 </div>
+
+                {/* Feasibility conditions detail */}
+                {selected.feasibility && selected.verdict === 'feasible' && (
+                  <div className="bg-green-950/30 rounded-lg border border-green-900/50 p-4 space-y-2">
+                    <h3 className="text-sm font-semibold text-green-400">All Feasibility Checks Passed</h3>
+                    <div className="grid grid-cols-3 gap-2 text-xs">
+                      <div className="p-2 rounded bg-green-900/30 text-green-400">{'\u2713'} Rank Coverage</div>
+                      <div className="p-2 rounded bg-green-900/30 text-green-400">{'\u2713'} Coupling Coverage</div>
+                      <div className="p-2 rounded bg-green-900/30 text-green-400">{'\u2713'} Power Coverage</div>
+                    </div>
+                    {selected.feasibility.governance_margin != null && (
+                      <p className="text-xs text-[var(--color-text-muted)]">
+                        Governance margin: {'\u03B3'} = {selected.feasibility.governance_margin}
+                      </p>
+                    )}
+                  </div>
+                )}
+                {selected.feasibility && selected.verdict === 'infeasible' && (
+                  <div className="bg-red-950/30 rounded-lg border border-red-900/50 p-4 space-y-2">
+                    <h3 className="text-sm font-semibold text-red-400">Feasibility Check Failed</h3>
+                    <div className="grid grid-cols-3 gap-2 text-xs">
+                      <div className={`p-2 rounded ${selected.feasibility.rank_coverage ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'}`}>
+                        {selected.feasibility.rank_coverage ? '\u2713' : '\u2717'} Rank Coverage
+                      </div>
+                      <div className={`p-2 rounded ${selected.feasibility.coupling_coverage ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'}`}>
+                        {selected.feasibility.coupling_coverage ? '\u2713' : '\u2717'} Coupling Coverage
+                      </div>
+                      <div className={`p-2 rounded ${selected.feasibility.power_coverage ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'}`}>
+                        {selected.feasibility.power_coverage ? '\u2713' : '\u2717'} Power Coverage
+                      </div>
+                    </div>
+                    {selected.feasibility.remediation && (
+                      <p className="text-xs text-[var(--color-text-muted)] mt-1">
+                        <span className="text-yellow-400">Remediation:</span> {selected.feasibility.remediation.detail}
+                      </p>
+                    )}
+                    {selected.feasibility.axes_violating_power?.length > 0 && (
+                      <p className="text-xs text-red-300">
+                        Violating axes: {selected.feasibility.axes_violating_power.join(', ')}
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {/* Deploy section */}
                 <div className="bg-[var(--color-bg-card)] rounded-lg border border-[var(--color-border)] p-4">
