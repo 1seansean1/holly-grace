@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import agents, app_factory, approvals, auth, autonomy, chat, costs, evaluations, execution, graph, health, hierarchy, holly, mcp, morphogenetic, scheduler, system, tools, tower, traces, workflows
+from app.routers import agents, app_factory, approvals, auth, autonomy, chat, costs, evaluations, execution, graph, health, hierarchy, holly, im, mcp, morphogenetic, scheduler, system, tools, tower, traces, workflows
 from app.services.holly_client import close_client
 from app.services.event_bridge import event_bridge
 
@@ -66,6 +66,7 @@ app.include_router(morphogenetic.router)
 app.include_router(system.router)
 app.include_router(tower.router)
 app.include_router(hierarchy.router)
+app.include_router(im.router)
 app.include_router(app_factory.router)
 app.include_router(chat.router)
 app.include_router(holly.router)

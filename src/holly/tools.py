@@ -1337,6 +1337,13 @@ HOLLY_TOOLS = {
     "submit_autonomous_task": submit_autonomous_task,
 }
 
+# Merge IM (Informational Monism) pipeline tools
+try:
+    from src.im.tools import IM_TOOLS, IM_TOOL_SCHEMAS
+    HOLLY_TOOLS.update(IM_TOOLS)
+except ImportError:
+    pass  # IM module not available
+
 # Anthropic tool schemas for function calling
 HOLLY_TOOL_SCHEMAS = [
     {
@@ -1702,3 +1709,9 @@ HOLLY_TOOL_SCHEMAS = [
         },
     },
 ]
+
+# Merge IM tool schemas
+try:
+    HOLLY_TOOL_SCHEMAS.extend(IM_TOOL_SCHEMAS)
+except NameError:
+    pass  # IM_TOOL_SCHEMAS not imported

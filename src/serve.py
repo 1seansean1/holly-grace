@@ -176,6 +176,14 @@ async def lifespan(app: FastAPI):
     holly_consumer.start()
     logger.info("Holly Grace bus consumer started")
 
+    # Initialize IM (Informational Monism) workspace tables
+    try:
+        from src.im.store import ensure_tables as ensure_im_tables
+        ensure_im_tables()
+        logger.info("IM workspace tables initialized")
+    except Exception:
+        logger.warning("Failed to init IM tables (non-fatal)", exc_info=True)
+
     # Initialize Holly memory tables
     try:
         from src.holly.memory import init_memory_tables
@@ -2018,6 +2026,175 @@ async def hierarchy_recompute():
             "failing_predicates": gs.failing_predicates,
         } for gs in sorted(gate.values(), key=lambda x: x.level)],
     })
+
+
+# ---------------------------------------------------------------------------
+# IM (Informational Monism) workspace endpoints — Architecture Selection Rule
+# ---------------------------------------------------------------------------
+
+
+@app.get("/im/workspaces")
+async def im_workspaces(limit: int = 20):
+    """List all IM design workspaces."""
+    from src.im.store import list_workspaces
+    workspaces = list_workspaces(limit=limit)
+    return JSONResponse({"workspaces": workspaces, "count": len(workspaces)})
+
+
+@app.get("/im/workspaces/{workspace_id}")
+async def im_workspace_detail(workspace_id: str):
+    """Get full workspace state including all pipeline stages."""
+    from src.im.tools import im_get_workspace
+    result = im_get_workspace(workspace_id)
+    if "error" in result:
+        return JSONResponse(result, status_code=404)
+    return JSONResponse(result)
+
+
+@app.delete("/im/workspaces/{workspace_id}")
+async def im_workspace_delete(workspace_id: str):
+    """Delete an IM workspace."""
+    from src.im.store import delete_workspace
+    deleted = delete_workspace(workspace_id)
+    if not deleted:
+        return JSONResponse({"error": f"Workspace {workspace_id} not found"}, status_code=404)
+    return JSONResponse({"status": "deleted", "workspace_id": workspace_id})
+
+
+@app.get("/im/workspaces/{workspace_id}/audit")
+async def im_workspace_audit(workspace_id: str):
+    """Get audit trail for a workspace."""
+    from src.im.store import get_audit_trail
+    trail = get_audit_trail(workspace_id)
+    return JSONResponse({"workspace_id": workspace_id, "audit_trail": trail})
+
+
+@app.post("/im/pipeline/parse")
+async def im_pipeline_parse(request: Request):
+    """Step 1: Parse natural-language intent into goal tuple. Creates new workspace."""
+    body = await request.json()
+    raw_intent = body.get("raw_intent", "").strip()
+    if not raw_intent:
+        return JSONResponse({"error": "raw_intent is required"}, status_code=400)
+    context = body.get("context", "")
+    from src.im.tools import im_parse_goal_tuple
+    result = im_parse_goal_tuple(raw_intent, context)
+    if "error" in result:
+        return JSONResponse(result, status_code=500)
+    return JSONResponse(result)
+
+
+@app.post("/im/pipeline/{workspace_id}/predicates")
+async def im_pipeline_predicates(workspace_id: str, request: Request):
+    """Step 2: Generate failure predicates from selected G1."""
+    body = await request.json() if request.headers.get("content-type") == "application/json" else {}
+    g1_index = body.get("g1_index", 0)
+    domain_hints = body.get("domain_hints", [])
+    from src.im.tools import im_generate_failure_predicates
+    result = im_generate_failure_predicates(workspace_id, g1_index, domain_hints)
+    if "error" in result:
+        return JSONResponse(result, status_code=400)
+    return JSONResponse(result)
+
+
+@app.post("/im/pipeline/{workspace_id}/coupling")
+async def im_pipeline_coupling(workspace_id: str, request: Request):
+    """Step 3: Build or update coupling matrix."""
+    body = await request.json() if request.headers.get("content-type") == "application/json" else {}
+    mode = body.get("mode", "generate")
+    overrides = body.get("overrides", [])
+    lock = body.get("lock", False)
+    from src.im.tools import im_build_coupling_model
+    result = im_build_coupling_model(workspace_id, mode, overrides, lock)
+    if "error" in result:
+        return JSONResponse(result, status_code=400)
+    return JSONResponse(result)
+
+
+@app.post("/im/pipeline/{workspace_id}/codimension")
+async def im_pipeline_codimension(workspace_id: str, request: Request):
+    """Step 4: Compute codimension and eigenspectrum."""
+    body = await request.json() if request.headers.get("content-type") == "application/json" else {}
+    tau = body.get("tau", 0.05)
+    k_preloaded = body.get("k_preloaded", [])
+    from src.im.tools import im_estimate_codimension
+    result = im_estimate_codimension(workspace_id, tau, k_preloaded)
+    if "error" in result:
+        return JSONResponse(result, status_code=400)
+    return JSONResponse(result)
+
+
+@app.post("/im/pipeline/{workspace_id}/rank-budget")
+async def im_pipeline_rank_budget(workspace_id: str, request: Request):
+    """Step 5: Compute rank budget and regime classification."""
+    body = await request.json() if request.headers.get("content-type") == "application/json" else {}
+    agent_pool = body.get("agent_pool")
+    orchestrator = body.get("orchestrator")
+    from src.im.tools import im_rank_budget_and_regime
+    result = im_rank_budget_and_regime(workspace_id, agent_pool, orchestrator)
+    if "error" in result:
+        return JSONResponse(result, status_code=400)
+    return JSONResponse(result)
+
+
+@app.post("/im/pipeline/{workspace_id}/memory")
+async def im_pipeline_memory(workspace_id: str):
+    """Step 6: Design memory tier structure."""
+    from src.im.tools import im_memory_tier_design
+    result = im_memory_tier_design(workspace_id)
+    if "error" in result:
+        return JSONResponse(result, status_code=400)
+    return JSONResponse(result)
+
+
+@app.post("/im/pipeline/{workspace_id}/agents")
+async def im_pipeline_agents(workspace_id: str):
+    """Step 7: Synthesize agent specs and assignment."""
+    from src.im.tools import im_synthesize_agent_specs
+    result = im_synthesize_agent_specs(workspace_id)
+    if "error" in result:
+        return JSONResponse(result, status_code=400)
+    return JSONResponse(result)
+
+
+@app.post("/im/pipeline/{workspace_id}/workflow")
+async def im_pipeline_workflow(workspace_id: str):
+    """Step 8: Synthesize workflow specification."""
+    from src.im.tools import im_synthesize_workflow_spec
+    result = im_synthesize_workflow_spec(workspace_id)
+    if "error" in result:
+        return JSONResponse(result, status_code=400)
+    return JSONResponse(result)
+
+
+@app.post("/im/pipeline/{workspace_id}/feasibility")
+async def im_pipeline_feasibility(workspace_id: str):
+    """Step 9: Validate feasibility (Architecture Design Theorem)."""
+    from src.im.tools import im_validate_feasibility
+    result = im_validate_feasibility(workspace_id)
+    if "error" in result:
+        return JSONResponse(result, status_code=400)
+    return JSONResponse(result)
+
+
+@app.post("/im/pipeline/full")
+async def im_pipeline_full(request: Request):
+    """Run complete 9-step pipeline from natural language to feasibility verdict."""
+    body = await request.json()
+    raw_intent = body.get("raw_intent", "").strip()
+    if not raw_intent:
+        return JSONResponse({"error": "raw_intent is required"}, status_code=400)
+    from src.im.tools import im_run_full_pipeline
+    result = im_run_full_pipeline(
+        raw_intent=raw_intent,
+        context=body.get("context", ""),
+        agent_pool=body.get("agent_pool"),
+        orchestrator=body.get("orchestrator"),
+        tau=body.get("tau", 0.05),
+    )
+    if "error" in result:
+        return JSONResponse(result, status_code=500)
+    return JSONResponse(result)
 
 
 # ---------------------------------------------------------------------------

@@ -17,6 +17,7 @@ import {
   Radar,
   Layers,
   Activity,
+  Grid3x3,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -25,6 +26,7 @@ const NAV_ITEMS = [
   { to: '/workflows', icon: Network, label: 'Workflows' },
   { to: '/agents', icon: Bot, label: 'Agents' },
   { to: '/hierarchy', icon: Layers, label: 'Hierarchy' },
+  { to: '/im-designer', icon: Grid3x3, label: 'IM Design' },
   { to: '/approvals', icon: ShieldCheck, label: 'Approvals' },
   { to: '/eval', icon: FlaskConical, label: 'Eval' },
   { to: '/morph', icon: Dna, label: 'Morph' },

@@ -20,6 +20,7 @@ import ChatPage from '@/pages/ChatPage';
 import TowerPage from '@/pages/TowerPage';
 import HierarchyPage from '@/pages/HierarchyPage';
 import AutonomyPage from '@/pages/AutonomyPage';
+import IMDesignerPage from '@/pages/IMDesignerPage';
 export default function App() {
   return (
     <ErrorBoundary>
@@ -34,6 +35,7 @@ export default function App() {
           <Route path="agents" element={<AgentsPage />} />
           <Route path="tower" element={<TowerPage />} />
           <Route path="hierarchy" element={<HierarchyPage />} />
+          <Route path="im-designer" element={<IMDesignerPage />} />
           <Route path="approvals" element={<ApprovalsPage />} />
           <Route path="eval" element={<EvalPage />} />
           <Route path="morph" element={<MorphPage />} />
