@@ -165,17 +165,18 @@ def update_workspace(ws: IMWorkspace) -> None:
         )
 
 
-def delete_workspace(workspace_id: str) -> None:
-    """Delete a workspace and its audit trail."""
+def delete_workspace(workspace_id: str) -> bool:
+    """Delete a workspace and its audit trail. Returns True if deleted."""
     with _get_conn() as conn:
         conn.execute(
             "DELETE FROM im_workspace_audit WHERE workspace_id = %s",
             (workspace_id,),
         )
-        conn.execute(
+        cur = conn.execute(
             "DELETE FROM im_workspaces WHERE workspace_id = %s",
             (workspace_id,),
         )
+        return cur.rowcount > 0
 
 
 # ---------------------------------------------------------------------------

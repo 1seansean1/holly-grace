@@ -216,6 +216,7 @@ def _llm_generate_predicates(
         client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
         hints_text = "\n".join(f"- {h}" for h in (domain_hints or []))
+        hints_section = ("Domain hints:\n" + hints_text) if hints_text else ""
         prompt = f"""You are a formal failure predicate generator for the Informational Monism framework.
 
 Given this goal and G¹ specification, generate:
@@ -225,7 +226,7 @@ Given this goal and G¹ specification, generate:
 
 Goal: {raw_intent}
 G¹: {json.dumps(g1)}
-{f"Domain hints:\\n{hints_text}" if hints_text else ""}
+{hints_section}
 
 Respond with JSON:
 {{
