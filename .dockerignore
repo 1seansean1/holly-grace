@@ -6,7 +6,10 @@ __pycache__
 .pytest_cache
 .mypy_cache
 .ruff_cache
-console/
+console/frontend/node_modules/
+console/frontend/dist/
+console/backend/.venv/
+console/backend/__pycache__/
 tests/
 !tests/golden/
 node_modules/
