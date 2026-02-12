@@ -119,12 +119,26 @@ async def lifespan(app: FastAPI):
     except Exception:
         logger.warning("Failed to init MCP registry tables (non-fatal)", exc_info=True)
 
-    # Seed built-in MCP servers (github-reader)
+    # Seed built-in MCP servers (github-reader, github-writer)
     try:
         from src.mcp.servers import seed_github_reader
         seed_github_reader()
     except Exception:
         logger.warning("Failed to seed github-reader MCP server (non-fatal)", exc_info=True)
+
+    try:
+        from src.mcp.servers import seed_github_writer
+        seed_github_writer()
+    except Exception:
+        logger.warning("Failed to seed github-writer MCP server (non-fatal)", exc_info=True)
+
+    try:
+        from src.mcp.servers import seed_aws_ecs, seed_api_costs, seed_shopify_analytics
+        seed_aws_ecs()
+        seed_api_costs()
+        seed_shopify_analytics()
+    except Exception:
+        logger.warning("Failed to seed observability MCP servers (non-fatal)", exc_info=True)
 
     # Seed goal hierarchy (37 predicates, 10 blocks, coupling axes, agents, orchestrators)
     try:
@@ -178,10 +192,11 @@ async def lifespan(app: FastAPI):
         logger.warning("Failed to init autonomy audit tables (non-fatal)", exc_info=True)
 
     # Start Holly autonomy loop (continuous execution daemon)
-    from src.holly.autonomy import get_autonomy_loop, seed_startup_objectives
+    from src.holly.autonomy import get_autonomy_loop, seed_startup_objectives, seed_revenue_objectives
     holly_autonomy = get_autonomy_loop()
     if os.environ.get("HOLLY_AUTONOMOUS", "0") == "1":
         seed_startup_objectives()
+        seed_revenue_objectives()
         holly_autonomy.start()
         logger.info("Holly autonomy loop STARTED (HOLLY_AUTONOMOUS=1)")
     else:

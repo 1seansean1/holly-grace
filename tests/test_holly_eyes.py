@@ -155,7 +155,7 @@ class TestSeedGitHubReader:
     @patch("src.mcp.store.create_server")
     def test_seed_skips_if_already_exists(self, mock_create, mock_get):
         """seed_github_reader is idempotent — skips if server exists."""
-        mock_get.return_value = {"server_id": "github-reader"}
+        mock_get.return_value = {"server_id": "github-reader", "stdio_command": "python3"}
 
         from src.mcp.servers import seed_github_reader
         seed_github_reader()
@@ -192,11 +192,13 @@ class TestCrewToolBindings:
         assert "mcp_github_reader_search_code" in agent.tools
         assert "mcp_github_reader_get_file_tree" in agent.tools
 
-    def test_system_engineer_has_github_tools(self):
+    def test_system_engineer_has_github_and_ecs_tools(self):
         from src.holly.crew.registry import CREW_AGENTS
         agent = CREW_AGENTS["crew_system_engineer"]
         assert "mcp_github_reader_read_file" in agent.tools
-        assert len(agent.tools) == 4
+        assert "mcp_github_writer_create_branch" in agent.tools
+        assert "mcp_aws_ecs_describe_service" in agent.tools
+        assert len(agent.tools) == 4 + 7 + 5  # reader + writer + ECS
 
     def test_critic_has_github_tools(self):
         from src.holly.crew.registry import CREW_AGENTS
@@ -214,13 +216,12 @@ class TestCrewToolBindings:
         assert "mcp_github_reader_read_file" in agent.tools
 
     def test_agents_without_tools_still_empty(self):
-        """Agents not assigned GitHub tools still have empty tools list."""
+        """Agents not assigned any MCP tools still have empty tools list."""
         from src.holly.crew.registry import CREW_AGENTS
         no_tool_agents = [
-            "crew_test_engineer", "crew_wiring_tech", "crew_program_manager",
-            "crew_finance_officer", "crew_lead_researcher", "crew_wise_old_man",
-            "crew_epsilon_tuner", "crew_strategic_advisor", "crew_cyber_security",
-            "crew_product_manager",
+            "crew_test_engineer", "crew_program_manager",
+            "crew_lead_researcher", "crew_wise_old_man",
+            "crew_epsilon_tuner",
         ]
         for agent_id in no_tool_agents:
             agent = CREW_AGENTS[agent_id]

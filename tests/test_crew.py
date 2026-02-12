@@ -22,8 +22,8 @@ from src.holly.tools import dispatch_crew, list_crew_agents
 class TestCrewRegistry:
     """Test the crew agent registry."""
 
-    def test_all_15_agents_registered(self):
-        assert len(CREW_AGENTS) == 15
+    def test_all_16_agents_registered(self):
+        assert len(CREW_AGENTS) == 16
 
     def test_all_ids_have_crew_prefix(self):
         for agent_id in CREW_AGENTS:
@@ -57,6 +57,7 @@ class TestCrewRegistry:
             "crew_system_engineer",
             "crew_cyber_security",
             "crew_product_manager",
+            "crew_debugger",
         ]
         for agent_id in expected:
             assert agent_id in CREW_AGENTS, f"Missing: {agent_id}"
@@ -98,7 +99,7 @@ class TestListCrew:
     def test_returns_list_of_dicts(self):
         agents = list_crew()
         assert isinstance(agents, list)
-        assert len(agents) == 15
+        assert len(agents) == 16
         for a in agents:
             assert isinstance(a, dict)
             assert "agent_id" in a
@@ -178,8 +179,8 @@ class TestListCrewAgentsTool:
 
     def test_returns_all_agents(self):
         result = list_crew_agents()
-        assert result["count"] == 15
-        assert len(result["agents"]) == 15
+        assert result["count"] == 16
+        assert len(result["agents"]) == 16
 
     def test_agent_dicts_have_required_keys(self):
         result = list_crew_agents()
@@ -232,3 +233,95 @@ class TestSystemPromptContent:
         prompt = agent.system_prompt
         assert "revenue_epsilon" in prompt
         assert "goal_epsilon" in prompt
+
+    def test_debugger_has_12_phase_protocol(self):
+        agent = CREW_AGENTS["crew_debugger"]
+        prompt = agent.system_prompt
+        # All 12 phases must be present
+        assert "SECURITY PRE-CHECK" in prompt
+        assert "CONTAIN & TRIAGE" in prompt
+        assert "SYMPTOM & CHANGE AUDIT" in prompt
+        assert "BASELINE STATE" in prompt
+        assert "HYPOTHESES" in prompt
+        assert "EVIDENCE MATRIX" in prompt
+        assert "ORACLE DEFINITION" in prompt
+        assert "PRIORITIZE TESTS" in prompt
+        assert "INVESTIGATE" in prompt
+        assert "VERDICT" in prompt
+        assert "FIX" in prompt
+        assert "PROVE THE FIX" in prompt
+        assert "POST-INCIDENT CLOSURE" in prompt
+
+    def test_debugger_has_10_tools(self):
+        agent = CREW_AGENTS["crew_debugger"]
+        assert len(agent.tools) == 10
+        # 4 GitHub reader tools
+        assert "mcp_github_reader_read_file" in agent.tools
+        assert "mcp_github_reader_search_code" in agent.tools
+        # 6 runtime query tools
+        assert "query_system_health" in agent.tools
+        assert "query_autonomy_status" in agent.tools
+        assert "query_runs" in agent.tools
+        assert "query_run_detail" in agent.tools
+        assert "query_hierarchy_gate" in agent.tools
+        assert "query_scheduled_jobs" in agent.tools
+
+    def test_debugger_uses_opus(self):
+        agent = CREW_AGENTS["crew_debugger"]
+        assert agent.model == "claude-opus-4-6"
+
+    def test_debugger_definition_of_done(self):
+        agent = CREW_AGENTS["crew_debugger"]
+        prompt = agent.system_prompt
+        assert "Definition of Done" in prompt
+        assert "ALL FOUR" in prompt
+        assert "Postmortem filed" in prompt
+
+    def test_debugger_anti_bias_guardrails(self):
+        agent = CREW_AGENTS["crew_debugger"]
+        prompt = agent.system_prompt
+        assert "Anti-bias guardrails" in prompt or "Anti-confirmation bias" in prompt
+        assert "crew_cyber_security" in prompt
+
+
+# ---------------------------------------------------------------------------
+# Enneagram integration tests
+# ---------------------------------------------------------------------------
+
+class TestDebuggerEnneagram:
+    """Test debugger enneagram integration."""
+
+    def test_debugger_is_type_8(self):
+        from src.holly.crew.enneagram import get_crew_type
+        etype = get_crew_type("crew_debugger")
+        assert etype is not None
+        assert etype.number == 8
+        assert etype.name == "Challenger"
+        assert etype.triad == "gut"
+
+    def test_debugger_has_5_coupling_axes(self):
+        from src.holly.crew.enneagram import get_coupling_axes
+        axes = get_coupling_axes("crew_debugger")
+        assert len(axes) == 5
+
+    def test_debugger_coupling_partners(self):
+        from src.holly.crew.enneagram import get_coupling_axes
+        axes = get_coupling_axes("crew_debugger")
+        partners = {a["partner"] for a in axes}
+        assert partners == {
+            "crew_test_engineer",
+            "crew_architect",
+            "crew_system_engineer",
+            "crew_wise_old_man",
+            "crew_cyber_security",
+        }
+
+    def test_team_balance_with_debugger(self):
+        from src.holly.crew.enneagram import get_team_balance_report
+        report = get_team_balance_report()
+        # 15 not 16: crew_wiring_tech has no enneagram assignment
+        assert report["total_agents"] == 15
+        assert "8 (Challenger)" in report["type_distribution"]
+        assert report["type_distribution"]["8 (Challenger)"] == 1
+        # Gut triad should now have 5 (3x Type1 + 1x Type9 + 1x Type8)
+        assert report["triad_balance"]["gut"] == 5

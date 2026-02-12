@@ -20,6 +20,7 @@ Crew roster:
   - System Engineer: automated system documentation
   - Cyber Security Expert: security reviews and policies
   - Product Manager: feature backlog management
+  - Debugger: runtime diagnostics via 12-phase hypothesis-testing protocol
 """
 
 from src.holly.crew.registry import CREW_AGENTS, get_crew_agent, list_crew

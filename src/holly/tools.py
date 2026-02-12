@@ -809,6 +809,472 @@ def query_crew_enneagram(agent_id: str | None = None) -> dict:
     return get_team_balance_report()
 
 
+def propose_code_change(
+    branch_name: str,
+    description: str,
+    files: list[dict],
+    create_pr: bool = True,
+) -> dict:
+    """Propose a code change — the ONLY entry point for writing code to the repo.
+
+    Creates a feature branch, commits files, opens a PR, and records audit trail.
+    All governance rules (forbidden files, rate limits, secret scanning) are enforced.
+
+    Args:
+        branch_name: Feature branch name (e.g. 'holly/add-tool-xyz').
+        description: Human-readable description of what this change does and why.
+        files: List of file operations: [{path, content, action: "create"|"update"|"delete"}].
+        create_pr: Whether to create a pull request (default True).
+    """
+    from src.workflows.code_change import (
+        validate_proposal,
+        execute_commit,
+        record_audit,
+    )
+    import uuid
+
+    # Node 1: Validate
+    validation = validate_proposal(files, branch_name, description)
+    if not validation.get("valid"):
+        return {
+            "status": "rejected",
+            "reason": validation.get("reason", "unknown"),
+            "path": validation.get("path"),
+        }
+
+    risk_level = validation["risk_level"]
+
+    # Node 2: Commit
+    commit_result = execute_commit(
+        files=files,
+        branch_name=branch_name,
+        message=description,
+        risk_level=risk_level,
+        create_pr=create_pr,
+    )
+    if commit_result.get("error"):
+        return {"status": "failed", "error": commit_result["error"]}
+
+    # Node 3: Audit
+    run_id = f"code_change_{uuid.uuid4().hex[:12]}"
+    record_audit(
+        run_id=run_id,
+        commit_sha=commit_result.get("commit_sha", ""),
+        pr_number=commit_result.get("pr_number"),
+        pr_url=commit_result.get("pr_url", ""),
+        branch_name=branch_name,
+        risk_level=risk_level,
+        description=description,
+        files=files,
+    )
+
+    return {
+        "status": "committed",
+        "run_id": run_id,
+        "risk_level": risk_level,
+        "branch": branch_name,
+        "commit_sha": commit_result.get("commit_sha", ""),
+        "pr_number": commit_result.get("pr_number"),
+        "pr_url": commit_result.get("pr_url", ""),
+    }
+
+
+def merge_pull_request_tool(pr_number: int) -> dict:
+    """Merge a pull request on GitHub via squash merge.
+
+    Records the merge in tower_effects and stores a memory episode.
+
+    Args:
+        pr_number: The PR number to merge.
+    """
+    from src.mcp.manager import get_mcp_manager
+
+    try:
+        mgr = get_mcp_manager()
+        result = mgr.call_tool("github-writer", "merge_pull_request", {
+            "pr_number": pr_number,
+            "merge_method": "squash",
+        })
+        data = json.loads(result) if isinstance(result, str) else result
+        if isinstance(data, dict) and data.get("error"):
+            return {"error": data["error"]}
+
+        try:
+            from src.holly.memory import store_episode
+            store_episode(
+                summary=f"Merged PR #{pr_number}: SHA {data.get('merge_sha', 'unknown')}",
+                outcome="merged",
+            )
+        except Exception:
+            pass
+
+        return {
+            "merged": data.get("merged", False),
+            "pr_number": pr_number,
+            "merge_sha": data.get("merge_sha", ""),
+        }
+    except Exception as e:
+        return {"error": f"Merge failed: {e}"}
+
+
+def deploy_self(image_tag: str | None = None) -> dict:
+    """Trigger a full self-deployment: build → push → register → update ECS.
+
+    If image_tag is not provided, auto-increments from the current tag.
+    Records deployment in tower_effects and memory.
+
+    Args:
+        image_tag: Docker image tag (e.g. 'v12'). Auto-increments if omitted.
+    """
+    from src.workflows.deploy import pre_check, build_and_push, deploy_to_ecs, verify_deploy
+    import uuid
+
+    # Auto-increment image tag if not provided
+    if not image_tag:
+        try:
+            import boto3
+            import os
+            ecr = boto3.client("ecr", region_name=os.environ.get("AWS_REGION", "us-east-2"))
+            resp = ecr.describe_images(
+                repositoryName="holly-grace/holly-grace",
+                filter={"tagStatus": "TAGGED"},
+            )
+            tags = []
+            for img in resp.get("imageDetails", []):
+                for t in img.get("imageTags", []):
+                    if t.startswith("v") and t[1:].isdigit():
+                        tags.append(int(t[1:]))
+            current = max(tags) if tags else 11
+            image_tag = f"v{current + 1}"
+        except Exception:
+            image_tag = "v12"
+
+    # Pre-check
+    check = pre_check()
+    if not check.get("ok"):
+        return {"status": "blocked", "reason": check.get("reason", "pre_check_failed")}
+
+    current_revision = check.get("current_revision")
+
+    # Build and push via GitHub Actions
+    build_result = build_and_push(image_tag)
+    if not build_result.get("ok"):
+        return {"status": "build_failed", "reason": build_result.get("reason", "unknown")}
+
+    # Deploy to ECS
+    deploy_result = deploy_to_ecs(image_tag, current_revision)
+    if not deploy_result.get("ok"):
+        return {
+            "status": "deploy_failed",
+            "reason": deploy_result.get("reason", "unknown"),
+            "rolled_back_to": deploy_result.get("rolled_back_to"),
+        }
+
+    # Verify
+    run_id = f"deploy_{uuid.uuid4().hex[:12]}"
+    verify_result = verify_deploy(
+        image_tag=image_tag,
+        new_revision=deploy_result.get("new_revision"),
+        run_id=run_id,
+    )
+
+    return {
+        "status": "deployed",
+        "run_id": run_id,
+        "image_tag": image_tag,
+        "revision": deploy_result.get("new_revision"),
+        "health_check": verify_result.get("health_check", "unknown"),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Operational self-repair tools
+# ---------------------------------------------------------------------------
+
+def reset_circuit_breaker(service: str) -> dict:
+    """Reset a circuit breaker for a specific service back to CLOSED state.
+
+    Use when a service has recovered but its breaker is still OPEN.
+
+    Args:
+        service: Service name (e.g. 'ollama', 'stripe', 'shopify', 'redis').
+    """
+    from src.resilience.circuit_breaker import get_breaker, SERVICE_NAMES
+
+    if service not in SERVICE_NAMES:
+        return {"error": f"Unknown service '{service}'. Known: {SERVICE_NAMES}"}
+
+    breaker = get_breaker(service)
+    old_state = breaker.state.value
+    breaker.reset()
+    return {"service": service, "old_state": old_state, "new_state": "closed"}
+
+
+def query_circuit_breakers() -> dict:
+    """Get the state of all circuit breakers (closed/open/half-open)."""
+    from src.resilience.circuit_breaker import get_all_states
+
+    states = get_all_states()
+    open_count = sum(1 for s in states.values() if s != "closed")
+    return {"breakers": states, "open_count": open_count}
+
+
+def replay_dlq_batch(limit: int = 5) -> dict:
+    """Re-queue pending DLQ (dead letter queue) entries as new Tower runs.
+
+    Pulls up to `limit` entries that are ready for retry.
+
+    Args:
+        limit: Max entries to replay (default 5).
+    """
+    from src.aps.store import dlq_get_pending, dlq_resolve
+
+    pending = dlq_get_pending()
+    if not pending:
+        return {"replayed": 0, "message": "No pending DLQ entries"}
+
+    batch = pending[:limit]
+    replayed = 0
+    errors = []
+
+    for entry in batch:
+        try:
+            from src.tower.store import create_run
+            payload = entry.get("payload", {})
+            task_desc = payload.get("task", f"DLQ replay: {entry['job_id']}")
+            create_run(
+                workflow_id=payload.get("workflow_id", "default"),
+                run_name=f"dlq_replay_{entry['id']}",
+                input_state={
+                    "messages": [{"type": "human", "content": task_desc}],
+                    "trigger_source": f"dlq_replay_{entry['job_id']}",
+                    "trigger_payload": payload,
+                    "retry_count": entry.get("attempts", 0),
+                },
+                metadata={"dlq_id": entry["id"], "original_error": entry.get("error")},
+                created_by="holly_dlq_replay",
+            )
+            dlq_resolve(entry["id"])
+            replayed += 1
+        except Exception as e:
+            errors.append({"dlq_id": entry["id"], "error": str(e)})
+
+    return {"replayed": replayed, "errors": errors, "remaining": len(pending) - replayed}
+
+
+def manage_autonomy(action: str) -> dict:
+    """Manage the Holly autonomy loop.
+
+    Actions: 'status', 'pause', 'resume', 'restart', 'clear_queue', 'list_queue'.
+
+    Args:
+        action: One of 'status', 'pause', 'resume', 'restart', 'clear_queue', 'list_queue'.
+    """
+    from src.holly.autonomy import get_autonomy_loop, list_queued_tasks, clear_queue
+
+    loop = get_autonomy_loop()
+
+    if action == "status":
+        return {
+            "running": loop.running if loop else False,
+            "paused": loop.paused if loop else False,
+            "tasks_completed": loop.tasks_completed if loop else 0,
+            "consecutive_errors": loop.consecutive_errors if loop else 0,
+            "idle_sweeps": loop.idle_sweeps if loop else 0,
+            "monitor_interval": loop.monitor_interval if loop else 0,
+        }
+    elif action == "pause":
+        if loop:
+            loop.pause()
+            return {"action": "paused", "ok": True}
+        return {"error": "Autonomy loop not initialized"}
+    elif action == "resume":
+        if loop:
+            loop.resume()
+            return {"action": "resumed", "ok": True}
+        return {"error": "Autonomy loop not initialized"}
+    elif action == "restart":
+        if loop:
+            loop.stop()
+            loop.start()
+            return {"action": "restarted", "ok": True}
+        return {"error": "Autonomy loop not initialized"}
+    elif action == "clear_queue":
+        count = clear_queue()
+        return {"action": "cleared", "tasks_removed": count}
+    elif action == "list_queue":
+        tasks = list_queued_tasks(limit=20)
+        return {"action": "list_queue", "tasks": tasks, "count": len(tasks)}
+    else:
+        return {"error": f"Unknown action '{action}'. Use: status, pause, resume, restart, clear_queue, list_queue"}
+
+
+def manage_redis_streams(action: str, stream: str | None = None) -> dict:
+    """Manage Redis Streams bus.
+
+    Actions: 'status' (all streams), 'claim_stale' (reclaim stuck messages), 'trim' (trim old messages).
+
+    Args:
+        action: One of 'status', 'claim_stale', 'trim'.
+        stream: Specific stream name (required for claim_stale/trim).
+    """
+    from src.bus import ALL_STREAMS, pending_count, claim_stale
+
+    if action == "status":
+        result = {}
+        for s in ALL_STREAMS:
+            result[s] = {"pending": pending_count(s)}
+        return {"streams": result}
+    elif action == "claim_stale":
+        if not stream:
+            return {"error": "stream parameter required for claim_stale"}
+        if stream not in ALL_STREAMS:
+            return {"error": f"Unknown stream '{stream}'. Known: {ALL_STREAMS}"}
+        claimed = claim_stale(stream, consumer_name="holly_ops", min_idle_ms=60_000, count=10)
+        return {"stream": stream, "claimed": len(claimed)}
+    elif action == "trim":
+        if not stream:
+            return {"error": "stream parameter required for trim"}
+        if stream not in ALL_STREAMS:
+            return {"error": f"Unknown stream '{stream}'. Known: {ALL_STREAMS}"}
+        from src.bus import _get_redis, TRIM_LIMITS
+        r = _get_redis()
+        max_len = TRIM_LIMITS.get(stream, 5000)
+        r.xtrim(stream, maxlen=max_len, approximate=True)
+        return {"stream": stream, "trimmed_to": max_len}
+    else:
+        return {"error": f"Unknown action '{action}'. Use: status, claim_stale, trim"}
+
+
+def manage_scheduled_job(
+    action: str,
+    job_id: str | None = None,
+    trigger_type: str | None = None,
+    trigger_args: dict | None = None,
+    task_description: str | None = None,
+) -> dict:
+    """Manage APScheduler jobs.
+
+    Actions: 'list', 'pause', 'resume', 'remove', 'trigger_now'.
+
+    Args:
+        action: One of 'list', 'pause', 'resume', 'remove', 'trigger_now'.
+        job_id: Job ID (required for pause/resume/remove/trigger_now).
+        trigger_type: For future use.
+        trigger_args: For future use.
+        task_description: For future use.
+    """
+    from src.scheduler.autonomous import get_global_scheduler
+
+    sched = get_global_scheduler()
+    if not sched:
+        return {"error": "Scheduler not initialized"}
+
+    if action == "list":
+        jobs = sched.jobs
+        return {
+            "jobs": [
+                {
+                    "id": j.id,
+                    "name": j.name,
+                    "next_run": str(j.next_run_time) if j.next_run_time else None,
+                    "trigger": str(j.trigger),
+                }
+                for j in jobs
+            ],
+            "count": len(jobs),
+        }
+    elif action == "pause" and job_id:
+        try:
+            sched._scheduler.pause_job(job_id)
+            return {"action": "paused", "job_id": job_id, "ok": True}
+        except Exception as e:
+            return {"error": f"Failed to pause job {job_id}: {e}"}
+    elif action == "resume" and job_id:
+        try:
+            sched._scheduler.resume_job(job_id)
+            return {"action": "resumed", "job_id": job_id, "ok": True}
+        except Exception as e:
+            return {"error": f"Failed to resume job {job_id}: {e}"}
+    elif action == "remove" and job_id:
+        try:
+            sched._scheduler.remove_job(job_id)
+            return {"action": "removed", "job_id": job_id, "ok": True}
+        except Exception as e:
+            return {"error": f"Failed to remove job {job_id}: {e}"}
+    elif action == "trigger_now" and job_id:
+        try:
+            job = sched._scheduler.get_job(job_id)
+            if job:
+                job.modify(next_run_time=None)
+                sched._scheduler.modify_job(job_id, next_run_time=__import__("datetime").datetime.now())
+                return {"action": "triggered", "job_id": job_id, "ok": True}
+            return {"error": f"Job {job_id} not found"}
+        except Exception as e:
+            return {"error": f"Failed to trigger job {job_id}: {e}"}
+    else:
+        if action in ("pause", "resume", "remove", "trigger_now") and not job_id:
+            return {"error": f"job_id required for action '{action}'"}
+        return {"error": f"Unknown action '{action}'. Use: list, pause, resume, remove, trigger_now"}
+
+
+def query_error_trends(hours: int = 24) -> dict:
+    """Query error trends from Tower runs and DLQ over the last N hours.
+
+    Args:
+        hours: Look-back period in hours (default 24).
+    """
+    result = {"hours": hours, "tower_runs": {}, "dlq": {}}
+
+    # Tower run failure stats
+    try:
+        from src.tower.store import list_runs
+        failed = list_runs(status="failed", limit=100)
+        errored = list_runs(status="error", limit=100)
+        all_failures = failed + errored
+
+        # Filter to recent
+        from datetime import datetime, timezone, timedelta
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+        recent = []
+        for r in all_failures:
+            created = r.get("created_at")
+            if created:
+                if isinstance(created, str):
+                    try:
+                        created = datetime.fromisoformat(created)
+                    except Exception:
+                        continue
+                if hasattr(created, "tzinfo") and created.tzinfo is None:
+                    created = created.replace(tzinfo=timezone.utc)
+                if created >= cutoff:
+                    recent.append(r)
+
+        result["tower_runs"] = {
+            "total_failures": len(recent),
+            "by_workflow": {},
+        }
+        for r in recent:
+            wf = r.get("workflow_id", "unknown")
+            result["tower_runs"]["by_workflow"][wf] = result["tower_runs"]["by_workflow"].get(wf, 0) + 1
+    except Exception as e:
+        result["tower_runs"] = {"error": str(e)}
+
+    # DLQ stats
+    try:
+        from src.aps.store import dlq_list_all
+        all_dlq = dlq_list_all()
+        unresolved = [d for d in all_dlq if not d.get("resolved_at")]
+        result["dlq"] = {
+            "total": len(all_dlq),
+            "unresolved": len(unresolved),
+        }
+    except Exception as e:
+        result["dlq"] = {"error": str(e)}
+
+    return result
+
+
 def call_mcp_tool(server_id: str, tool_name: str, arguments: dict | None = None) -> dict:
     """Call any tool on any registered MCP server.
 
@@ -854,6 +1320,16 @@ HOLLY_TOOLS = {
     "tune_epsilon": tune_epsilon,
     "run_workflow": run_workflow,
     "query_crew_enneagram": query_crew_enneagram,
+    "propose_code_change": propose_code_change,
+    "merge_pull_request": merge_pull_request_tool,
+    "deploy_self": deploy_self,
+    "reset_circuit_breaker": reset_circuit_breaker,
+    "query_circuit_breakers": query_circuit_breakers,
+    "replay_dlq_batch": replay_dlq_batch,
+    "manage_autonomy": manage_autonomy,
+    "manage_redis_streams": manage_redis_streams,
+    "manage_scheduled_job": manage_scheduled_job,
+    "query_error_trends": query_error_trends,
     "call_mcp_tool": call_mcp_tool,
     "store_memory_fact": store_memory_fact,
     "query_memory": query_memory,
@@ -1105,6 +1581,124 @@ HOLLY_TOOL_SCHEMAS = [
                 "priority": {"type": "string", "enum": ["low", "normal", "high", "critical"], "description": "Task priority"},
             },
             "required": ["objective"],
+        },
+    },
+    {
+        "name": "propose_code_change",
+        "description": "Propose a code change — the ONLY entry point for writing code to the repo. Creates a feature branch, commits files, opens a PR, and records full audit trail. All governance rules (forbidden files, rate limits, secret scanning) are enforced. NEVER call github-writer MCP tools directly — always use this tool.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "branch_name": {"type": "string", "description": "Feature branch name (e.g. 'holly/add-tool-xyz')"},
+                "description": {"type": "string", "description": "Human-readable description of what this change does and why"},
+                "files": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "path": {"type": "string", "description": "File path relative to repo root"},
+                            "content": {"type": "string", "description": "File content (for create/update)"},
+                            "action": {"type": "string", "enum": ["create", "update", "delete"], "description": "What to do with this file"},
+                        },
+                        "required": ["path", "action"],
+                    },
+                    "description": "List of file operations",
+                },
+                "create_pr": {"type": "boolean", "description": "Whether to create a pull request (default true)"},
+            },
+            "required": ["branch_name", "description", "files"],
+        },
+    },
+    {
+        "name": "merge_pull_request",
+        "description": "Merge an open pull request via squash merge. Records the merge in tower_effects and stores a memory episode. Use after reviewing a PR or after propose_code_change creates one.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "pr_number": {"type": "integer", "description": "The PR number to merge"},
+            },
+            "required": ["pr_number"],
+        },
+    },
+    {
+        "name": "deploy_self",
+        "description": "Trigger a full deployment pipeline: merge to master → GitHub Actions build → ECR push → ECS task def update → service restart → health check. Auto-rollback on failure. Feel the weight of this — you are updating your own running container.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "image_tag": {"type": "string", "description": "Docker image tag (e.g. 'v12'). Auto-increments from current tag if omitted."},
+            },
+        },
+    },
+    {
+        "name": "reset_circuit_breaker",
+        "description": "Reset a circuit breaker for a service back to CLOSED state. Use when a service has recovered but its breaker is still OPEN.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "service": {"type": "string", "description": "Service name (ollama, stripe, shopify, printful, instagram, chromadb, redis)"},
+            },
+            "required": ["service"],
+        },
+    },
+    {
+        "name": "query_circuit_breakers",
+        "description": "Get the state (closed/open/half-open) of all circuit breakers across external services.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "replay_dlq_batch",
+        "description": "Re-queue pending DLQ (dead letter queue) entries as new Tower runs. Pulls entries that are ready for retry.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "limit": {"type": "integer", "description": "Max entries to replay (default 5)"},
+            },
+        },
+    },
+    {
+        "name": "manage_autonomy",
+        "description": "Manage the Holly autonomy loop. Actions: 'status' (full state), 'pause' (pause processing), 'resume' (resume after pause), 'restart' (stop + start), 'clear_queue' (remove all queued tasks), 'list_queue' (peek at queued tasks).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "action": {"type": "string", "enum": ["status", "pause", "resume", "restart", "clear_queue", "list_queue"], "description": "What to do"},
+            },
+            "required": ["action"],
+        },
+    },
+    {
+        "name": "manage_redis_streams",
+        "description": "Manage Redis Streams message bus. Actions: 'status' (pending counts for all streams), 'claim_stale' (reclaim stuck messages from a stream), 'trim' (trim old messages from a stream).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "action": {"type": "string", "enum": ["status", "claim_stale", "trim"], "description": "What to do"},
+                "stream": {"type": "string", "description": "Stream name (required for claim_stale/trim)"},
+            },
+            "required": ["action"],
+        },
+    },
+    {
+        "name": "manage_scheduled_job",
+        "description": "Manage APScheduler jobs. Actions: 'list' (all jobs), 'pause' (pause a job), 'resume' (resume a paused job), 'remove' (delete a job), 'trigger_now' (run a job immediately).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "action": {"type": "string", "enum": ["list", "pause", "resume", "remove", "trigger_now"], "description": "What to do"},
+                "job_id": {"type": "string", "description": "Job ID (required for pause/resume/remove/trigger_now)"},
+            },
+            "required": ["action"],
+        },
+    },
+    {
+        "name": "query_error_trends",
+        "description": "Query error trends from Tower runs and DLQ over the last N hours. Shows failure counts by workflow and unresolved DLQ entries.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "hours": {"type": "integer", "description": "Look-back period in hours (default 24)"},
+            },
         },
     },
 ]

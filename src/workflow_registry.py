@@ -324,6 +324,62 @@ REVENUE_ENGINE_WORKFLOW = WorkflowDefinition(
 
 
 # ---------------------------------------------------------------------------
+# Code Change workflow definition
+# ---------------------------------------------------------------------------
+
+
+CODE_CHANGE_WORKFLOW = WorkflowDefinition(
+    workflow_id="code_change",
+    display_name="Code Change",
+    description=(
+        "Autonomous code-write pipeline: validate governance rules, "
+        "commit to feature branch via GitHub Writer MCP, open PR, "
+        "and record full audit trail in tower_effects + memory."
+    ),
+    nodes=[
+        WorkflowNodeDef("validate", "orchestrator", {"x": 400, "y": 50}, is_entry_point=True),
+        WorkflowNodeDef("commit", "orchestrator", {"x": 400, "y": 250}),
+        WorkflowNodeDef("audit", "orchestrator", {"x": 400, "y": 450}),
+    ],
+    edges=[
+        WorkflowEdgeDef("cc_e1", "validate", "commit", "direct"),
+        WorkflowEdgeDef("cc_e2", "commit", "audit", "direct"),
+        WorkflowEdgeDef("cc_e3", "audit", "__end__", "direct"),
+    ],
+    error_config={"max_retries": 1},
+)
+
+
+# ---------------------------------------------------------------------------
+# Deploy workflow definition
+# ---------------------------------------------------------------------------
+
+
+DEPLOY_WORKFLOW = WorkflowDefinition(
+    workflow_id="deploy",
+    display_name="Deploy",
+    description=(
+        "Self-deployment pipeline: pre-check ECS stability, trigger GitHub "
+        "Actions build+push, register new ECS task definition, update service, "
+        "verify health, auto-rollback on failure."
+    ),
+    nodes=[
+        WorkflowNodeDef("pre_check", "orchestrator", {"x": 400, "y": 50}, is_entry_point=True),
+        WorkflowNodeDef("build_and_push", "orchestrator", {"x": 400, "y": 200}),
+        WorkflowNodeDef("deploy_ecs", "orchestrator", {"x": 400, "y": 350}),
+        WorkflowNodeDef("verify", "orchestrator", {"x": 400, "y": 500}),
+    ],
+    edges=[
+        WorkflowEdgeDef("dp_e1", "pre_check", "build_and_push", "direct"),
+        WorkflowEdgeDef("dp_e2", "build_and_push", "deploy_ecs", "direct"),
+        WorkflowEdgeDef("dp_e3", "deploy_ecs", "verify", "direct"),
+        WorkflowEdgeDef("dp_e4", "verify", "__end__", "direct"),
+    ],
+    error_config={"max_retries": 0},
+)
+
+
+# ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
 
@@ -438,6 +494,8 @@ class WorkflowRegistry:
             (SOLANA_MINING_WORKFLOW, False),
             (SIGNAL_GENERATOR_WORKFLOW, False),
             (REVENUE_ENGINE_WORKFLOW, False),
+            (CODE_CHANGE_WORKFLOW, False),
+            (DEPLOY_WORKFLOW, False),
         ]:
             defn = wf.to_dict()
             seed_workflow(

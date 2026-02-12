@@ -78,6 +78,7 @@ CREW_ENNEAGRAM_MAP: dict[str, int] = {
     "crew_finance_officer": 6,   # Loyalist: fiscal responsibility and caution
     "crew_wise_old_man": 9,      # Peacemaker: calm wisdom, reconciles conflict
     "crew_system_engineer": 1,   # Reformer: documentation accuracy and order
+    "crew_debugger": 8,           # Challenger: direct, decisive, confrontational diagnostics
 }
 
 
@@ -128,6 +129,18 @@ SENSITIVITY_MATRIX: list[CouplingAxis] = [
                  0.80, "mentoring"),  # 9→5: Peacemaker guides Investigator
     CouplingAxis("crew_lead_researcher", "crew_epsilon_tuner", "research_to_tuning",
                  0.75, "mentoring"),  # 5→6: Researcher informs Tuner
+
+    # --- Debugger coupling axes ---
+    CouplingAxis("crew_debugger", "crew_test_engineer", "failure_forensics",
+                 0.90, "synergy"),  # 8↔1: Challenger finds bug, Reformer writes regression test
+    CouplingAxis("crew_debugger", "crew_architect", "design_vs_reality",
+                 0.85, "tension"),  # 8↔5: Debugger finds where implementation diverged from design
+    CouplingAxis("crew_debugger", "crew_system_engineer", "state_inspection",
+                 0.80, "synergy"),  # 8↔1: Debugger probes, Engineer documents findings
+    CouplingAxis("crew_debugger", "crew_wise_old_man", "incident_history",
+                 0.75, "mentoring"),  # 9→8: Elder provides historical context for recurring bugs
+    CouplingAxis("crew_debugger", "crew_cyber_security", "security_escalation",
+                 0.85, "synergy"),  # 8↔6: Challenger contains, Loyalist investigates compromise
 ]
 
 

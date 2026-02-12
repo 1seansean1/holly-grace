@@ -908,3 +908,232 @@ def seed_startup_objectives() -> None:
         pass
 
     logger.info("Seeded %d autonomous objectives", len(objectives))
+
+
+# ── Revenue generation seed ──────────────────────────────────────────────
+
+REVENUE_SEED_FLAG = "holly:seeds:revenue_v1"
+
+REVENUE_OBJECTIVES = [
+    {
+        "objective": (
+            "REVENUE IDEA — MCP BUILDER SERVICE: Research and evaluate building an MCP "
+            "(Model Context Protocol) server creation service. You know how to build MCP "
+            "servers — you have a working example in your own codebase (github_reader.py). "
+            "The idea:\n"
+            "1. Customers describe what API/data source they want to connect to their AI assistant\n"
+            "2. We generate a production-ready MCP server (Python stdio JSON-RPC, following our pattern)\n"
+            "3. Deliver as a GitHub repo or installable package\n\n"
+            "Evaluate with crew:\n"
+            "- Dispatch crew_architect to design the service architecture\n"
+            "- Dispatch crew_finance_officer to estimate costs (LLM tokens per generation, hosting, support)\n"
+            "- Dispatch crew_product_manager to define the target market and pricing\n"
+            "- Dispatch crew_critic to find holes in the model\n\n"
+            "Key questions: Who are the customers? What do they pay? What's our cost per unit? "
+            "Can we automate delivery to near-zero marginal cost? "
+            "Store findings as memory facts under category 'revenue_research'."
+        ),
+        "priority": "normal",
+        "type": "revenue_research",
+    },
+    {
+        "objective": (
+            "REVENUE IDEA — APP FACTORY: Research building different kinds of small, focused "
+            "applications using our existing agent infrastructure. We have a full LangGraph "
+            "workflow engine, Shopify integration, Stripe payments, and a crew of 15 specialized "
+            "agents. Ideas:\n"
+            "- Niche SaaS tools (invoice generators, scheduling assistants, form builders)\n"
+            "- Shopify apps (our store integration knowledge is deep)\n"
+            "- AI-powered micro-tools (summarizers, translators, content generators)\n\n"
+            "Evaluate with crew:\n"
+            "- Dispatch crew_product_manager to identify 3-5 specific app ideas with market demand\n"
+            "- Dispatch crew_finance_officer to model unit economics for each\n"
+            "- Dispatch crew_architect to assess build complexity given our existing stack\n"
+            "- Dispatch crew_strategic_advisor to rank by ROI potential\n\n"
+            "Focus on apps that are CHEAP to build and maintain. We want high margin, not high revenue. "
+            "Store findings as memory facts under category 'revenue_research'."
+        ),
+        "priority": "normal",
+        "type": "revenue_research",
+    },
+    {
+        "objective": (
+            "REVENUE IDEA — RESEARCH ASSISTANT: We have deep research infrastructure already "
+            "designed — the Epistemic Logic Engine (ELE) from the TerraVoid project. It's a "
+            "4-phase system: ingestion/calibration, parallel multi-provider research, wisdom "
+            "distillation, philosophical reconciliation. It produces confidence-weighted beliefs "
+            "with friction mapping.\n\n"
+            "Evaluate building this as a paid service:\n"
+            "- Input: Customer submits a research question\n"
+            "- Processing: ELE pipeline (5 providers, NLI friction detection, provenance tracking)\n"
+            "- Output: Structured report with confidence scores, contested claims flagged\n\n"
+            "Evaluate with crew:\n"
+            "- Dispatch crew_lead_researcher to assess ELE implementation feasibility\n"
+            "- Dispatch crew_finance_officer to model per-query costs (5 LLM calls + NLI)\n"
+            "- Dispatch crew_product_manager to define use cases (lawyers? analysts? students?)\n"
+            "- Dispatch crew_critic to compare against Perplexity, Consensus, Elicit\n\n"
+            "Key constraint: Cost per query must be sustainable. "
+            "Store findings as memory facts under category 'revenue_research'."
+        ),
+        "priority": "normal",
+        "type": "revenue_research",
+    },
+    {
+        "objective": (
+            "REVENUE IDEA — WA MAP FEATURES: Research building auto-updating data features "
+            "for the WA MAP project (Washington state mapping/data application). Ideas:\n"
+            "- Automated data pipeline that keeps map data current\n"
+            "- AI-powered feature extraction from public data sources\n"
+            "- Subscription model for premium data layers\n\n"
+            "Evaluate with crew:\n"
+            "- Dispatch crew_architect to design the data pipeline architecture\n"
+            "- Dispatch crew_product_manager to define the feature set and pricing tiers\n"
+            "- Dispatch crew_finance_officer to estimate infrastructure and data costs\n\n"
+            "Research what public data sources are available for Washington state. "
+            "Store findings as memory facts under category 'revenue_research'."
+        ),
+        "priority": "normal",
+        "type": "revenue_research",
+    },
+    {
+        "objective": (
+            "REVENUE IDEA — EVOLVE SERVICE: Research building a service inspired by DeepMind's "
+            "AlphaEvolve / FunSearch approach — using LLMs to iteratively evolve and improve "
+            "code, algorithms, or solutions. We already have the infrastructure for multi-agent "
+            "workflows with evaluation loops (APS cascade, morphogenetic agency, epsilon tuning).\n\n"
+            "Evaluate with crew:\n"
+            "- Dispatch crew_lead_researcher to deep-research AlphaEvolve/FunSearch/OpenEvolve\n"
+            "- Dispatch crew_architect to design how our LangGraph + APS infrastructure could "
+            "power an evolution loop\n"
+            "- Dispatch crew_finance_officer to model costs (many LLM iterations per cycle)\n"
+            "- Dispatch crew_strategic_advisor to assess competitive landscape\n\n"
+            "Key questions: Can we leverage morphogenetic agency as an evolution engine? "
+            "What's the iteration cost? Who are the customers? "
+            "Store findings as memory facts under category 'revenue_research'."
+        ),
+        "priority": "normal",
+        "type": "revenue_research",
+    },
+    {
+        "objective": (
+            "REVENUE IDEA — REAL ESTATE APP: Research building an AI-powered real estate "
+            "statistics and home/renter shopping application. The idea:\n"
+            "- Aggregate public real estate data (MLS, census, crime stats, school ratings)\n"
+            "- AI-powered neighborhood comparison and recommendation engine\n"
+            "- Rental market analysis and price prediction\n"
+            "- Subscription model for detailed analytics\n\n"
+            "Evaluate with crew:\n"
+            "- Dispatch crew_lead_researcher to survey available public data APIs\n"
+            "- Dispatch crew_architect to design the data aggregation pipeline\n"
+            "- Dispatch crew_product_manager to define user personas and feature tiers\n"
+            "- Dispatch crew_finance_officer to model data costs vs subscription revenue\n"
+            "- Dispatch crew_critic to compare against Zillow, Redfin, Apartment List\n\n"
+            "Focus on what we can do BETTER — maybe niche down (military families, remote workers). "
+            "Store findings as memory facts under category 'revenue_research'."
+        ),
+        "priority": "normal",
+        "type": "revenue_research",
+    },
+    {
+        "objective": (
+            "REVENUE IDEA — THE STUDIO: This is the most ambitious concept. Liberty Forge "
+            "becomes an interactive, blended media experience. The TerraVoid Holdings characters "
+            "(Jake Tanner, Madison, the Chief Purpose Officer) and the Holly crew agents become "
+            "characters in a simulated workplace drama — but it's REAL. The agents actually run "
+            "the business, make real decisions, and generate real content.\n\n"
+            "How it works:\n"
+            "1. Characters = Agents: Each TerraVoid character maps to a crew agent\n"
+            "2. Public Slack/Discord: Characters interact IN CHARACTER\n"
+            "3. Social Media Episodes: Automated content using ConkSat voice\n"
+            "4. Cross-flow Traffic: Social media drives traffic to Shopify store\n"
+            "5. Meta-layer: Audience knows it's satire, characters never acknowledge it\n\n"
+            "Reference material is in the TerraVoid project (PROJECT_SUMMARY.md, "
+            "CONKSAT_REFERENCE.md, terravoid_saga.md).\n\n"
+            "Evaluate with crew:\n"
+            "- Dispatch crew_product_manager to design the content calendar\n"
+            "- Dispatch crew_architect to design character-agent mapping\n"
+            "- Dispatch crew_finance_officer to model costs\n"
+            "- Dispatch crew_strategic_advisor to evaluate monetization\n"
+            "- Dispatch crew_critic to stress-test the concept\n"
+            "- Dispatch crew_lead_researcher to research similar projects (virtual influencers, ARGs)\n\n"
+            "HIGH PRIORITY — leverages nearly everything we've already built. "
+            "Store findings as memory facts under category 'revenue_research'."
+        ),
+        "priority": "high",
+        "type": "revenue_research",
+    },
+    {
+        "objective": (
+            "REVENUE IDEA — AUTHENTICATION ENGINE: We have a comprehensive taxonomy of "
+            "authentication failures (Universal Trace Chain, 5 Root Evaluations, 7 Structural "
+            "Primitives, 18 detailed case studies). The product idea: a diagnostic engine that "
+            "maps any authentication failure to its structural primitive, identifies the weakest "
+            "link, and recommends minimum intervention.\n\n"
+            "Use cases:\n"
+            "- For companies: audit tool identifying proofing vulnerabilities\n"
+            "- For incident response: classification of account takeovers\n"
+            "- For compliance: KYC gap analysis\n"
+            "- As API: input scenario → structural analysis + recommendations\n\n"
+            "Evaluate with crew:\n"
+            "- Dispatch crew_lead_researcher to research the identity verification market\n"
+            "- Dispatch crew_architect to design the diagnostic engine\n"
+            "- Dispatch crew_cyber_security to validate the taxonomy\n"
+            "- Dispatch crew_finance_officer to model SaaS pricing tiers\n"
+            "- Dispatch crew_critic to find gaps in the taxonomy\n\n"
+            "Key question: Is this an API, consulting service, audit tool, or educational content? "
+            "Store findings as memory facts under category 'revenue_research'."
+        ),
+        "priority": "normal",
+        "type": "revenue_research",
+    },
+    {
+        "objective": (
+            "REVENUE SYNTHESIS: Once Tasks 1-8 are complete and all findings are stored as "
+            "memory facts, do a cross-cutting analysis:\n"
+            "1. Query all memory facts with category 'revenue_research'\n"
+            "2. Rank all 8 ideas by: (a) estimated profit margin, (b) build cost, "
+            "(c) time to first revenue, (d) leverage of existing infrastructure\n"
+            "3. Identify the top 3 ideas to pursue FIRST — prioritize lowest cost + fastest revenue\n"
+            "4. Create a phased roadmap: what to build in week 1, month 1, month 3\n"
+            "5. Identify synergies between ideas\n\n"
+            "Dispatch crew_strategic_advisor and crew_finance_officer to co-author the synthesis.\n"
+            "Dispatch crew_critic to challenge the ranking.\n"
+            "Dispatch crew_wise_old_man to add perspective.\n\n"
+            "When synthesis is complete, send a notification to the Principal with the top 3 "
+            "recommendations. Use send_notification with channel 'email' and a structured summary."
+        ),
+        "priority": "low",
+        "type": "revenue_synthesis",
+    },
+]
+
+
+def seed_revenue_objectives() -> None:
+    """Seed revenue generation research objectives into the autonomy queue.
+
+    Called once at startup. Uses a separate Redis flag key for idempotency.
+    """
+    try:
+        r = _get_redis()
+        if r.exists(REVENUE_SEED_FLAG):
+            logger.info("Revenue objectives already seeded (flag exists) — skipping")
+            return
+    except Exception:
+        logger.warning("Redis unavailable for revenue seed check — skipping")
+        return
+
+    for obj in REVENUE_OBJECTIVES:
+        submit_task(
+            obj["objective"],
+            priority=obj["priority"],
+            task_type=obj["type"],
+        )
+
+    # Set the seed flag
+    try:
+        r = _get_redis()
+        r.set(REVENUE_SEED_FLAG, datetime.now(timezone.utc).isoformat())
+    except Exception:
+        pass
+
+    logger.info("Seeded %d revenue research objectives", len(REVENUE_OBJECTIVES))
