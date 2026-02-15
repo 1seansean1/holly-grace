@@ -50,8 +50,16 @@ services:
     container_name: holly-ollama
     ports:
       - "11435:11434"
+    environment:
+      OLLAMA_HOST: "0.0.0.0:11434"
+      OLLAMA_ORIGINS: "*"
     volumes:
       - holly_ollama:/root/.ollama
+    # NOTE: GPU doesn't work in Docker on WSL2. Use native Windows Ollama instead.
+    # Native Ollama runs on port 11434, .env updated accordingly.
+    # To use Docker Ollama (CPU-only), change .env OLLAMA_BASE_URL back to 11435.
+    profiles:
+      - ollama-docker
     deploy:
       resources:
         reservations:

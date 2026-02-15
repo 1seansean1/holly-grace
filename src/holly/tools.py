@@ -42,17 +42,23 @@ def approve_ticket(ticket_id: int, note: str = "") -> dict:
 
     # Re-queue the run for the worker to pick up
     from src.tower.store import update_run_status
+    resume_error = None
     if ticket.get("run_id"):
         try:
             update_run_status(ticket["run_id"], "queued")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error("Failed to re-queue run %s after approving ticket %s: %s",
+                         ticket["run_id"], ticket_id, e)
+            resume_error = str(e)
 
-    return {
+    result = {
         "status": "approved",
         "ticket_id": ticket_id,
         "run_id": ticket.get("run_id"),
     }
+    if resume_error:
+        result["warning"] = f"Ticket approved but run resume failed: {resume_error}"
+    return result
 
 
 def reject_ticket(ticket_id: int, reason: str = "") -> dict:
@@ -80,21 +86,27 @@ def reject_ticket(ticket_id: int, reason: str = "") -> dict:
 
     # Mark the run as failed if it was waiting
     from src.tower.store import update_run_status
+    update_error = None
     if ticket.get("run_id"):
         try:
             update_run_status(
                 ticket["run_id"], "failed",
                 last_error=f"Rejected by Holly Grace: {reason}",
             )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error("Failed to mark run %s as failed after rejecting ticket %s: %s",
+                         ticket["run_id"], ticket_id, e)
+            update_error = str(e)
 
-    return {
+    result = {
         "status": "rejected",
         "ticket_id": ticket_id,
         "run_id": ticket.get("run_id"),
         "reason": reason,
     }
+    if update_error:
+        result["warning"] = f"Ticket rejected but run status update failed: {update_error}"
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -294,8 +306,9 @@ def query_system_health() -> dict:
         health["queued_runs"] = len(queued)
         health["waiting_approval"] = len(waiting)
         health["pending_tickets"] = len(pending_tickets)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("Failed to fetch tower run counts: %s", e)
+        health["tower"] = "unreachable"
 
     overall = "healthy" if all(
         v == "healthy" for k, v in health.items()
@@ -1137,9 +1150,9 @@ def manage_redis_streams(action: str, stream: str | None = None) -> dict:
             return {"error": "stream parameter required for trim"}
         if stream not in ALL_STREAMS:
             return {"error": f"Unknown stream '{stream}'. Known: {ALL_STREAMS}"}
-        from src.bus import _get_redis, TRIM_LIMITS
+        from src.bus import _get_redis, _TRIM_POLICIES
         r = _get_redis()
-        max_len = TRIM_LIMITS.get(stream, 5000)
+        max_len = _TRIM_POLICIES.get(stream, 5000)
         r.xtrim(stream, maxlen=max_len, approximate=True)
         return {"stream": stream, "trimmed_to": max_len}
     else:
@@ -1204,10 +1217,10 @@ def manage_scheduled_job(
             return {"error": f"Failed to remove job {job_id}: {e}"}
     elif action == "trigger_now" and job_id:
         try:
+            from datetime import datetime as _dt, timezone as _tz
             job = sched._scheduler.get_job(job_id)
             if job:
-                job.modify(next_run_time=None)
-                sched._scheduler.modify_job(job_id, next_run_time=__import__("datetime").datetime.now())
+                sched._scheduler.modify_job(job_id, next_run_time=_dt.now(_tz.utc))
                 return {"action": "triggered", "job_id": job_id, "ok": True}
             return {"error": f"Job {job_id} not found"}
         except Exception as e:
@@ -1275,6 +1288,78 @@ def query_error_trends(hours: int = 24) -> dict:
     return result
 
 
+def phone_command(tool: str, args: dict | None = None, wait: bool = True, timeout: int = 30) -> dict:
+    """Execute a phone tool on Sean's laptop via SQS bridge.
+
+    This sends the command to the SQS queue where the laptop bridge picks it
+    up, executes it via ADB, and returns the result.  Works from ECS — no
+    local ADB needed.
+
+    Common tools:
+        phone_send_sms  — args: {"number": "+1...", "message": "..."}
+        phone_sms       — args: {"limit": 10, "direction": "all", "contact": "..."}
+        phone_status    — args: {}
+        phone_screenshot — args: {}
+        phone_unlock    — args: {}
+
+    Args:
+        tool: Phone MCP tool name (e.g. "phone_send_sms").
+        args: Tool arguments dict.
+        wait: If True, wait for response from bridge (default True).
+        timeout: Max seconds to wait for response (default 30).
+    """
+    import uuid as _uuid
+    import time as _time
+    from datetime import datetime, timezone
+
+    try:
+        import boto3 as _boto3
+    except ImportError:
+        return {"error": "boto3 not installed"}
+
+    _region = "us-east-2"
+    _cmd_queue = "https://sqs.us-east-2.amazonaws.com/327416545926/holly-phone-commands"
+    _rsp_queue = "https://sqs.us-east-2.amazonaws.com/327416545926/holly-phone-responses"
+
+    sqs = _boto3.client("sqs", region_name=_region)
+    request_id = str(_uuid.uuid4())
+
+    # Send command
+    msg = {
+        "request_id": request_id,
+        "tool": tool,
+        "args": args or {},
+        "timestamp": datetime.now(tz=timezone.utc).isoformat(),
+    }
+    sqs.send_message(QueueUrl=_cmd_queue, MessageBody=json.dumps(msg, default=str))
+
+    if not wait:
+        return {"status": "queued", "request_id": request_id, "tool": tool}
+
+    # Poll response queue for our request_id
+    deadline = _time.time() + timeout
+    while _time.time() < deadline:
+        resp = sqs.receive_message(
+            QueueUrl=_rsp_queue,
+            MaxNumberOfMessages=10,
+            WaitTimeSeconds=min(5, max(1, int(deadline - _time.time()))),
+            MessageAttributeNames=["All"],
+        )
+        for m in resp.get("Messages", []):
+            try:
+                body = json.loads(m["Body"])
+            except Exception:
+                sqs.delete_message(QueueUrl=_rsp_queue, ReceiptHandle=m["ReceiptHandle"])
+                continue
+            if body.get("request_id") == request_id:
+                sqs.delete_message(QueueUrl=_rsp_queue, ReceiptHandle=m["ReceiptHandle"])
+                return {"status": "ok", "request_id": request_id, "tool": tool, "result": body.get("result", {})}
+            # Not ours — leave it (visibility timeout will make it reappear)
+
+    return {"status": "timeout", "request_id": request_id, "tool": tool,
+            "note": f"No response within {timeout}s — bridge may be offline"}
+
+
 def call_mcp_tool(server_id: str, tool_name: str, arguments: dict | None = None) -> dict:
     """Call any tool on any registered MCP server.
 
@@ -1331,6 +1416,7 @@ HOLLY_TOOLS = {
     "manage_scheduled_job": manage_scheduled_job,
     "query_error_trends": query_error_trends,
     "call_mcp_tool": call_mcp_tool,
+    "phone_command": phone_command,
     "store_memory_fact": store_memory_fact,
     "query_memory": query_memory,
     "query_autonomy_status": query_autonomy_status,
@@ -1706,6 +1792,32 @@ HOLLY_TOOL_SCHEMAS = [
             "properties": {
                 "hours": {"type": "integer", "description": "Look-back period in hours (default 24)"},
             },
+        },
+    },
+    {
+        "name": "phone_command",
+        "description": "Execute a phone tool on Sean's laptop via SQS bridge. Sends a command to the laptop where the phone is connected via ADB. Use this to text Sean, read his messages, check phone status, take screenshots, etc. The bridge must be running on his laptop.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "tool": {
+                    "type": "string",
+                    "description": "Phone tool to execute. Common: phone_send_sms, phone_sms, phone_status, phone_screenshot, phone_unlock",
+                },
+                "args": {
+                    "type": "object",
+                    "description": "Tool arguments. For phone_send_sms: {\"number\": \"+1...\", \"message\": \"...\"}. For phone_sms: {\"limit\": 10, \"direction\": \"all\"}",
+                },
+                "wait": {
+                    "type": "boolean",
+                    "description": "Wait for response from bridge (default true). Set false for fire-and-forget.",
+                },
+                "timeout": {
+                    "type": "integer",
+                    "description": "Max seconds to wait for response (default 30)",
+                },
+            },
+            "required": ["tool"],
         },
     },
 ]

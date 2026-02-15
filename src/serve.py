@@ -140,6 +140,12 @@ async def lifespan(app: FastAPI):
     except Exception:
         logger.warning("Failed to seed observability MCP servers (non-fatal)", exc_info=True)
 
+    try:
+        from src.mcp.servers import seed_phone_control
+        seed_phone_control()
+    except Exception:
+        logger.warning("Failed to seed phone-control MCP server (non-fatal)", exc_info=True)
+
     # Seed goal hierarchy (37 predicates, 10 blocks, coupling axes, agents, orchestrators)
     try:
         from src.hierarchy.seed import seed_hierarchy
@@ -2467,6 +2473,16 @@ async def ws_holly(websocket: WebSocket):
 
     await websocket.accept()
     session_id = websocket.query_params.get("session_id", "default")
+
+    # Prevent users from hijacking reserved session IDs
+    _RESERVED_SESSION_IDS = {"autonomous", "system", "internal"}
+    if session_id in _RESERVED_SESSION_IDS:
+        await websocket.send_text(json.dumps({
+            "type": "error",
+            "content": f"Session ID '{session_id}' is reserved",
+        }))
+        await websocket.close(code=4003, reason="Reserved session ID")
+        return
 
     try:
         while True:

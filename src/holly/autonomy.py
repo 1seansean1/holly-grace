@@ -68,7 +68,7 @@ def submit_task(
 ) -> str:
     """Submit a task to Holly's autonomous queue.  Returns task_id."""
     task = {
-        "id": str(uuid.uuid4())[:8],
+        "id": uuid.uuid4().hex[:12],
         "objective": objective,
         "priority": priority,
         "type": task_type,
@@ -107,13 +107,14 @@ def get_failed_count() -> int:
 def _count_by_outcome(outcome: str) -> int:
     """Count audit log entries by outcome."""
     import psycopg
+    from psycopg.rows import dict_row
     try:
-        with psycopg.connect(_get_pg_dsn(), autocommit=True) as conn:
+        with psycopg.connect(_get_pg_dsn(), autocommit=True, row_factory=dict_row) as conn:
             row = conn.execute(
                 "SELECT count(*) AS cnt FROM holly_autonomy_audit WHERE outcome = %s",
                 (outcome,),
             ).fetchone()
-            return row[0] if row else 0
+            return row["cnt"] if row else 0
     except Exception:
         return 0
 
@@ -153,7 +154,7 @@ def _update_status(status: str, detail: str = "") -> None:
             "updated_at": datetime.now(timezone.utc).isoformat(),
         })
     except Exception:
-        pass  # Non-critical
+        logger.debug("Failed to publish autonomy status to Redis")
 
 
 def get_autonomy_status() -> dict:
@@ -192,10 +193,7 @@ def get_autonomy_status() -> dict:
 def _get_pg_dsn() -> str:
     return os.environ.get(
         "DATABASE_URL",
-        os.environ.get(
-            "POSTGRES_DSN",
-            "postgresql://postgres:postgres@localhost:5434/ecom_agents",
-        ),
+        "postgresql://holly:holly_dev_password@localhost:5434/holly_grace",
     )
 
 

@@ -42,3 +42,15 @@ chat-ui/*.ps1
 # OS
 NUL
 nul
+
+# Temp data artifacts
+authored_predicate_results.json
+ws_data.json
+%SystemDrive%/
+
+# Dev utility scripts (contain tokens or are one-off)
+run_im_goals.sh
+rerun_failed.sh
+run_authored_predicates.py
+render_lighthouse_summary.py
+scripts/

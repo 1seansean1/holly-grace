@@ -112,6 +112,18 @@ def seed_shopify_analytics() -> None:
         env_allow=["SHOPIFY_STORE", "SHOPIFY_ACCESS_TOKEN"],
     )
 
+def seed_phone_control() -> None:
+    """Register the phone-control MCP server (22 ADB-based phone tools)."""
+    _seed_simple_mcp(
+        server_id="phone-control",
+        display_name="Phone Control",
+        description="Android phone control via ADB — status, shell, unlock, SMS, screenshots, calls, file transfer, EC2 relay",
+        module="src.mcp.servers.phone_control",
+        env_allow=["ADB_PATH", "ANDROID_WIFI_IP", "ANDROID_PIN",
+                    "EC2_RELAY_PUBLIC_IP", "EC2_RELAY_USER", "EC2_RELAY_KEY"],
+    )
+
+
 def seed_github_writer() -> None:
     """Register the github-writer MCP server and sync its tools.
 

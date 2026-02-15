@@ -76,6 +76,32 @@ _SHOPIFY_ANALYTICS_TOOLS = [
     "mcp_shopify_analytics_customer_segments",
 ]
 
+# Phone Control MCP tool IDs — Android device control via ADB.
+_PHONE_CONTROL_TOOLS = [
+    "mcp_phone_control_phone_status",
+    "mcp_phone_control_phone_shell",
+    "mcp_phone_control_phone_unlock",
+    "mcp_phone_control_phone_lock",
+    "mcp_phone_control_phone_wake",
+    "mcp_phone_control_phone_screenshot",
+    "mcp_phone_control_phone_sms",
+    "mcp_phone_control_phone_send_sms",
+    "mcp_phone_control_phone_notifications",
+    "mcp_phone_control_phone_apps",
+    "mcp_phone_control_phone_open_url",
+    "mcp_phone_control_phone_call",
+    "mcp_phone_control_phone_clipboard",
+    "mcp_phone_control_phone_push",
+    "mcp_phone_control_phone_pull",
+    "mcp_phone_control_phone_install",
+    "mcp_phone_control_phone_relay_start",
+    "mcp_phone_control_phone_relay_stop",
+    "mcp_phone_control_phone_relay_status",
+    "mcp_phone_control_phone_remote",
+    "mcp_phone_control_phone_remote_stop",
+    "mcp_phone_control_phone_remote_status",
+]
+
 CREW_AGENTS: dict[str, CrewAgent] = {}
 
 
@@ -423,7 +449,7 @@ _register(CrewAgent(
     display_name="System Engineer",
     role="Automated system documentation scanning and 100% documentation currency.",
     model="gpt-4o",
-    tools=[*_GITHUB_READER_TOOLS, *_GITHUB_WRITER_TOOLS, *_AWS_ECS_TOOLS],
+    tools=[*_GITHUB_READER_TOOLS, *_GITHUB_WRITER_TOOLS, *_AWS_ECS_TOOLS, *_PHONE_CONTROL_TOOLS],
     system_prompt="""\
 You are the System Engineer on Holly Grace's Construction Crew. Your job is to \
 keep 100%% of system documentation current through automated, non-invasive \

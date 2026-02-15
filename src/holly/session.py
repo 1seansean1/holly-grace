@@ -76,6 +76,7 @@ def append_message(
     *,
     session_id: str | None = None,
     metadata: dict | None = None,
+    _retry: bool = True,
 ) -> int:
     """Append a message to the session. Returns new message count.
 
@@ -102,9 +103,11 @@ def append_message(
         ).fetchone()
 
     if row is None:
-        # Session doesn't exist yet — create and retry
+        if not _retry:
+            raise RuntimeError(f"Failed to create or find session {sid}")
+        # Session doesn't exist yet — create and retry once
         get_or_create_session(sid)
-        return append_message(role, content, session_id=sid, metadata=metadata)
+        return append_message(role, content, session_id=sid, metadata=metadata, _retry=False)
 
     count = row["message_count"]
 
@@ -116,35 +119,43 @@ def append_message(
 
 
 def _compact_session(session_id: str) -> None:
-    """Compact a session by keeping only the most recent messages."""
-    with _get_conn() as conn:
+    """Compact a session by keeping only the most recent messages.
+
+    Uses a single connection with FOR UPDATE lock to prevent messages
+    appended between read and write from being silently dropped.
+    """
+    conn = psycopg.connect(_DB_URL, autocommit=False, row_factory=dict_row)
+    try:
         row = conn.execute(
-            "SELECT messages FROM holly_sessions WHERE session_id = %s",
+            "SELECT messages FROM holly_sessions WHERE session_id = %s FOR UPDATE",
             (session_id,),
         ).fetchone()
 
-    if not row:
-        return
+        if not row:
+            conn.rollback()
+            return
 
-    messages = row["messages"]
-    if isinstance(messages, str):
-        messages = json.loads(messages)
+        messages = row["messages"]
+        if isinstance(messages, str):
+            messages = json.loads(messages)
 
-    if len(messages) <= COMPACTION_KEEP:
-        return
+        if len(messages) <= COMPACTION_KEEP:
+            conn.rollback()
+            return
 
-    # Keep the most recent COMPACTION_KEEP messages
-    compacted = messages[-COMPACTION_KEEP:]
+        original_count = len(messages)
 
-    # Add a system message noting the compaction
-    summary_msg = {
-        "role": "system",
-        "content": f"[Session compacted: {len(messages) - COMPACTION_KEEP} older messages removed]",
-        "ts": datetime.now(timezone.utc).isoformat(),
-    }
-    compacted.insert(0, summary_msg)
+        # Keep the most recent COMPACTION_KEEP messages
+        compacted = messages[-COMPACTION_KEEP:]
 
-    with _get_conn() as conn:
+        # Add a system message noting the compaction
+        summary_msg = {
+            "role": "system",
+            "content": f"[Session compacted: {original_count - COMPACTION_KEEP} older messages removed]",
+            "ts": datetime.now(timezone.utc).isoformat(),
+        }
+        compacted.insert(0, summary_msg)
+
         conn.execute(
             """UPDATE holly_sessions
                SET messages = %s::JSONB,
@@ -153,11 +164,17 @@ def _compact_session(session_id: str) -> None:
                WHERE session_id = %s""",
             (json.dumps(compacted, default=str), len(compacted), session_id),
         )
+        conn.commit()
 
-    logger.info(
-        "Session %s compacted: %d → %d messages",
-        session_id, len(messages), len(compacted),
-    )
+        logger.info(
+            "Session %s compacted: %d → %d messages",
+            session_id, original_count, len(compacted),
+        )
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 
 def clear_session(session_id: str | None = None) -> None:

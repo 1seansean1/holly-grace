@@ -30,7 +30,6 @@ from src.holly.tools import HOLLY_TOOL_SCHEMAS, HOLLY_TOOLS
 
 logger = logging.getLogger(__name__)
 
-_ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 _MODEL = os.environ.get("HOLLY_MODEL", "claude-opus-4-6")
 _MAX_TOOL_ROUNDS = 5
 _MAX_TOKENS = 4096
@@ -46,7 +45,13 @@ _client: anthropic.Anthropic | None = None
 def _get_client() -> anthropic.Anthropic:
     global _client
     if _client is None:
-        _client = anthropic.Anthropic(api_key=_ANTHROPIC_API_KEY)
+        api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+        if not api_key:
+            raise RuntimeError(
+                "ANTHROPIC_API_KEY environment variable is not set — "
+                "Holly Grace cannot start without it"
+            )
+        _client = anthropic.Anthropic(api_key=api_key)
     return _client
 
 
@@ -84,7 +89,7 @@ def _build_notification_context(session_id: str = "default") -> str | None:
         try:
             mark_notification_surfaced(n["id"], session_id)
         except Exception:
-            pass
+            logger.warning("Failed to mark notification %s as surfaced", n.get("id"))
 
     return "\n".join(lines)
 
@@ -201,14 +206,15 @@ def handle_message(
 
     # 4. Inject notification context if any
     notification_ctx = _build_notification_context(session_id)
-    if notification_ctx:
+    if notification_ctx and len(messages) > 0:
         # Insert as a system-injected user message before the latest human message
-        messages.insert(-1, {
+        insert_idx = max(0, len(messages) - 1)
+        messages.insert(insert_idx, {
             "role": "user",
             "content": f"[SYSTEM CONTEXT — new events since last turn]\n{notification_ctx}",
         })
         # Need an assistant ack so the API alternation rule is satisfied
-        messages.insert(-1, {
+        messages.insert(insert_idx + 1, {
             "role": "assistant",
             "content": "Noted, I'll factor these into my response.",
         })

@@ -455,29 +455,21 @@ class TestManageRedisStreams(unittest.TestCase):
     @patch("src.bus.claim_stale")
     @patch("src.bus.pending_count")
     @patch("src.bus.ALL_STREAMS", ["holly:tower:events"])
+    @patch("src.bus._TRIM_POLICIES", {"holly:tower:events": 5000})
     def test_trim_with_valid_stream(self, mock_pending, mock_claim, mock_get_redis):
         """Trim action calls xtrim with the configured max length."""
-        import src.bus as bus_module
-        # The tool imports TRIM_LIMITS from src.bus; the actual name is _TRIM_POLICIES.
-        # Create the attribute so the lazy import inside the tool function succeeds.
-        bus_module.TRIM_LIMITS = {"holly:tower:events": 5000}
-        try:
-            from src.holly.tools import manage_redis_streams
+        from src.holly.tools import manage_redis_streams
 
-            mock_redis = MagicMock()
-            mock_get_redis.return_value = mock_redis
+        mock_redis = MagicMock()
+        mock_get_redis.return_value = mock_redis
 
-            result = manage_redis_streams("trim", stream="holly:tower:events")
+        result = manage_redis_streams("trim", stream="holly:tower:events")
 
-            mock_redis.xtrim.assert_called_once_with(
-                "holly:tower:events", maxlen=5000, approximate=True,
-            )
-            self.assertEqual(result["stream"], "holly:tower:events")
-            self.assertEqual(result["trimmed_to"], 5000)
-        finally:
-            # Clean up the temporary attribute
-            if hasattr(bus_module, "TRIM_LIMITS"):
-                del bus_module.TRIM_LIMITS
+        mock_redis.xtrim.assert_called_once_with(
+            "holly:tower:events", maxlen=5000, approximate=True,
+        )
+        self.assertEqual(result["stream"], "holly:tower:events")
+        self.assertEqual(result["trimmed_to"], 5000)
 
     @patch("src.bus.claim_stale")
     @patch("src.bus.pending_count")
