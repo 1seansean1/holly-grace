@@ -1,0 +1,350 @@
+# Holly Grace — Artifact Genealogy & Derivation Graph
+
+**Generated:** 17 February 2026
+**Purpose:** Complete lineage of every artifact in the Holly Grace codebase. This document traces how the project was actually built — from first literature review through to the execution loop that produces code. Nothing in the repo exists without a derivation chain back to a source.
+
+---
+
+## 1  The Mega Graph
+
+Every node is an artifact that exists (or existed as a research phase). Every edge is a derivation relationship: the target was produced *from* the source. Color coding: red = external research, blue = theory/monograph, green = architecture, orange = specifications, purple = process/governance, gray = execution outputs.
+
+```mermaid
+graph TD
+    %% ═══════════════════════════════════════════
+    %% PHASE α: RESEARCH & THEORY
+    %% ═══════════════════════════════════════════
+
+    subgraph ALPHA["Phase α — Research & Theory"]
+        direction TB
+        LIT["Literature Review<br/>(62 sources: Landauer, Bennett,<br/>Zurek, Baez, Friston, Anthropic...)"]
+        ISO["ISO Sweep<br/>(42010, 25010,<br/>15288, 12207)"]
+        SPX["SpaceX Model<br/>(responsible-engineer,<br/>SIL stratification)"]
+        OAI["OpenAI Methodology<br/>(eval-driven dev,<br/>staged rollouts)"]
+        ANTH["Anthropic Safety<br/>(constitutional AI,<br/>defense-in-depth)"]
+        FAIL["Failure Research<br/>(41-87% multi-agent failure,<br/>FMEA/FTA)"]
+        FIT["Fitness Functions<br/>Research"]
+        MONO["Monograph v2.0<br/>(289 pp, Allen 2026)<br/>Informational Monism,<br/>Morphogenetic Agency,<br/>Goal-Spec Engineering"]
+
+        LIT --> MONO
+    end
+
+    style ALPHA fill:#fef2f2,stroke:#dc2626
+
+    %% ═══════════════════════════════════════════
+    %% PHASE β: ARCHITECTURE
+    %% ═══════════════════════════════════════════
+
+    subgraph BETA["Phase β — Architecture"]
+        direction TB
+        SADTOOL["Custom SAD Iteration Tool<br/>(rapid mermaid generation<br/>+ validation pipeline)"]
+        SAD["SAD v0.1.0.2<br/>(System Architecture Document)<br/>Mermaid flowchart:<br/>L0-L5, 40+ components"]
+        RTD["RTD v0.1.0.2<br/>(Repository Tree Document)<br/>Mermaid tree:<br/>deploy/, holly/, console/,<br/>tests/, docs/"]
+        REPOTREE["repo-tree.md<br/>(Flat file listing)"]
+    end
+
+    style BETA fill:#eff6ff,stroke:#2563eb
+
+    %% ═══════════════════════════════════════════
+    %% PHASE γ: SPECIFICATIONS
+    %% ═══════════════════════════════════════════
+
+    subgraph GAMMA["Phase γ — Specifications"]
+        direction TB
+        ICD["ICD v0.1<br/>(49 interface contracts)<br/>Schema, error, latency,<br/>backpressure, redaction"]
+        CBS["Component Behavior Specs<br/>(SIL-3 state machines)<br/>Kernel, Sandbox, Egress"]
+        GHS["Goal Hierarchy<br/>Formal Spec<br/>(7-level hierarchy,<br/>L0-L6 predicates,<br/>3 theorems)"]
+        SIL["SIL Classification<br/>Matrix v1.0<br/>(51 components,<br/>SIL-1/2/3)"]
+        DEV["Dev Environment<br/>Spec v1.0<br/>(toolchain, CI,<br/>branch strategy)"]
+        MGE["Monograph Glossary<br/>Extract<br/>(60+ symbols,<br/>theory↔impl mapping)"]
+        DM["Design Methodology<br/>v1.0 (.docx)"]
+    end
+
+    style GAMMA fill:#f0fdf4,stroke:#16a34a
+
+    %% ═══════════════════════════════════════════
+    %% PHASE δ: PROCESS & GOVERNANCE
+    %% ═══════════════════════════════════════════
+
+    subgraph DELTA["Phase δ — Process & Governance"]
+        direction TB
+        README["README.md<br/>(Meta Procedure 14-step,<br/>Task Derivation Protocol,<br/>Designer's Diary)"]
+        TM["Task Manifest v2<br/>(583 tasks, 15 slices,<br/>86 roadmap steps)"]
+        DPG["Development Procedure<br/>Graph v1.0<br/>(P0-P11 execution loop)"]
+        TGS["Test Governance<br/>Spec v1.0<br/>(65 controls, falsification-first,<br/>maturity gates)"]
+        AUDIT["END_TO_END_AUDIT<br/>CHECKLIST<br/>(12-stage, P0-P11,<br/>4 release gates)"]
+    end
+
+    style DELTA fill:#fdf4ff,stroke:#9333ea
+
+    %% ═══════════════════════════════════════════
+    %% PHASE ε: EXECUTION OUTPUTS (future)
+    %% ═══════════════════════════════════════════
+
+    subgraph EPSILON["Phase ε — Execution Outputs (Slice 1+)"]
+        direction TB
+        AYML["architecture.yaml"]
+        AREG["ArchitectureRegistry"]
+        DECO["Decorator Registry<br/>(@kernel_boundary,<br/>@tenant_scoped, ...)"]
+        AST["AST Scanner"]
+        KCTX["KernelContext"]
+        K18["K1-K8 Gates"]
+        TLA["TLA+ Specs"]
+        TESTS["Test Suite"]
+        TRACE["trace_matrix.csv"]
+        GATE["gate_assessment.csv"]
+        CODE["holly/ source tree"]
+    end
+
+    style EPSILON fill:#f9fafb,stroke:#6b7280
+
+    %% ═══════════════════════════════════════════
+    %% DERIVATION EDGES
+    %% ═══════════════════════════════════════════
+
+    %% Phase α internal
+    ISO --> DM
+    SPX --> DM
+    OAI --> DM
+    ANTH --> DM
+    FAIL --> DM
+    FIT --> DM
+
+    %% Phase α → β (Theory → Architecture)
+    MONO --> SAD
+    MONO --> MGE
+    DM --> SADTOOL
+    SADTOOL --> SAD
+    SAD --> RTD
+    SAD --> REPOTREE
+
+    %% Phase α → γ (Research → Specs)
+    MONO --> GHS
+    MONO --> CBS
+    SPX --> SIL
+    FAIL --> SIL
+    ISO --> DEV
+    OAI --> DEV
+    ANTH --> CBS
+
+    %% Phase β → γ (Architecture → Specs)
+    SAD --> ICD
+    SAD --> SIL
+    SAD --> CBS
+    SAD --> DEV
+    RTD --> DEV
+
+    %% Phase α+β → δ (Theory+Architecture → Process)
+    MONO --> README
+    DM --> README
+    SAD --> README
+    ISO --> README
+    SPX --> README
+    OAI --> README
+    ANTH --> README
+
+    %% Phase γ → δ (Specs → Process)
+    README --> TM
+    ICD --> TM
+    CBS --> TM
+    GHS --> TM
+    SIL --> TM
+    SAD --> TM
+
+    %% Task Manifest validation loop
+    TM -->|"validated against"| ICD
+    TM -->|"validated against"| CBS
+    TM -->|"validated against"| GHS
+
+    %% Procedure Graph derivation
+    TM --> DPG
+    SIL --> DPG
+    DEV --> DPG
+    ICD --> DPG
+    CBS --> DPG
+    GHS --> DPG
+    MGE --> DPG
+
+    %% Test Governance derivation
+    AUDIT --> TGS
+    SIL --> TGS
+    DPG --> TGS
+    MONO --> TGS
+
+    %% TGS feeds back into DPG
+    TGS --> DPG
+
+    %% Phase δ → ε (Process → Execution)
+    DPG --> AYML
+    DPG --> AREG
+    DPG --> DECO
+    DPG --> AST
+    DPG --> KCTX
+    DPG --> K18
+    DPG --> TLA
+    DPG --> TESTS
+    DPG --> CODE
+
+    %% Specs → Execution
+    SAD --> AYML
+    ICD --> CODE
+    CBS --> KCTX
+    CBS --> K18
+    CBS --> TLA
+    GHS --> CODE
+    SIL --> TLA
+    SIL --> TESTS
+    DEV --> CODE
+    MGE --> CODE
+    TGS --> TESTS
+    TGS --> TRACE
+    TGS --> GATE
+
+    %% Execution internal
+    AYML --> AREG
+    AREG --> DECO
+    DECO --> AST
+    KCTX --> K18
+    RTD --> CODE
+```
+
+---
+
+## 2  Phase Narrative
+
+### Phase α — Research & Theory (completed)
+
+The project began with a **literature review** spanning 62 academic sources (Landauer's erasure principle, Bennett's reversible computation, Zurek's quantum Darwinism, Baez's compositional frameworks, Friston's active inference, Anthropic's constitutional AI). This produced the **monograph** — 289 pages formalizing informational monism, channel theory, agency, goal-specification engineering, morphogenetic field theory, and the APS cascade.
+
+In parallel, **six research agents** swept industry practices:
+
+| Agent | Domain | Key Contribution |
+|-------|--------|-----------------|
+| ISO Sweep | 42010, 25010, 15288, 12207 | Traceability chain, verification process, quality model |
+| SpaceX | Responsible-engineer model | SIL stratification, HITL in CI, rapid iteration |
+| OpenAI | Eval-driven development | EDDOps (Phase K), property-based + adversarial suites |
+| Anthropic | Constitutional AI, defense-in-depth | Executable predicates (not documentation), 5-layer safety |
+| Failure Research | Multi-agent failure analysis | FMEA/FTA, 41–87% failure rates without structural safeguards |
+| Fitness Functions | Architecture enforcement | CI gates, continuous compliance, decorator registry |
+
+These six streams plus the monograph converged into the **Design Methodology v1.0** — the synthesis document that established all 14 meta-procedure steps.
+
+### Phase β — Architecture (completed)
+
+A **custom SAD iteration tool** was built for rapid mermaid diagram generation with structural validation. This tool produced the **SAD v0.1.0.2** (System Architecture Document) — a mermaid flowchart defining 40+ components across 6 layers (VPC/Cloud L0, Kernel L1, Core L2, Engine L3, Observability L4, Console L5) with data stores, sandbox, and egress.
+
+The SAD was then projected into the **RTD v0.1.0.2** (Repository Tree Document) — a mermaid tree diagram mapping every SAD component to a file path. The RTD plus SAD together define the structural contract that all code must conform to.
+
+### Phase γ — Specifications (completed)
+
+Seven specification documents were derived from the SAD, monograph, and research:
+
+| Document | Derived From | Content |
+|----------|-------------|---------|
+| **ICD v0.1** | SAD (40+ arrows → 49 contracts) | Schema, error codes, latency budgets, backpressure, tenant isolation, redaction per interface |
+| **Component Behavior Specs** | SAD (SIL-3 nodes) + Monograph (state machines) + Anthropic (defense-in-depth) | Formal state machines for Kernel, Sandbox, Egress |
+| **Goal Hierarchy Formal Spec** | Monograph (Ch 6–9) | 7-level hierarchy, L0–L6 predicates, 3 theorems, 4 APIs |
+| **SIL Classification Matrix** | SAD (51 components) + SpaceX (stratification) + Failure Research (consequence analysis) | SIL-1/2/3 per component, verification requirements |
+| **Dev Environment Spec** | SAD + RTD + ISO (process) + OpenAI (CI) | Toolchain, 10-stage CI, branch strategy, ADR template |
+| **Monograph Glossary Extract** | Monograph (289 pp) + SAD (implementation constructs) | 60+ symbols, bidirectional theory↔impl mapping |
+| **Design Methodology** | All 6 research agents | 14-step meta procedure, worked examples |
+
+The **Task Manifest** was then derived from the README's meta procedure applied to all 86 roadmap steps, producing 583 tasks. A validation pass against ICD, Behavior Specs, and Goal Hierarchy added 38 tasks and refined 47 acceptance criteria.
+
+### Phase δ — Process & Governance (completed)
+
+Three process documents govern execution:
+
+| Document | Derived From | Role |
+|----------|-------------|------|
+| **Development Procedure Graph** | Task Manifest + all γ specs + Monograph Glossary | Top-level execution loop (P0–P11) consumed by every dev cycle |
+| **Test Governance Spec** | END_TO_END_AUDIT_CHECKLIST + SIL Matrix + Procedure Graph | 65-control library, per-task test derivation, maturity gates |
+| **README** (Meta Procedure + Task Derivation Protocol) | Monograph + Design Methodology + SAD + all research | Entry point; contains 14-step MP, TDP, Designer's Diary |
+
+### Phase ε — Execution (current: pre-Slice 1)
+
+All Phase ε artifacts are produced by executing the Development Procedure Graph. The first execution cycle (Slice 1, Phase A, Steps 1–3 + 3a) will produce:
+
+- `architecture.yaml` (from SAD parser)
+- `ArchitectureRegistry` (Python singleton loading YAML)
+- Decorator registry (`@kernel_boundary`, `@tenant_scoped`)
+- AST scanner (enforce decorators on boundaries)
+- Thin kernel slice (KernelContext + K1 gate) for spiral gate validation
+
+---
+
+## 3  Full Artifact Inventory
+
+| # | Artifact | Path | Phase | Size | Derived From |
+|---|----------|------|-------|------|-------------|
+| 1 | Monograph v2.0 | `(external PDF, 289 pp)` | α | 289 pp | Literature review (62 sources) |
+| 2 | Design Methodology v1.0 | `docs/Design_Methodology_v1.0.docx` | α | 22 KB | ISO + SpaceX + OpenAI + Anthropic + Failure + Fitness research |
+| 3 | SAD v0.1.0.2 | `docs/architecture/SAD_0.1.0.2.mermaid` | β | 11 KB | Monograph + custom SAD iteration tool |
+| 4 | RTD v0.1.0.2 | `docs/architecture/RTD_0.1.0.2.mermaid` | β | 10 KB | SAD |
+| 5 | repo-tree.md | `docs/architecture/repo-tree.md` | β | 32 KB | SAD + RTD |
+| 6 | ICD v0.1 | `docs/ICD_v0.1.md` | γ | 99 KB | SAD (40+ boundary arrows) |
+| 7 | Component Behavior Specs | `docs/Component_Behavior_Specs_SIL3.md` | γ | 88 KB | SAD (SIL-3 nodes) + Monograph + Anthropic |
+| 8 | Goal Hierarchy Formal Spec | `docs/Goal_Hierarchy_Formal_Spec.md` | γ | 56 KB | Monograph (Ch 6–9) |
+| 9 | SIL Classification Matrix | `docs/SIL_Classification_Matrix.md` | γ | 65 KB | SAD + SpaceX + Failure Research |
+| 10 | Dev Environment Spec | `docs/Dev_Environment_Spec.md` | γ | 39 KB | SAD + RTD + ISO + OpenAI |
+| 11 | Monograph Glossary Extract | `docs/Monograph_Glossary_Extract.md` | γ | 27 KB | Monograph (full 289 pp scan) |
+| 12 | README.md | `README.md` | δ | 30 KB | Monograph + DM + SAD + all research |
+| 13 | Task Manifest v2 | `docs/Task_Manifest.md` | δ | 98 KB | README (MP + TDP) + all γ specs |
+| 14 | Development Procedure Graph | `docs/Development_Procedure_Graph.md` | δ | 32 KB | Task Manifest + all γ specs + Glossary |
+| 15 | Test Governance Spec | `docs/Test_Governance_Spec.md` | δ | 25 KB | Audit Checklist + SIL Matrix + DPG |
+| 16 | Artifact Genealogy | `docs/architecture/Artifact_Genealogy.md` | δ | (this file) | All of the above |
+| — | END_TO_END_AUDIT_CHECKLIST | `(external, user desktop)` | α | 12 KB | Audit process research (Allen) |
+| — | **Total in-repo documentation** | | | **~612 KB** | |
+
+---
+
+## 4  Derivation Rules
+
+These rules govern how new artifacts enter the genealogy:
+
+1. **No orphan artifacts.** Every new file in the repo must have at least one derivation edge back to an existing artifact. If it doesn't, it's either undocumented (fix the genealogy) or unjustified (remove it).
+
+2. **Phase ordering is strict.** α → β → γ → δ → ε. An artifact in phase γ cannot be derived solely from phase ε outputs — that would be circular. Feedback loops (e.g., TGS ↔ DPG) are permitted within the same phase.
+
+3. **The monograph is root.** Every derivation chain, if followed far enough, terminates at either the monograph, one of the six research streams, or the audit checklist. These are the axioms of the system.
+
+4. **Architecture documents are structural.** SAD and RTD define the physical structure. All specifications (γ) must be consistent with SAD. If a specification implies a component not in the SAD, either update the SAD first or the specification is invalid.
+
+5. **The Development Procedure Graph is the only execution entry point.** No code is written except through the P0–P11 cycle. The DPG consumes all other documents; no other document directly produces code.
+
+---
+
+## 5  How This Was Actually Built (Chronological)
+
+```
+2026-02-10  Monograph v2.0 finalized (289 pp)
+2026-02-17  06:00  Six research agents launched (ISO, SpaceX, OpenAI, Anthropic, Failure, Fitness)
+2026-02-17  08:00  Research synthesis → Design Methodology v1.0
+2026-02-17  09:00  Custom SAD iteration tool built
+2026-02-17  10:00  SAD v0.1.0.2 generated (6 iterations)
+2026-02-17  10:30  RTD v0.1.0.2 projected from SAD
+2026-02-17  11:00  README.md written (Meta Procedure, Task Derivation Protocol)
+2026-02-17  12:00  Three parallel spec agents launched:
+                     Agent 1: ICD v0.1 (49 interfaces from SAD arrows)
+                     Agent 2: Component Behavior Specs (SIL-3 state machines)
+                     Agent 3: Goal Hierarchy Formal Spec (from monograph Ch 6-9)
+2026-02-17  14:00  Task Manifest v1 generated (545 tasks from MP × 86 steps)
+2026-02-17  15:00  Validation agent: Task Manifest vs ICD + Behavior Specs + Goal Hierarchy
+                     → +38 tasks, +47 refined acceptance criteria → Task Manifest v2 (583 tasks)
+2026-02-17  16:00  Designer's Diary Entries #1 and #2 written
+2026-02-17  17:00  SIL Classification Matrix generated (51 components)
+2026-02-17  18:00  Dev Environment Spec generated
+2026-02-17  19:00  Monograph Glossary Extract — full 289-page scan begun
+2026-02-17  21:00  Monograph Glossary Extract completed (60+ symbols mapped)
+2026-02-17  22:00  Development Procedure Graph v1.0 written (P0-P11)
+2026-02-17  23:00  END_TO_END_AUDIT_CHECKLIST analyzed
+                   Test Governance Spec v1.0 written (65 controls)
+                   Development Procedure Graph enriched with test governance hooks
+                   README updated with procedure graph prominence
+2026-02-17  23:30  Artifact Genealogy graph generated (this document)
+                   ──── Phase δ complete. Ready for Phase ε (Slice 1). ────
+```
+
+---
+
+*This document is the map of the map. Every artifact in Holly Grace traces through this graph back to the monograph, the six research streams, or the audit checklist. No artifact exists without provenance.*

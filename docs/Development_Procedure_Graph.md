@@ -1,7 +1,59 @@
-# Holly Grace — Development Procedure Graph v1.0
+# Holly Grace — Development Procedure Graph v1.1
 
 **Generated:** 17 February 2026
+**Revised:** 17 February 2026
 **Purpose:** Top-level executable procedure governing all Holly Grace development. This is the meta-process: every development cycle (human or AI agent) executes this graph. The graph is iterative — it loops per task batch within a slice, and per slice across the 15-slice spiral.
+
+---
+
+## 0  Genealogy Preamble — How This Procedure Came to Exist
+
+This execution loop (P0–P11) is not the starting point. It is Phase δ in a five-phase derivation chain. The full lineage is documented in [`docs/architecture/Artifact_Genealogy.md`](architecture/Artifact_Genealogy.md); what follows is the causal summary.
+
+### Phase α — Research & Theory
+
+The project began with a systematic literature review (62 sources spanning information theory, morphogenetic field theory, agency formalisms, multi-agent systems, and safety engineering) and parallel industry sweeps (ISO 42010/25010/15288/12207, SpaceX responsible-engineer model, OpenAI eval-driven development, Anthropic constitutional AI, failure analysis research). These inputs were synthesized into:
+
+> **Allen, S. P. (2026).** *Informational Monism, Morphogenetic Agency, and Goal-Specification Engineering: A Unified Framework.* v2.0, 289 pp.
+
+The monograph provides the formal foundations: channel theory microdynamics, agency rank, cognitive light cones, goal codimension, multi-agent feasibility, steering operators, infeasibility residuals, morphogenetic field dynamics, and the APS cascade. Every implementation construct in Holly traces back to a monograph definition via the [`Monograph_Glossary_Extract.md`](Monograph_Glossary_Extract.md).
+
+### Phase β — Architecture
+
+A custom SAD iteration tool was developed for rapid mermaid-based architecture generation and validation. Using the monograph as the specification source, this tool produced:
+
+- **SAD v0.1.0.2** — System Architecture Document (L0–L5, 40+ components, all boundary crossings)
+- **RTD v0.1.0.2** — Repository Tree Document (target file structure)
+- **repo-tree.md** — Flat file listing for scaffold generation
+
+The SAD is the single source of truth for component topology. The RTD is the single source of truth for file placement.
+
+### Phase γ — Specifications
+
+From the SAD and monograph, five specification documents were derived:
+
+1. **ICD v0.1** — 49 interface contracts for every boundary crossing in the SAD
+2. **Component Behavior Specs (SIL-3)** — Formal state machines for Kernel, Sandbox, Egress
+3. **Goal Hierarchy Formal Spec** — Executable predicate definitions for L0–L6
+4. **SIL Classification Matrix** — Criticality assignments for every component
+5. **Dev Environment Spec** — Toolchain, CI pipeline, and infrastructure requirements
+
+Each specification inherits its authority from a monograph concept and an architecture decision.
+
+### Phase δ — Process & Governance
+
+From the specifications, research outputs, and the audit methodology (END_TO_END_AUDIT_CHECKLIST), four governance documents were derived:
+
+1. **Design Methodology v1.0** — 14-step meta procedure (ISO + SpaceX + OpenAI + Anthropic synthesis)
+2. **Task Manifest** — 583 tasks across 15 spiral slices, derived by applying the meta procedure to the SAD
+3. **Test Governance Spec** — 65-control library, falsification-first protocol, maturity gates
+4. **This document** — Development Procedure Graph, the executable loop
+
+### Phase ε — Execution
+
+Phase ε is the loop defined below. It consumes everything produced in α–δ and produces code, tests, evidence, and audit artifacts. When the loop completes all 15 slices, it produces a release safety case.
+
+**Key invariant:** No artifact in this codebase exists without a derivation chain traceable through these five phases back to a monograph concept or a research finding. The Artifact Genealogy mega graph enforces this structurally.
 
 ---
 
