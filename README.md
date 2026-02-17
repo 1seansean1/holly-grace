@@ -24,6 +24,27 @@ Holly instantiates this theory as a three-layer stack. **Kernel (L1)** is an in-
 
 The build methodology synthesizes ISO systems-engineering standards (42010, 25010, 15288/12207), safety-critical practices (SIL-based rigor mapping, FMEA/FTA, formal verification), and operational philosophies drawn from SpaceX (responsible-engineer ownership, rapid build-test-build, HITL in CI), OpenAI (eval-driven development, staged rollouts, feature flags), and Anthropic (constitutional AI as executable specification, defense-in-depth safety). The core discipline is architecture-as-code: the SAD is machine-parsed into `architecture.yaml`, which drives a decorator registry (`@kernel_boundary`, `@tenant_scoped`, etc.) that stamps every module with its architectural contract. AST scanners block merges when decorators are missing or boundary crossings violate the ICD. Eval-driven development (EDDOps) governs the agent layer — property-based tests and adversarial eval suites gate every prompt and constitution change, treating behavioral specs as first-class versioned artifacts. The traceable chain runs: stakeholder concern → requirement → architecture decision → decorated code → automated test → deployment proof, enforced by fitness functions on every commit.
 
+### Meta Procedure
+
+| # | Step | Do | Produces | Driver |
+|---|---|---|---|---|
+| 1 | Ontological Foundation | Ground every concept in Allen (2026) formal definitions | Glossary, traceability index | Monograph |
+| 2 | Architecture Description | Adopt ISO 42010 — stakeholder concerns → viewpoints → views | Viewpoint catalog, correspondence rules | ISO sweep |
+| 3 | Quality Model | Adopt ISO 25010 — every decision cites a quality attribute | Quality attribute catalog, decision records | ISO sweep |
+| 4 | Lifecycle Processes | Adopt ISO 15288/12207 — define verification method per requirement | Process tailoring doc, verification assignments | ISO sweep |
+| 5 | Criticality Classification | Assign SIL-1 → SIL-3 per component by failure consequence | SIL matrix, verification requirements | SpaceX model |
+| 6 | Failure Analysis (FMEA) | Enumerate every failure mode, assess severity, map mitigations | FMEA worksheets, residual risk register | Failure research |
+| 7 | Formal Specification | TLA+ model-check kernel state machine + sandbox isolation | TLA+ specs, model-check results, assumption register | Failure research |
+| 8 | Architecture-as-Code | SAD → YAML → decorator registry → AST scanner → CI gate | `architecture.yaml`, decorator registry, AST scanner | Fitness functions |
+| 9 | Traceable Chain | Enforce concern → requirement → decision → code → test → proof | Living RTM, CI gate on broken links | ISO 15288 |
+| 10 | EDDOps | Evals as source of truth; property-based + adversarial suites in CI | Eval framework, behavioral suites, eval CI stage | OpenAI methodology |
+| 11 | Constitutional AI | Celestial L0–L4 as executable predicates, not documentation | Predicate functions, constitution gate in CI | Anthropic safety |
+| 12 | Defense-in-Depth | Five independent safety layers: kernel, sandbox, egress, eval, HITL | Safety case docs, dissimilar verification channel | Anthropic safety |
+| 13 | Spiral Execution | Thin vertical slice first; phase gates block progression | Phase gate checklists, spiral gate report | ISO + SpaceX + OpenAI |
+| 14 | Staged Deployment | Feature flags → canary → progressive delivery → release safety case | Deployment pipeline, release safety case | OpenAI methodology |
+
+> Full methodology details: [`docs/Design_Methodology_v1.0.docx`](docs/Design_Methodology_v1.0.docx)
+
 ## Execution Model
 
 Phases follow a **spiral** cadence. Phase A steps 1–3 execute first, then a thin Kernel slice (B.15–B.16) validates the enforcement loop end-to-end before backfilling. Each phase ends with an explicit quality gate. Critical-path components (Kernel, Sandbox, Egress) carry **SIL-3 rigor** — formal specs, property-based tests, independent verification. Standard-path components carry **SIL-1**.
