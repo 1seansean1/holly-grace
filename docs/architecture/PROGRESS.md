@@ -4,7 +4,7 @@ _Generated: 2026-02-18_
 
 | Slice | Phase | Done | Total | Progress | Critical Path |
 |------:|-------|-----:|------:|---------:|---------------|
-| 1 | Phase A Spiral (Steps 1, 2, 3, 3a) | 9 | 39 | 23% [##........] | 9/12 |
+| 1 | Phase A Spiral (Steps 1, 2, 3, 3a) | 10 | 39 | 25% [##........] | 10/12 |
 | 2 | Phase A Backfill (Steps 4–11) | 0 | 39 | 0% [..........] | 0/10 |
 | 3 | Phase B: Failure Analysis & Kernel (Step | 0 | 62 | 0% [..........] | 0/19 |
 | 4 | Phase C: Storage Layer (Steps 22–26) | 0 | 23 | 0% [..........] | 0/7 |
@@ -19,7 +19,7 @@ _Generated: 2026-02-18_
 | 13 | Phase L: Config (Steps 70–72) | 0 | 12 | 0% [..........] | 0/4 |
 | 14 | Phase M: Console L5 (Steps 73–78) | 0 | 18 | 0% [..........] | 0/7 |
 | 15 | Phase N: Deploy & Ops (Steps 79–86) | 0 | 29 | 0% [..........] | 0/14 |
-| **Σ** | **All** | **9** | **442** | **2%** | |
+| **Σ** | **All** | **10** | **442** | **2%** | |
 
 ## Task Detail
 
@@ -60,7 +60,7 @@ _Generated: 2026-02-18_
 | 3a.5 | Confirm SIL-3 rigor on kernel in slice | pending | 0.5d | 3a.4 |  |
 | 3a.6 | Exercise ≥1 FMEA failure mode | pending | 0.5d | 3a.5 |  |
 | 3a.7 | Write minimal TLA+ spec for K1 | pending | 1.5d | 3a.6 |  |
-| 3a.8 | Validate full pipeline: YAML → registry → decorato | pending (crit) | 1d | 3.7, 3a.7 |  |
+| 3a.8 | Validate full pipeline: YAML → registry → decorato | done (crit) | 1d | 3.7, 3a.7 |  |
 | 3a.9 | Validate traceable chain for one requirement | pending | 0.5d | 3a.8 |  |
 | 3a.10 | Implement minimal K8 eval gate | pending (crit) | 1d | 3a.8, 3a.9 |  |
 | 3a.11 | Verify kernel layer activates independently | pending | 1d | 3a.10 |  |
@@ -243,8 +243,8 @@ _Generated: 2026-02-18_
 | 36.3 | FMEA: goal injection, Celestial override, codimens | pending | 0.5d | 36.2 |  |
 | 36.4 | Implement 7-level hierarchy + lexicographic gating | pending (crit) | 0.5d | 36.9, 36.3 |  |
 | 36.5 | Implement Celestial L0–L4 as executable predicates | pending (crit) | 0.5d | 36.4 |  |
-| 36.6 | Register, decorate per ICD-010 | pending | 0.5d |  |  |
-| 36.7 | Link | pending | 0.5d | 36.6 |  |
+| 36.6 | Register, decorate per ICD-010 | pending | 0.5d | 36.5 |  |
+| 36.7 | Link | pending | 0.5d |  |  |
 | 36.8 | Implement L0–L4 Predicate Functions | pending (crit) | 0.5d | 36.7, 33.4 |  |
 | 36.9 | Validate L0–L4 Predicates with Property-Based Test | pending (crit) | 0.5d | 36.8 |  |
 | 37.1 | Map to monograph agency rank, cognitive light cone | pending | 0.5d |  |  |

@@ -47,9 +47,9 @@ After completing:
 ## Current State
 
 - **Critical path:** 1.5→1.6→1.7→1.8→2.6→2.7→2.8→3.6→3.7→3a.8→3a.10→3a.12
-- **Done:** Tasks 1.5, 1.6, 1.7, 1.8, 2.6, 2.7, 2.8, 3.6, 3.7 (9 of 12)
-- **Next:** Task 3a.8 — Full pipeline validation
-- **Test count:** 263
+- **Done:** Tasks 1.5, 1.6, 1.7, 1.8, 2.6, 2.7, 2.8, 3.6, 3.7, 3a.8 (10 of 12)
+- **Next:** Task 3a.10 — Implement minimal K8 eval gate
+- **Test count:** 276
 - **Components:** 48
 - **Audit findings resolved:** F-001 through F-030
 

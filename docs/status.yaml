@@ -89,7 +89,10 @@ tasks:
   3a.5: pending
   3a.6: pending
   3a.7: pending
-  3a.8: pending
+  3a.8:
+    status: done
+    date: "2026-02-18"
+    note: "Full pipeline integration test: YAML → registry → decorator → K1 (13 tests)"
   3a.9: pending
   3a.10: pending
   3a.11: pending

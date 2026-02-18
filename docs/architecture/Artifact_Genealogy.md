@@ -97,7 +97,7 @@ graph TD
         GANTT["GANTT.mermaid\nGANTT_critical.mermaid"]
         PROG["PROGRESS.md"]
         STATYS["status.yaml"]
-        TESTS["Test Suite\n263 tests across\n13 test modules"]
+        TESTS["Test Suite\n276 tests across\n14 test modules"]
         CODE["holly/ source tree"]
     end
 
@@ -296,7 +296,7 @@ Phase ε execution has begun. The tooling foundation (Tasks 1.5-1.8) is complete
 
 The tracker pipeline now includes a mandatory rendering validation gate: generated Gantt charts are validated for undefined alias references, circular dependencies, unicode issues, and label truncation before being written to disk. This prevents silent rendering failures in mermaid.js viewers.
 
-263 unit tests across 13 test modules verify the complete extraction, tracking, registry, decorator, and kernel exception schema pipeline. The test harness covers SAD parsing, schema validation, architecture extraction, manifest parsing, dependency graph construction, Gantt generation, Gantt rendering validation, registry singleton lifecycle, component/boundary/ICD lookups, hot-reload with validation, core architectural decorators (property-based), kernel exceptions (SIL-3 state machines), schema registry validation, and K1 pipeline orchestration.
+276 unit tests across 14 test modules verify the complete extraction, tracking, registry, decorator, and kernel exception schema pipeline. The test harness covers SAD parsing, schema validation, architecture extraction, manifest parsing, dependency graph construction, Gantt generation, Gantt rendering validation, registry singleton lifecycle, component/boundary/ICD lookups, hot-reload with validation, core architectural decorators (property-based), kernel exceptions (SIL-3 state machines), schema registry validation, and K1 pipeline orchestration.
 
 Remaining Slice 1 critical path: `3.7 -> 3a.8 -> 3a.10 -> 3a.12` (ICD enforcement, pipeline validation, eval gate, spiral gate).
 
@@ -336,7 +336,7 @@ Remaining Slice 1 critical path: `3.7 -> 3a.8 -> 3a.10 -> 3a.12` (ICD enforcemen
 | 28 | PROGRESS.md | `docs/architecture/PROGRESS.md` | ε | 25 KB | Tracker + Dep Graph + status.yaml |
 | 29 | Architecture Registry | `holly/arch/registry.py` | ε | 9 KB | Schema + Extract (Tasks 2.6, 2.7, 2.8) |
 | 30 | Core Decorators | `holly/arch/decorators.py` | ε | 12 KB | Registry API (Task 3.6) |
-| 31 | Test Suite (263 tests) | `tests/unit/test_*.py` (13 modules) | ε | 55 KB | All ε modules + TGS |
+| 31 | Test Suite (276 tests) | `tests/unit/test_*.py` (13 modules) | ε | 55 KB | All ε modules + TGS |
 | — | END_TO_END_AUDIT_CHECKLIST | `(external, user desktop)` | α | 12 KB | Audit process research (Allen) |
 | — | **Total in-repo documentation + code** | | | **~750 KB** | |
 
@@ -433,7 +433,7 @@ These rules govern how new artifacts enter the genealogy:
                      holly/kernel/schema_registry.py — jsonschema>=4.20 validation registry
                      holly/kernel/k1.py — K1 orchestration layer
                      tests/unit/test_k1.py — 37 new tests covering exceptions, schema validation, K1 pipeline
-                     263 total tests across 13 test modules
+                     276 total tests across 14 test modules
                      External dependency added: jsonschema>=4.20
 2026-02-18  Artifact Genealogy updated with Phase ε Task 3.7 completion
 ```
