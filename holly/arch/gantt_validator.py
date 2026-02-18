@@ -10,6 +10,7 @@ silent rendering failures in mermaid.js:
 4. Label truncation leaving broken text
 5. Duplicate aliases
 6. Missing required header fields
+7. Multiple after references (mermaid only supports `after <single_id>`)
 """
 
 from __future__ import annotations
@@ -143,6 +144,14 @@ def validate_gantt(source: str) -> GanttValidationResult:
             after_str = after_match.group(1)
             dep_aliases = _AFTER_ALIAS.findall(after_str)
             current_alias = alias_match.group(1)
+            # Mermaid Gantt only supports `after <single_id>` — multiple
+            # IDs in a single after clause cause a parse crash.
+            if len(dep_aliases) > 1:
+                result.issues.append(GanttIssue(
+                    "error", i,
+                    f"Multiple after references ({', '.join(dep_aliases)}) - "
+                    f"mermaid only supports 'after <single_id>'",
+                ))
             for dep_alias in dep_aliases:
                 after_refs.append((i, dep_alias))
                 adjacency.setdefault(current_alias, set()).add(dep_alias)

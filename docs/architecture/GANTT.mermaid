@@ -18,7 +18,7 @@ gantt
     2.3 Document singleton/caching/thread-safety trade-offs :t2_3, after t2_2, 0.5d
     2.4 Assign SIL-2 :t2_4, after t2_3, 0.5d
     2.5 Enumerate failure modes :t2_5, after t2_4, 0.5d
-    2.6 Implement singleton loader :crit, t2_6, after t1_8, t2_5, 1d
+    2.6 Implement singleton loader :crit, t2_6, after t2_5, 1d
     2.7 Implement component/boundary/ICD lookups :crit, t2_7, after t2_6, 1d
     2.8 Implement hot-reload with validation :crit, t2_8, after t2_7, 1d
     2.9 Link lookups to YAML source entries :t2_9, after t2_8, 0.5d
@@ -27,7 +27,7 @@ gantt
     3.3 Document decorator pattern trade-offs :t3_3, after t3_2, 0.5d
     3.4 Assign SIL-2 :t3_4, after t3_3, 0.5d
     3.5 Enumerate failure modes :t3_5, after t3_4, 0.5d
-    3.6 Implement core decorators :crit, t3_6, after t2_8, t3_5, 1d
+    3.6 Implement core decorators :crit, t3_6, after t3_5, 1d
     3.7 Implement ICD contract enforcement :crit, t3_7, after t3_6, 1d
     3.8 Build AST scanner :t3_8, after t3_7, 1d
     3.9 Map decorators to test requirements :t3_9, after t3_8, 0.5d
@@ -39,18 +39,18 @@ gantt
     3a.5 Confirm SIL-3 rigor on kernel in slice :t3a_5, after t3a_4, 0.5d
     3a.6 Exercise ≥1 FMEA failure mode :t3a_6, after t3a_5, 0.5d
     3a.7 Write minimal TLA+ spec for K1 :t3a_7, after t3a_6, 1.5d
-    3a.8 Validate full pipeline - YAML -> registry -> :crit, t3a_8, after t3_7, t3a_7, 1d
+    3a.8 Validate full pipeline - YAML -> registry -> :crit, t3a_8, after t3a_7, 1d
     3a.9 Validate traceable chain for one requirement :t3a_9, after t3a_8, 0.5d
-    3a.10 Implement minimal K8 eval gate :crit, t3a_10, after t3a_8, t3a_9, 1d
+    3a.10 Implement minimal K8 eval gate :crit, t3a_10, after t3a_9, 1d
     3a.11 Verify kernel layer activates independently :t3a_11, after t3a_10, 1d
-    3a.12 Run gate, produce pass/fail report :crit, t3a_12, after t3a_10, t3a_11, 0.5d
+    3a.12 Run gate, produce pass/fail report :crit, t3a_12, after t3a_11, 0.5d
     section Slice 2 (0%)
     10.1 Define RTM schema :t10_1, 2026-02-17, 0.5d
-    10.2 Build RTM generator :crit, t10_2, after t9_2, t10_1, 0.5d
+    10.2 Build RTM generator :crit, t10_2, after t10_1, 0.5d
     10.3 Add gap detection :t10_3, after t10_2, 0.5d
     11.1 Integrate drift, scanner, fitness, RTM into unified :crit, t11_1, after t10_2, 0.5d
     11.2 Add staged canary for arch changes :t11_2, after t11_1, 0.5d
-    11.3 Define Phase A gate checklist :crit, t11_3, after t11_1, t11_2, 0.5d
+    11.3 Define Phase A gate checklist :crit, t11_3, after t11_2, 0.5d
     11.4 Implement ICD audit trail logging :t11_4, after t11_3, 0.5d
     4.1 Verify package names trace to monograph :t4_1, 2026-02-17, 0.5d
     4.2 Generate packages per 42010 viewpoint structure :t4_2, after t4_1, 0.5d
@@ -61,10 +61,10 @@ gantt
     5.2 Define ICD per 42010 boundary :t5_2, after t5_1, 0.5d
     5.3 Document contract-vs-protocol trade-off :t5_3, after t5_2, 0.5d
     5.4 Assign SIL per ICD based on connected components :t5_4, after t5_3, 0.5d
-    5.5 Implement ICD as Pydantic models :crit, t5_5, after t5_8, t5_4, 0.5d
+    5.5 Implement ICD as Pydantic models :crit, t5_5, after t5_4, 0.5d
     5.6 Register ICDs in architecture.yaml :crit, t5_6, after t5_5, 0.5d
     5.7 Link ICDs to SAD boundary crossings :t5_7, 2026-02-17, 0.5d
-    5.8 Build ICD Schema Registry :crit, t5_8, after t5_7, t3a_12, 0.5d
+    5.8 Build ICD Schema Registry :crit, t5_8, after t3a_12, 0.5d
     5.9 Implement ICD Validation Test Harness :t5_9, after t5_8, 0.5d
     5a.1 Identify stakeholder scenarios :t5a_1, 2026-02-17, 0.5d
     5a.2 Evaluate architecture against scenarios :t5a_2, after t5a_1, 0.5d
@@ -78,10 +78,10 @@ gantt
     7.3 Wire scanner into CI pipeline :t7_3, after t7_2, 0.5d
     8.1 Assign verification methods to arch contracts :t8_1, 2026-02-17, 0.5d
     8.2 Implement SIL-appropriate test levels :t8_2, after t8_1, 0.5d
-    8.3 Write contract fixture generator :crit, t8_3, after t7_2, t8_2, 0.5d
+    8.3 Write contract fixture generator :crit, t8_3, after t8_2, 0.5d
     8.4 Map tests to decorators and requirements :t8_4, after t8_3, 0.5d
     9.1 Derive fitness function parameters from ATAM :t9_1, 2026-02-17, 0.5d
-    9.2 Implement fitness functions :crit, t9_2, after t8_3, t9_1, 0.5d
+    9.2 Implement fitness functions :crit, t9_2, after t9_1, 0.5d
     9.3 Wire into CI as per-commit checks :t9_3, after t9_2, 0.5d
     9.4 Implement ICD-specific fitness functions :t9_4, after t9_3, 0.5d
     section Slice 3 (0%)
@@ -99,87 +99,87 @@ gantt
     14.2 TLA+ spec - sandbox isolation :t14_2, after t14_1, 1.5d
     14.3 TLA+ spec - egress filter pipeline :t14_3, after t14_2, 1.5d
     14.4 Document assumption register :t14_4, after t14_3, 1.5d
-    14.5 Implement formal state-machine validator :crit, t14_5, after t14_1, t14_4, 1.5d
+    14.5 Implement formal state-machine validator :crit, t14_5, after t14_4, 1.5d
     15.1 Map KernelContext to monograph boundary concepts :t15_1, 2026-02-17, 0.5d
     15.2 Confirm SIL-3 designation :t15_2, after t15_1, 0.5d
     15.3 Review FMEA mitigations for kernel context lifecycle :t15_3, after t15_2, 0.5d
-    15.4 Implement per TLA+ state machine spec :crit, t15_4, after t14_5, t15_3, 1.5d
+    15.4 Implement per TLA+ state machine spec :crit, t15_4, after t15_3, 1.5d
     15.5 Register in architecture.yaml, add decorator :t15_5, after t15_4, 1d
     15.6 Link to requirement and test :t15_6, after t15_5, 0.5d
     15.7 Verify independence from downstream layers :t15_7, after t15_6, 1d
     16.1 Map K1-K4 to monograph channel constraints :t16_1, 2026-02-17, 0.5d
     16.2 Review FMEA mitigations for K1-K4 :t16_2, after t16_1, 0.5d
-    16.3 Implement K1 schema validation per TLA+ :crit, t16_3, after t15_4, t16_2, 1.5d
+    16.3 Implement K1 schema validation per TLA+ :crit, t16_3, after t16_2, 1.5d
     16.4 Implement K2 permission gating per TLA+ :crit, t16_4, after t16_3, 1.5d
     16.5 Implement K3 bounds checking per TLA+ :crit, t16_5, after t16_4, 1.5d
     16.6 Implement K4 trace injection per TLA+ :crit, t16_6, after t16_5, 1.5d
     16.7 Register K1-K4 in YAML, apply decorators :t16_7, after t16_6, 1d
     16.8 Link each to requirement and test :t16_8, after t16_7, 0.5d
-    16.9 Verify K1-K4 Guard Condition Determinism :crit, t16_9, after t16_6, t16_8, 1.5d
+    16.9 Verify K1-K4 Guard Condition Determinism :crit, t16_9, after t16_8, 1.5d
     17.1 Map K5-K6 to monograph :t17_1, 2026-02-17, 0.5d
     17.2 Review FMEA mitigations :t17_2, after t17_1, 0.5d
-    17.3 Implement K5 idempotency (RFC 8785) per TLA+ :crit, t17_3, after t16_9, t17_2, 1.5d
+    17.3 Implement K5 idempotency (RFC 8785) per TLA+ :crit, t17_3, after t17_2, 1.5d
     17.4 Implement K6 audit WAL per TLA+ :crit, t17_4, after t17_3, 1.5d
     17.5 Register, decorate :t17_5, after t17_4, 1d
     17.6 Link to requirements and tests :t17_6, after t17_5, 0.5d
-    17.7 Verify K5-K6 Invariant Preservation :crit, t17_7, after t17_4, t17_6, 1.5d
+    17.7 Verify K5-K6 Invariant Preservation :crit, t17_7, after t17_6, 1.5d
     18.1 Map K7-K8 to monograph goal hierarchy :t18_1, 2026-02-17, 0.5d
     18.2 Review FMEA mitigations :t18_2, after t18_1, 0.5d
-    18.3 Implement K7 HITL gate per TLA+ :crit, t18_3, after t17_7, t18_2, 1.5d
+    18.3 Implement K7 HITL gate per TLA+ :crit, t18_3, after t18_2, 1.5d
     18.4 Implement K8 eval gate per TLA+ :crit, t18_4, after t18_3, 1.5d
     18.5 Define eval predicate interface :t18_5, after t18_4, 1d
     18.6 Verify K7+K8 as independent safety layers :t18_6, after t18_5, 1d
     18.7 Register, decorate :t18_7, after t18_6, 1d
     18.8 Link to requirements and tests :t18_8, after t18_7, 0.5d
-    18.9 Verify K7-K8 Failure Isolation :crit, t18_9, after t18_4, t18_8, 1.5d
+    18.9 Verify K7-K8 Failure Isolation :crit, t18_9, after t18_8, 1.5d
     19.1 Map exception hierarchy to monograph failure concepts :t19_1, 2026-02-17, 0.5d
     19.2 Inherit SIL-3 from kernel :t19_2, after t19_1, 0.5d
     19.3 Implement exception classes :t19_3, after t19_2, 1d
     19.4 Link to requirements :t19_4, after t19_3, 0.5d
     20.1 Design dissimilar channel from FMEA :t20_1, 2026-02-17, 0.5d
     20.2 Formally verify independence :t20_2, after t20_1, 1.5d
-    20.3 Implement dissimilar verification channel :crit, t20_3, after t18_9, t20_2, 1d
+    20.3 Implement dissimilar verification channel :crit, t20_3, after t20_2, 1d
     20.4 Link to requirement and test :t20_4, after t20_3, 0.5d
-    20.5 Verify Dissimilar Verifier State Machine :crit, t20_5, after t20_3, t20_4, 1.5d
+    20.5 Verify Dissimilar Verifier State Machine :crit, t20_5, after t20_4, 1.5d
     21.1 Assign verification methods per SIL-3 :t21_1, 2026-02-17, 0.5d
-    21.2 Execute SIL-3 verification :crit, t21_2, after t20_5, t21_1, 0.5d
+    21.2 Execute SIL-3 verification :crit, t21_2, after t21_1, 0.5d
     21.3 Run TLA+ model checker against all kernel specs :t21_3, after t21_2, 1.5d
     21.4 Validate RTM completeness for kernel :t21_4, after t21_3, 0.5d
     21.5 Independent review of kernel safety :t21_5, after t21_4, 1d
-    21.6 Define Phase B gate checklist :crit, t21_6, after t21_2, t21_5, 0.5d
+    21.6 Define Phase B gate checklist :crit, t21_6, after t21_5, 0.5d
     section Slice 4 (0%)
     22.1 Map storage concepts to monograph (memory tiers, :t22_1, 2026-02-17, 0.5d
     22.2 Document storage architecture trade-offs :t22_2, after t22_1, 0.5d
     22.3 Assign SIL-2 :t22_3, after t22_2, 0.5d
     22.4 FMEA - connection pool exhaustion, RLS bypass, :t22_4, after t22_3, 0.5d
-    22.5 Implement async pool, models, RLS, migrations :crit, t22_5, after t22_4, t21_6, 0.5d
+    22.5 Implement async pool, models, RLS, migrations :crit, t22_5, after t21_6, 0.5d
     22.6 Link to requirement and test :t22_6, after t22_5, 0.5d
-    22.7 Apply RLS per ICD Boundary :crit, t22_7, after t22_5, t22_6, 0.5d
+    22.7 Apply RLS per ICD Boundary :crit, t22_7, after t22_6, 0.5d
     23.1 Inherit SIL-2 :t23_1, 2026-02-17, 0.5d
     23.2 FMEA - orphan partition, failed archival, restore :t23_2, after t23_1, 0.5d
-    23.3 Implement time-based partitions, auto-create, S3 :crit, t23_3, after t22_7, t23_2, 0.5d
+    23.3 Implement time-based partitions, auto-create, S3 :crit, t23_3, after t23_2, 0.5d
     23.4 Link to requirement and test :t23_4, after t23_3, 0.5d
     24.1 Assign SIL-2 :t24_1, 2026-02-17, 0.5d
     24.2 FMEA - cache poisoning, pub/sub message loss, HA :t24_2, after t24_1, 0.5d
-    24.3 Implement pool, pub/sub, queues, cache, HA :crit, t24_3, after t23_3, t24_2, 0.5d
+    24.3 Implement pool, pub/sub, queues, cache, HA :crit, t24_3, after t24_2, 0.5d
     24.4 Link to requirement and test :t24_4, after t24_3, 0.5d
     25.1 Assign SIL-2 :t25_1, 2026-02-17, 0.5d
     25.2 FMEA - embedding drift, cross-tenant retrieval, :t25_2, after t25_1, 0.5d
-    25.3 Implement client, tenant-isolated collections, :crit, t25_3, after t24_3, t25_2, 0.5d
+    25.3 Implement client, tenant-isolated collections, :crit, t25_3, after t25_2, 0.5d
     25.4 Link to requirement and test :t25_4, after t25_3, 0.5d
     26.1 Assign SIL-2 verification methods :t26_1, 2026-02-17, 0.5d
-    26.2 Execute SIL-2 test suite :crit, t26_2, after t25_3, t26_1, 0.5d
+    26.2 Execute SIL-2 test suite :crit, t26_2, after t26_1, 0.5d
     26.3 Validate RTM completeness for storage :t26_3, after t26_2, 0.5d
-    26.4 Phase C gate checklist :crit, t26_4, after t26_2, t26_3, 0.5d
+    26.4 Phase C gate checklist :crit, t26_4, after t26_3, 0.5d
     section Slice 5 (0%)
     27.1 Map redaction to monograph channel filtering :t27_1, 2026-02-17, 0.5d
     27.2 Assign SIL-2 :t27_2, after t27_1, 0.5d
     27.3 FMEA - incomplete redaction, redaction bypass via :t27_3, after t27_2, 0.5d
-    27.4 Implement canonical redaction library :crit, t27_4, after t27_3, t26_4, 1d
+    27.4 Implement canonical redaction library :crit, t27_4, after t26_4, 1d
     27.5 Link to requirement and test :t27_5, after t27_4, 0.5d
     28.1 Assign SIL-2 :t28_1, 2026-02-17, 0.5d
     28.2 FMEA - sanitization bypass, injection via unicode, :t28_2, after t28_1, 0.5d
-    28.3 Implement input sanitization, output redaction, :crit, t28_3, after t27_4, t28_2, 1d
+    28.3 Implement input sanitization, output redaction, :crit, t28_3, after t28_2, 1d
     28.4 Link to requirement and test :t28_4, after t28_3, 0.5d
     29.1 Assign SIL-2 :t29_1, 2026-02-17, 0.5d
     29.2 FMEA - forbidden path bypass, incomplete code analysis :t29_2, after t29_1, 0.5d
@@ -187,15 +187,15 @@ gantt
     29.4 Link :t29_4, after t29_3, 0.5d
     30.1 Assign SIL-2 :t30_1, 2026-02-17, 0.5d
     30.2 FMEA - undetected secret pattern, false redaction :t30_2, after t30_1, 0.5d
-    30.3 Implement detect + redact in traces per ICD-v0.1 :crit, t30_3, after t28_3, t30_2, 1d
+    30.3 Implement detect + redact in traces per ICD-v0.1 :crit, t30_3, after t30_2, 1d
     30.4 Link :t30_4, after t30_3, 0.5d
     31.1 Map egress to monograph channel boundary :t31_1, 2026-02-17, 0.5d
     31.2 Assign SIL-3 :t31_2, after t31_1, 0.5d
     31.3 FMEA - allowlist circumvention, redaction failure, :t31_3, after t31_2, 0.5d
-    31.4 Implement per TLA+ egress spec :crit, t31_4, after t30_3, t31_3, 1.5d
+    31.4 Implement per TLA+ egress spec :crit, t31_4, after t31_3, 1.5d
     31.5 Verify egress as independent safety layer :crit, t31_5, after t31_4, 1d
     31.6 Link :t31_6, after t31_5, 0.5d
-    31.7 Verify Egress Filter Pipeline Guarantees :crit, t31_7, after t31_5, t31_6, 1.5d
+    31.7 Verify Egress Filter Pipeline Guarantees :crit, t31_7, after t31_6, 1.5d
     32.1 Assign SIL-2 :t32_1, 2026-02-17, 0.5d
     32.2 FMEA - key rotation failure, credential leak, vault :t32_2, after t32_1, 0.5d
     32.3 Implement KMS/Vault client, rotation, credential :t32_3, after t32_2, 1d
@@ -203,7 +203,7 @@ gantt
     33.1 Aggregate FMEA results for D.27-D.32 :crit, t33_1, after t31_7, 0.5d
     33.2 Build structured safety argument :crit, t33_2, after t33_1, 1d
     33.3 Link safety case to FMEA and test artifacts :t33_3, after t33_2, 0.5d
-    33.4 Phase D gate checklist :crit, t33_4, after t33_5, t33_3, 0.5d
+    33.4 Phase D gate checklist :crit, t33_4, after t33_3, 0.5d
     33.5 Integrate all 49 ICDs into Phase D Safety Case :crit, t33_5, after t33_2, 0.5d
     section Slice 6 (0%)
     34.1 Map conversation to monograph channel theory :t34_1, 2026-02-17, 0.5d
@@ -220,92 +220,92 @@ gantt
     36.1 Map to monograph goal predicate sets, codimension :t36_1, 2026-02-17, 0.5d
     36.2 Assign SIL-2 :t36_2, after t36_1, 0.5d
     36.3 FMEA - goal injection, Celestial override, :t36_3, after t36_2, 0.5d
-    36.4 Implement 7-level hierarchy + lexicographic gating :crit, t36_4, after t36_9, t36_3, 0.5d
+    36.4 Implement 7-level hierarchy + lexicographic gating :crit, t36_4, after t36_3, 0.5d
     36.5 Implement Celestial L0-L4 as executable predicates :crit, t36_5, after t36_4, 0.5d
     36.6 Register, decorate per ICD-010 :t36_6, 2026-02-17, 0.5d
     36.7 Link :t36_7, after t36_6, 0.5d
-    36.8 Implement L0-L4 Predicate Functions :crit, t36_8, after t36_7, t33_4, 0.5d
+    36.8 Implement L0-L4 Predicate Functions :crit, t36_8, after t33_4, 0.5d
     36.9 Validate L0-L4 Predicates with Property-Based Testing :crit, t36_9, after t36_8, 0.5d
     37.1 Map to monograph agency rank, cognitive light cone, :t37_1, 2026-02-17, 0.5d
     37.2 Assign SIL-2 :t37_2, after t37_1, 0.5d
     37.3 FMEA - wrong tier classification, Assembly Index :t37_3, after t37_2, 0.5d
-    37.4 Implement T0-T3 classification + Assembly Index per :crit, t37_4, after t36_5, t37_3, 0.5d
+    37.4 Implement T0-T3 classification + Assembly Index per :crit, t37_4, after t37_3, 0.5d
     37.5 Register, decorate per ICD-011 :t37_5, after t37_4, 0.5d
     37.6 Link :t37_6, after t37_5, 0.5d
-    37.7 Validate APS Assembly Index per Goal Hierarchy :crit, t37_7, after t37_4, t37_6, 0.5d
+    37.7 Validate APS Assembly Index per Goal Hierarchy :crit, t37_7, after t37_6, 0.5d
     38.1 Map to monograph steering operators, assignment :t38_1, 2026-02-17, 0.5d
     38.2 Assign SIL-2 :t38_2, after t38_1, 0.5d
     38.3 FMEA - stale topology, eigenspectrum blind spot, :t38_3, after t38_2, 0.5d
-    38.4 Implement spawn/steer/dissolve, contracts, :crit, t38_4, after t37_7, t38_3, 0.5d
+    38.4 Implement spawn/steer/dissolve, contracts, :crit, t38_4, after t38_3, 0.5d
     38.5 Register, decorate per ICD-012/015 :t38_5, after t38_4, 0.5d
     38.6 Link :t38_6, after t38_5, 0.5d
     38.7 Implement Eigenspectrum Monitor per Goal Hierarchy §3.2 :t38_7, after t38_6, 0.5d
-    38.8 Verify Steer Operations maintain Contract Satisfaction :crit, t38_8, after t38_4, t38_7, 0.5d
+    38.8 Verify Steer Operations maintain Contract Satisfaction :crit, t38_8, after t38_7, 0.5d
     39.1 Map to monograph K-scope crystallisation, memory :t39_1, 2026-02-17, 0.5d
     39.2 Assign SIL-2 :t39_2, after t39_1, 0.5d
     39.3 FMEA - cross-tenant memory leak, crystallisation :t39_3, after t39_2, 0.5d
-    39.4 Implement 3-tier - short (Redis via ICD-041), :crit, t39_4, after t38_8, t39_3, 0.5d
+    39.4 Implement 3-tier - short (Redis via ICD-041), :crit, t39_4, after t39_3, 0.5d
     39.5 Link :t39_5, after t39_4, 0.5d
     40.1 Assign SIL-2 verification methods :t40_1, 2026-02-17, 0.5d
-    40.2 Execute SIL-2 test suite :crit, t40_2, after t39_4, t40_1, 0.5d
+    40.2 Execute SIL-2 test suite :crit, t40_2, after t40_1, 0.5d
     40.3 Run all Core eval suites :crit, t40_3, after t40_2, 0.5d
     40.4 Validate RTM completeness for Core :t40_4, after t40_3, 0.5d
-    40.5 Phase E gate checklist :crit, t40_5, after t40_3, t40_4, 0.5d
+    40.5 Phase E gate checklist :crit, t40_5, after t40_4, 0.5d
     section Slice 7 (0%)
     41.1 Map to monograph channel composition, macro-channels :t41_1, 2026-02-17, 0.5d
     41.2 Assign SIL-2 :t41_2, after t41_1, 0.5d
     41.3 FMEA - lane starvation, policy deadlock, dispatcher :t41_3, after t41_2, 0.5d
-    41.4 Implement lane manager, policy engine, dispatchers :crit, t41_4, after t41_3, t40_5, 0.5d
+    41.4 Implement lane manager, policy engine, dispatchers :crit, t41_4, after t40_5, 0.5d
     41.5 Link :t41_5, after t41_4, 0.5d
     42.1 Map to monograph tool permission masks, channel :t42_1, 2026-02-17, 0.5d
     42.2 Assign SIL-2 :t42_2, after t42_1, 0.5d
     42.3 FMEA - permission escalation, tool introspection :t42_3, after t42_2, 0.5d
-    42.4 Implement registry per ICD-019/020, per-agent :crit, t42_4, after t41_4, t42_3, 0.5d
+    42.4 Implement registry per ICD-019/020, per-agent :crit, t42_4, after t42_3, 0.5d
     42.5 Link :t42_5, after t42_4, 0.5d
     43.1 Assign SIL-2 :t43_1, 2026-02-17, 0.5d
     43.2 FMEA per builtin - code (sandbox escape via gRPC :t43_2, after t43_1, 0.5d
-    43.3 Implement code (gRPC->sandbox per ICD-022), web :crit, t43_3, after t42_4, t43_2, 0.5d
+    43.3 Implement code (gRPC->sandbox per ICD-022), web :crit, t43_3, after t43_2, 0.5d
     43.4 Link :t43_4, after t43_3, 0.5d
     44.1 Map to monograph durable execution, compensation :t44_1, 2026-02-17, 0.5d
     44.2 Document saga vs orchestration trade-off :t44_2, after t44_1, 0.5d
     44.3 Assign SIL-2 :t44_3, after t44_2, 0.5d
     44.4 FMEA - saga partial failure, dead-letter overflow, :t44_4, after t44_3, 0.5d
-    44.5 Implement durable engine per ICD-021, saga, :crit, t44_5, after t43_3, t44_4, 0.5d
+    44.5 Implement durable engine per ICD-021, saga, :crit, t44_5, after t44_4, 0.5d
     44.6 Link :t44_6, after t44_5, 0.5d
     45.1 Assign SIL-2 verification methods :t45_1, 2026-02-17, 0.5d
-    45.2 Execute SIL-2 test suite :crit, t45_2, after t44_5, t45_1, 0.5d
+    45.2 Execute SIL-2 test suite :crit, t45_2, after t45_1, 0.5d
     45.3 Validate RTM completeness :t45_3, after t45_2, 0.5d
-    45.4 Phase F gate checklist :crit, t45_4, after t45_2, t45_3, 0.5d
+    45.4 Phase F gate checklist :crit, t45_4, after t45_3, 0.5d
     section Slice 8 (0%)
     46.1 Map to monograph Markov blanket isolation :t46_1, 2026-02-17, 0.5d
     46.2 Document minimal-image trade-offs per Behavior Spec §2 :t46_2, after t46_1, 0.5d
     46.3 Assign SIL-3 :t46_3, after t46_2, 0.5d
     46.4 FMEA per Behavior Spec §2 - image supply-chain :t46_4, after t46_3, 0.5d
-    46.5 Build minimal container - no network, no Holly deps :crit, t46_5, after t46_4, t45_4, 1d
+    46.5 Build minimal container - no network, no Holly deps :crit, t46_5, after t45_4, 1d
     46.6 Link :t46_6, after t46_5, 0.5d
     47.1 Inherit SIL-3 :t47_1, 2026-02-17, 0.5d
     47.2 FMEA per Behavior Spec §2 - proto deserialization :t47_2, after t47_1, 0.5d
-    47.3 Implement per TLA+ sandbox spec per Behavior Spec §2 :crit, t47_3, after t46_5, t47_2, 1.5d
+    47.3 Implement per TLA+ sandbox spec per Behavior Spec §2 :crit, t47_3, after t47_2, 1.5d
     47.4 Link :t47_4, after t47_3, 0.5d
-    47.5 Validate gRPC Proto Constraints per ICD-022 :crit, t47_5, after t47_3, t47_4, 1.5d
+    47.5 Validate gRPC Proto Constraints per ICD-022 :crit, t47_5, after t47_4, 1.5d
     48.1 Inherit SIL-3 :t48_1, 2026-02-17, 0.5d
     48.2 FMEA per Behavior Spec §2 - namespace leak, seccomp :t48_2, after t48_1, 0.5d
-    48.3 Implement per TLA+ isolation spec per Behavior Spec §2 :crit, t48_3, after t47_5, t48_2, 1.5d
+    48.3 Implement per TLA+ isolation spec per Behavior Spec §2 :crit, t48_3, after t48_2, 1.5d
     48.4 Verify isolation as independent safety layer per :t48_4, after t48_3, 1d
-    48.5 Verify Isolation Invariant Preservation per :crit, t48_5, after t48_3, t48_4, 1.5d
+    48.5 Verify Isolation Invariant Preservation per :crit, t48_5, after t48_4, 1.5d
     48.6 Link :t48_6, after t48_5, 0.5d
     49.1 Document gVisor vs Firecracker trade-off per :t49_1, 2026-02-17, 0.5d
     49.2 Inherit SIL-3 :t49_2, after t49_1, 0.5d
     49.3 FMEA per Behavior Spec §2 - runtime-specific escape :t49_3, after t49_2, 0.5d
-    49.4 Implement production runtime configs per Behavior :crit, t49_4, after t48_5, t49_3, 1d
+    49.4 Implement production runtime configs per Behavior :crit, t49_4, after t49_3, 1d
     49.5 Adversarial Runtime Escape Testing per Behavior :crit, t49_5, after t49_4, 1.5d
     49.6 Link :t49_6, after t49_5, 0.5d
     50.1 Assign SIL-3 verification methods per Behavior Spec §3 :t50_1, 2026-02-17, 0.5d
-    50.2 Execute SIL-3 test suite per Behavior Spec §2 :crit, t50_2, after t49_5, t50_1, 0.5d
+    50.2 Execute SIL-3 test suite per Behavior Spec §2 :crit, t50_2, after t50_1, 0.5d
     50.3 Run TLA+ model checker against sandbox spec per :crit, t50_3, after t50_2, 1.5d
     50.4 Independent review of sandbox safety per Behavior :t50_4, after t50_3, 1d
     50.5 Validate RTM completeness :t50_5, after t50_4, 0.5d
-    50.6 Phase G gate checklist :crit, t50_6, after t50_3, t50_5, 0.5d
+    50.6 Phase G gate checklist :crit, t50_6, after t50_5, 0.5d
     section Slice 9 (0%)
     51.1 Document middleware stack trade-offs :t51_1, 2026-02-17, 0.5d
     51.2 Assign SIL-2 :t51_2, 2026-02-17, 0.5d

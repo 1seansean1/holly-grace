@@ -73,12 +73,26 @@ gantt
     dateFormat YYYY-MM-DD
     section S1
     Task A :t1_1, 2026-01-01, 1d
-    Task B :t1_2, after t1_1, t999_99, 1d
+    Task B :t1_2, after t999_99, 1d
 """
         result = validate_gantt(source)
         assert not result.ok
         assert any("Undefined alias" in i.message and "t999_99" in i.message
                     for i in result.errors)
+
+    def test_multi_after_reference_is_error(self) -> None:
+        """Mermaid Gantt only supports `after <single_id>`, not multiple."""
+        source = """\
+gantt
+    dateFormat YYYY-MM-DD
+    section S1
+    Task A :t1_1, 2026-01-01, 1d
+    Task B :t1_2, 2026-01-01, 1d
+    Task C :t1_3, after t1_1, t1_2, 1d
+"""
+        result = validate_gantt(source)
+        assert not result.ok
+        assert any("Multiple after" in i.message for i in result.errors)
 
     def test_valid_after_references(self) -> None:
         result = validate_gantt(VALID_GANTT)

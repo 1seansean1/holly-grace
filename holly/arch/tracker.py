@@ -228,11 +228,12 @@ def generate_gantt(
                     f"    {label} :{status_tag}{task_alias}, {state.date_completed}, {duration}"
                 )
             elif dep_graph and dep_graph.has_deps(task.task_id):
-                dep_aliases = ", ".join(
-                    f"t{d.replace('.', '_')}" for d in dep_graph.deps_of(task.task_id)
-                )
+                # Mermaid Gantt only supports `after <single_id>`.
+                # Use the last dependency (latest-finishing in topo order).
+                deps = dep_graph.deps_of(task.task_id)
+                last_dep_alias = f"t{deps[-1].replace('.', '_')}"
                 lines.append(
-                    f"    {label} :{status_tag}{task_alias}, after {dep_aliases}, {duration}"
+                    f"    {label} :{status_tag}{task_alias}, after {last_dep_alias}, {duration}"
                 )
             else:
                 lines.append(
@@ -300,11 +301,10 @@ def generate_gantt_critical_only(
                     if d in emitted_ids
                 ]
                 if valid_deps:
-                    dep_aliases = ", ".join(
-                        f"t{d.replace('.', '_')}" for d in valid_deps
-                    )
+                    # Mermaid Gantt only supports `after <single_id>`.
+                    last_dep_alias = f"t{valid_deps[-1].replace('.', '_')}"
                     lines.append(
-                        f"    {label} :{status_tag}{task_alias}, after {dep_aliases}, {duration}"
+                        f"    {label} :{status_tag}{task_alias}, after {last_dep_alias}, {duration}"
                     )
                 else:
                     lines.append(
