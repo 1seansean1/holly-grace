@@ -1,7 +1,7 @@
 # Holly Grace — Test Governance Specification v1.0
 
 **Generated:** 17 February 2026
-**Source Authority:** END_TO_END_AUDIT_CHECKLIST.md (Allen, 2026), SIL Classification Matrix v1.0, Development Procedure Graph v1.0
+**Source Authority:** END_TO_END_AUDIT_CHECKLIST.md (Allen, 2026), SIL Classification Matrix v1.0, Development Procedure Graph v1.1
 **Purpose:** This document is the binding specification for how every test in Holly Grace is conceived, authored, traced, and validated. It is consumed by P1 (Task Derivation) and P3C (Test Authoring) of the Development Procedure Graph. No test may be written outside this governance framework. No task may be marked DONE unless its test governance obligations are discharged.
 
 ---

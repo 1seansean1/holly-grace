@@ -22,8 +22,8 @@ The monograph provides the formal foundations: channel theory microdynamics, age
 
 A custom SAD iteration tool was developed for rapid mermaid-based architecture generation and validation. Using the monograph as the specification source, this tool produced:
 
-- **SAD v0.1.0.2** — System Architecture Document (L0–L5, 40+ components, all boundary crossings)
-- **RTD v0.1.0.2** — Repository Tree Document (target file structure)
+- **SAD v0.1.0.5** — System Architecture Document (L0–L5, 45 components, all boundary crossings)
+- **RTD v0.1.0.4** — Repository Tree Document (target file structure)
 - **repo-tree.md** — Flat file listing for scaffold generation
 
 The SAD is the single source of truth for component topology. The RTD is the single source of truth for file placement.

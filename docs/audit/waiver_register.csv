@@ -1,0 +1,2 @@
+waiver_id,control_id,waiver_reason,compensating_controls,risk_acceptance,approved_by,date,expiry
+,,,,,,,(initialized — populate when any control deviations are accepted)
