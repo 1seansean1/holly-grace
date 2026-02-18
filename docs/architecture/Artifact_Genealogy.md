@@ -70,8 +70,8 @@ graph TD
         direction TB
         README["README.md\nMeta Procedure 14-step,\nTask Derivation Protocol,\nDesigners Diary"]
         TM["Task Manifest v2\n583 tasks, 15 slices,\n86 roadmap steps"]
-        DPG["Development Procedure\nGraph v1.0\nP0-P11 execution loop"]
-        TGS["Test Governance\nSpec v1.0\n65 controls, falsification-first,\nmaturity gates"]
+        DPG["Development Procedure\nGraph v1.1\nP0-P11 execution loop"]
+        TGS["Test Governance\nSpec v1.0\n62 controls, falsification-first,\nmaturity gates"]
         AUDIT["END_TO_END_AUDIT\nCHECKLIST\n12-stage, P0-P11,\n4 release gates"]
     end
 
@@ -279,8 +279,8 @@ All Phase ε artifacts are produced by executing the Development Procedure Graph
 |---|----------|------|-------|------|-------------|
 | 1 | Monograph v2.0 | `(external PDF, 289 pp)` | α | 289 pp | Literature review (62 sources) |
 | 2 | Design Methodology v1.0 | `docs/Design_Methodology_v1.0.docx` | α | 22 KB | ISO + SpaceX + OpenAI + Anthropic + Failure + Fitness research |
-| 3 | SAD v0.1.0.2 | `docs/architecture/SAD_0.1.0.2.mermaid` | β | 11 KB | Monograph + custom SAD iteration tool |
-| 4 | RTD v0.1.0.2 | `docs/architecture/RTD_0.1.0.2.mermaid` | β | 10 KB | SAD |
+| 3 | SAD v0.1.0.5 | `docs/architecture/SAD_0.1.0.5.mermaid` | β | 11 KB | Monograph + custom SAD iteration tool |
+| 4 | RTD v0.1.0.4 | `docs/architecture/RTD_0.1.0.4.mermaid` | β | 10 KB | SAD |
 | 5 | repo-tree.md | `docs/architecture/repo-tree.md` | β | 32 KB | SAD + RTD |
 | 6 | ICD v0.1 | `docs/ICD_v0.1.md` | γ | 99 KB | SAD (40+ boundary arrows) |
 | 7 | Component Behavior Specs | `docs/Component_Behavior_Specs_SIL3.md` | γ | 88 KB | SAD (SIL-3 nodes) + Monograph + Anthropic |
@@ -336,9 +336,9 @@ These rules govern how new artifacts enter the genealogy:
 2026-02-17  18:00  Dev Environment Spec generated
 2026-02-17  19:00  Monograph Glossary Extract — full 289-page scan begun
 2026-02-17  21:00  Monograph Glossary Extract completed (60+ symbols mapped)
-2026-02-17  22:00  Development Procedure Graph v1.0 written (P0-P11)
+2026-02-17  22:00  Development Procedure Graph v1.0 written (P0-P11), later bumped to v1.1
 2026-02-17  23:00  END_TO_END_AUDIT_CHECKLIST analyzed
-                   Test Governance Spec v1.0 written (65 controls)
+                   Test Governance Spec v1.0 written (62 controls)
                    Development Procedure Graph enriched with test governance hooks
                    README updated with procedure graph prominence
 2026-02-17  23:30  Artifact Genealogy graph generated (this document)

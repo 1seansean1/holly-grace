@@ -1003,7 +1003,7 @@ Check:
 
 - `docs/architecture.yaml` — Machine-parsed SAD
 - `docs/Interface_Control_Document_v0.1.md` — All 49 boundary contracts
-- `docs/Component_Behavior_Specs.md` — State machines for SIL-3 components
+- `docs/Component_Behavior_Specs_SIL3.md` — State machines for SIL-3 components
 - `docs/Goal_Hierarchy_Formal_Spec.md` — L0–L6 predicates, feasibility algorithms
 - `docs/glossary.md` — Ontological definitions (from Allen 2026)
 

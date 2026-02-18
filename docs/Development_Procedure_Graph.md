@@ -46,7 +46,7 @@ From the specifications, research outputs, and the audit methodology (END_TO_END
 
 1. **Design Methodology v1.0** — 14-step meta procedure (ISO + SpaceX + OpenAI + Anthropic synthesis)
 2. **Task Manifest** — 583 tasks across 15 spiral slices, derived by applying the meta procedure to the SAD
-3. **Test Governance Spec** — 65-control library, falsification-first protocol, maturity gates
+3. **Test Governance Spec** — 62-control library, falsification-first protocol, maturity gates
 4. **This document** — Development Procedure Graph, the executable loop
 
 ### Phase ε — Execution
@@ -111,8 +111,8 @@ P0.5  Load current slice state:
         - Enumerate tasks with status {pending, in_progress, completed, blocked}
         - Identify critical path tasks (from manifest's critical path annotations)
 P0.6  Load architecture state:
-        - Parse SAD_0.1.0.2.mermaid → current component inventory
-        - Parse RTD_0.1.0.2.mermaid → current file tree
+        - Parse SAD_0.1.0.5.mermaid → current component inventory
+        - Parse RTD_0.1.0.4.mermaid → current file tree
         - Diff against actual repo tree → detect drift
 P0.7  Load spec state:
         - ICD_v0.1.md → interface inventory (49 interfaces)
@@ -163,7 +163,7 @@ P1.6  For each selected task, extract from manifest:
         - SIL level → verification method set (from SIL Classification Matrix)
 P1.7  Test Governance Derivation (per Test_Governance_Spec.md §3):
   P1.7.1  Build control applicability matrix:
-           For each task, walk the 65-control library (SEC/TST/ARC/OPS/CQ/GOV).
+           For each task, walk the 62-control library (SEC/TST/ARC/OPS/CQ/GOV).
            A control is APPLICABLE when task.sil_level >= ctrl.sil_threshold
            AND ctrl.domain intersects task.affected_domains.
   P1.7.2  Derive test requirements per applicable control:
