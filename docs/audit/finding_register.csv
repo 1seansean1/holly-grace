@@ -1,0 +1,11 @@
+finding_id,run_id,checklist_item,severity,category,description,remediation,target_date,status,resolved_date,resolved_commit
+F-001,AGC-2026-02-17-001,§7.2,HIGH,version-ref,"README line 46 cites SAD v0.1.0.2 + RTD v0.1.0.2 (should be v0.1.0.5 + v0.1.0.4)","Update ASCII chain in README.md",2026-02-18,OPEN,,
+F-002,AGC-2026-02-17-001,"§7.2, §6.1",HIGH,version-ref,"Genealogy mermaid lines 41-42: SAD/RTD node labels cite v0.1.0.2","Update mermaid node labels in Artifact_Genealogy.md",2026-02-18,OPEN,,
+F-003,AGC-2026-02-17-001,§7.2,HIGH,version-ref,"Genealogy narrative lines 234, 236 cite SAD/RTD v0.1.0.2","Update narrative paragraphs in Artifact_Genealogy.md",2026-02-18,OPEN,,
+F-004,AGC-2026-02-17-001,"§6.1.4, §9.2.2",MEDIUM,phase-assignment,"DM phase: mermaid γ subgraph vs inventory table α","User decision: move DM to α in mermaid OR change inventory to γ",2026-02-24,OPEN,,
+F-005,AGC-2026-02-17-001,"§6.2.1, §7.3.8",MEDIUM,count-discrepancy,"N_nodes: §0 says 34 but mermaid count yields 35","Recount mermaid nodes; update §0.2",2026-02-24,OPEN,,
+F-006,AGC-2026-02-17-001,§6.2.2,MEDIUM,count-discrepancy,"N_edges: §0 says 80 but mermaid count yields 77","Recount mermaid edges; update §0.2",2026-02-24,OPEN,,
+F-007,AGC-2026-02-17-001,"§3.5.1, §7.3.7",MEDIUM,count-discrepancy,"N_sil: §0 says 50 but agents counted 47-49","Recount SIL matrix rows; update §0.2",2026-02-24,OPEN,,
+F-008,AGC-2026-02-17-001,§7.3.6,MEDIUM,count-discrepancy,"N_sad: §0 says 45 but mermaid ~34 components; narrative says 40+","Clarify N_sad definition; update consistently",2026-02-24,OPEN,,
+F-009,AGC-2026-02-17-001,§2 note,LOW,stale-comment,"RTD header comment says Synced with SAD v0.1.0.4 (should be v0.1.0.5)","Update header comment in RTD_0.1.0.4.mermaid",2026-02-24,OPEN,,
+F-010,AGC-2026-02-17-001,§0.4.3-4,LOW,missing-artifact,"trace_matrix.csv and finding_register.csv did not exist","Create finding_register.csv now; trace_matrix.csv at slice 1",2026-02-18,PARTIAL,,
