@@ -46,10 +46,11 @@ After completing:
 
 ## Current State
 
-- **Critical path:** 1.5→1.6→1.7→1.8→2.6→2.7→2.8→3.6→3.7→3a.8→3a.10→3a.12
-- **Done:** Tasks 1.5, 1.6, 1.7, 1.8, 2.6, 2.7, 2.8, 3.6, 3.7, 3a.8, 3a.10, 3a.12 (12 of 12 - COMPLETE)
-- **Next:** Slice 1 critical path complete. Slice 2 unlocked. Begin Phase A Backfill or Slice 2.
-- **Test count:** 319
+- **Slice 1 critical path:** 1.5→1.6→1.7→1.8→2.6→2.7→2.8→3.6→3.7→3a.8→3a.10→3a.12 (COMPLETE)
+- **Slice 2 critical path:** 5.8→5.5→5.6→7.1→7.2→8.3→9.2→10.2→11.1→11.3
+- **Done:** Tasks 1.5, 1.6, 1.7, 1.8, 2.6, 2.7, 2.8, 3.6, 3.7, 3a.8, 3a.10, 3a.12, 5.8 (13 total, Slice 2: 1 of 10)
+- **Next:** Task 5.5 - Implement ICD as Pydantic models
+- **Test count:** 351
 - **Components:** 48
 - **Audit findings resolved:** F-001 through F-030
 

@@ -103,3 +103,64 @@ tasks:
     status: done
     date: "2026-02-18"
     note: "Spiral gate report: 3 PASS, 9 WAIVED, 0 FAIL - Slice 2 unlocked (17 tests)"
+
+  # ── Slice 2: Phase A Backfill ───────────────────────────
+  # Step 4 — Scaffold
+  4.1: pending
+  4.2: pending
+  4.3: pending
+  4.4: pending
+  4.5: pending
+
+  # Step 5 — ICD
+  5.1: pending
+  5.2: pending
+  5.3: pending
+  5.4: pending
+  5.5: pending
+  5.6: pending
+  5.7: pending
+  5.8:
+    status: done
+    date: "2026-02-18"
+    note: "ICD Schema Registry: Pydantic model resolution with TTL cache, all 49 ICDs, <1ms p99 (32 tests)"
+  5.9: pending
+
+  # Step 5a — ATAM
+  5a.1: pending
+  5a.2: pending
+  5a.3: pending
+  5a.4: pending
+
+  # Step 6 — Validate
+  6.1: pending
+  6.2: pending
+  6.3: pending
+
+  # Step 7 — Scan
+  7.1: pending
+  7.2: pending
+  7.3: pending
+
+  # Step 8 — Test
+  8.1: pending
+  8.2: pending
+  8.3: pending
+  8.4: pending
+
+  # Step 9 — Fitness Functions
+  9.1: pending
+  9.2: pending
+  9.3: pending
+  9.4: pending
+
+  # Step 10 — RTM Generation
+  10.1: pending
+  10.2: pending
+  10.3: pending
+
+  # Step 11 — CI Gate
+  11.1: pending
+  11.2: pending
+  11.3: pending
+  11.4: pending
