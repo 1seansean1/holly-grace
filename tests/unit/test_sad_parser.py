@@ -135,7 +135,7 @@ class TestParseRealSAD:
 
         ast = parse_sad_file(sad_path)
 
-        # SAD v0.1.0.5 has 45 components
+        # SAD v0.1.0.5 has 48 components
         assert ast.node_count >= 40, f"Expected >=40 nodes, got {ast.node_count}"
 
         # Should have multiple subgraphs

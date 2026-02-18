@@ -97,27 +97,34 @@ def cmd_gantt(args: argparse.Namespace) -> None:
     if not manifest_path.exists():
         print(f"ERROR: Manifest not found: {manifest_path}", file=sys.stderr)
         sys.exit(1)
+    if not status_path.exists():
+        print(f"ERROR: Status file not found: {status_path}", file=sys.stderr)
+        sys.exit(1)
 
-    if args.critical:
-        registry = build_registry(manifest_path, status_path)
-        out = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
-        out.write(generate_gantt_critical_only(registry))
-        out.write("\n")
-        out.flush()
-        out.detach()  # prevent closing underlying stdout
-    elif args.stdout:
-        registry = build_registry(manifest_path, status_path)
-        out = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
-        out.write(generate_gantt(registry))
-        out.write("\n")
-        out.flush()
-        out.detach()  # prevent closing underlying stdout
-    else:
-        output_dir.mkdir(parents=True, exist_ok=True)
-        outputs = generate_progress_report(manifest_path, status_path, output_dir)
-        for name, path in outputs.items():
-            print(f"  {name}: {path}")
-        print(f"\nGenerated {len(outputs)} artifacts.")
+    try:
+        if args.critical:
+            registry = build_registry(manifest_path, status_path)
+            out = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+            out.write(generate_gantt_critical_only(registry))
+            out.write("\n")
+            out.flush()
+            out.detach()  # prevent closing underlying stdout
+        elif args.stdout:
+            registry = build_registry(manifest_path, status_path)
+            out = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+            out.write(generate_gantt(registry))
+            out.write("\n")
+            out.flush()
+            out.detach()  # prevent closing underlying stdout
+        else:
+            output_dir.mkdir(parents=True, exist_ok=True)
+            outputs = generate_progress_report(manifest_path, status_path, output_dir)
+            for name, path in outputs.items():
+                print(f"  {name}: {path}")
+            print(f"\nGenerated {len(outputs)} artifacts.")
+    except Exception as exc:
+        print(f"ERROR: Failed to build registry or generate output: {exc}", file=sys.stderr)
+        sys.exit(1)
 
 
 def cmd_progress(args: argparse.Namespace) -> None:
@@ -132,7 +139,11 @@ def cmd_progress(args: argparse.Namespace) -> None:
         print(f"ERROR: Manifest not found: {manifest_path}", file=sys.stderr)
         sys.exit(1)
 
-    registry = build_registry(manifest_path, status_path)
+    try:
+        registry = build_registry(manifest_path, status_path)
+    except Exception as exc:
+        print(f"ERROR: Failed to build registry: {exc}", file=sys.stderr)
+        sys.exit(1)
     for line in registry.summary_lines:
         print(line)
 

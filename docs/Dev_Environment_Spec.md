@@ -1004,7 +1004,7 @@ Check:
 
 ### Internal Documents
 
-- `docs/architecture/SAD_0.1.0.5.mermaid` — System Architecture Document (L0–L5, 45 components)
+- `docs/architecture/SAD_0.1.0.5.mermaid` — System Architecture Document (L0–L5, 48 components)
 - `docs/ICD_v0.1.md` — All 49 boundary contracts
 - `docs/Component_Behavior_Specs_SIL3.md` — State machines for SIL-3 components
 - `docs/Goal_Hierarchy_Formal_Spec.md` — L0–L6 predicates, feasibility algorithms

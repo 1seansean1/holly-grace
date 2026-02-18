@@ -122,7 +122,7 @@ class TestExtractRealSAD:
 
         doc = extract_from_file(sad_path)
 
-        # 45 components in SAD v0.1.0.5
+        # 48 components in SAD v0.1.0.5
         assert doc.component_count >= 40, f"Got {doc.component_count}"
 
         # K1-K8 should all be present

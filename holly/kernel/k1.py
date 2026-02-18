@@ -64,16 +64,26 @@ def _payload_hash(payload: Any) -> str:
     return hashlib.sha256(raw.encode()).hexdigest()
 
 
-def _measure_depth(obj: Any, _current: int = 0) -> int:
-    """Return the nesting depth of a JSON-like object."""
+def _measure_depth(obj: Any, _current: int = 0, _ceiling: int = 0) -> int:
+    """Return the nesting depth of a JSON-like object.
+
+    When *_ceiling* > 0, traversal short-circuits as soon as depth
+    reaches the ceiling — prevents O(N^D) cost on adversarial payloads.
+    """
+    if _ceiling > 0 and _current >= _ceiling:
+        return _current
     if isinstance(obj, dict):
         if not obj:
             return _current + 1
-        return max(_measure_depth(v, _current + 1) for v in obj.values())
+        return max(
+            _measure_depth(v, _current + 1, _ceiling) for v in obj.values()
+        )
     if isinstance(obj, list):
         if not obj:
             return _current + 1
-        return max(_measure_depth(v, _current + 1) for v in obj)
+        return max(
+            _measure_depth(v, _current + 1, _ceiling) for v in obj
+        )
     return _current
 
 
@@ -108,7 +118,7 @@ def k1_validate(
         raise PayloadTooLargeError(schema_id, size=size, limit=max_bytes)
 
     # ── Depth guard ───────────────────────────────────────
-    depth = _measure_depth(payload)
+    depth = _measure_depth(payload, _ceiling=max_depth + 1)
     if depth > max_depth:
         raise PayloadTooLargeError(
             schema_id,

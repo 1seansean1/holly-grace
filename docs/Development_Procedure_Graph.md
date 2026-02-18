@@ -22,7 +22,7 @@ The monograph provides the formal foundations: channel theory microdynamics, age
 
 A custom SAD iteration tool was developed for rapid mermaid-based architecture generation and validation. Using the monograph as the specification source, this tool produced:
 
-- **SAD v0.1.0.5** — System Architecture Document (L0–L5, 45 components, all boundary crossings)
+- **SAD v0.1.0.5** — System Architecture Document (L0–L5, 48 components, all boundary crossings)
 - **RTD v0.1.0.4** — Repository Tree Document (target file structure)
 - **repo-tree.md** — Flat file listing for scaffold generation
 

@@ -7,6 +7,8 @@ Covers fixes from the dual-repo review:
   4. C011 diff counting accuracy
   5. load_status() tasks shape guard (list → AttributeError)
   6. Critical path ASCII arrow support
+  7. _measure_depth() early termination (BUG-005)
+  8. load_status() YAML parse error handling (ERR-004)
 """
 
 from __future__ import annotations
@@ -279,3 +281,74 @@ class TestCriticalPathArrowParsing:
         assert _RE_CRITICAL_PATH.match("1.1 -> 1.2 -> 1.3")
         assert _RE_CRITICAL_PATH.match("1.1 → 1.2 → 1.3")
         assert not _RE_CRITICAL_PATH.match("not a path")
+
+
+# ══════════════════════════════════════════════════════════
+# BUG-005: _measure_depth() early termination
+# ══════════════════════════════════════════════════════════
+
+
+class TestMeasureDepthCeiling:
+    def test_shallow_payload_exact(self) -> None:
+        from holly.kernel.k1 import _measure_depth
+
+        payload = {"a": {"b": {"c": 1}}}
+        assert _measure_depth(payload) == 3
+
+    def test_ceiling_short_circuits(self) -> None:
+        from holly.kernel.k1 import _measure_depth
+
+        # Build a wide + deep structure: 100 keys at each of 5 levels
+        deep: dict[str, Any] = {}
+        for i in range(100):
+            level: dict[str, Any] = {}
+            for j in range(100):
+                level[f"k{j}"] = {"inner": 1}
+            deep[f"top{i}"] = level
+        # Without ceiling, this visits 100*100*1 = 10000 nodes
+        # With ceiling=3, it stops early
+        result = _measure_depth(deep, _ceiling=3)
+        assert result >= 3  # hit ceiling, stopped
+
+    def test_list_depth(self) -> None:
+        from holly.kernel.k1 import _measure_depth
+
+        payload = [[[1, 2], [3]], [4]]
+        assert _measure_depth(payload) == 3
+
+    def test_empty_containers(self) -> None:
+        from holly.kernel.k1 import _measure_depth
+
+        assert _measure_depth({}) == 1
+        assert _measure_depth([]) == 1
+        assert _measure_depth(42) == 0
+
+
+# ══════════════════════════════════════════════════════════
+# ERR-004: YAML parse error handling in load_status()
+# ══════════════════════════════════════════════════════════
+
+
+class TestLoadStatusYamlError:
+    def test_malformed_yaml_returns_empty(self, tmp_path: Path) -> None:
+        from holly.arch.tracker import load_status
+
+        status_file = tmp_path / "status.yaml"
+        status_file.write_text(
+            "tasks:\n  bad: [unclosed\n",
+            encoding="utf-8",
+        )
+        states = load_status(status_file)
+        assert states == {}
+
+    def test_malformed_yaml_logs_warning(self, tmp_path: Path, caplog: Any) -> None:
+        from holly.arch.tracker import load_status
+
+        status_file = tmp_path / "status.yaml"
+        status_file.write_text(
+            ":\n  :\n    : [[[",
+            encoding="utf-8",
+        )
+        with caplog.at_level(logging.WARNING):
+            load_status(status_file)
+        assert any("malformed YAML" in r.message for r in caplog.records)

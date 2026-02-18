@@ -105,7 +105,13 @@ def load_status(path: Path) -> dict[str, TaskState]:
     """Load docs/status.yaml into a dict of TaskState."""
     if not path.exists():
         return {}
-    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    try:
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except yaml.YAMLError:
+        logging.getLogger(__name__).warning(
+            "status.yaml is malformed YAML — returning empty status",
+        )
+        return {}
     if not isinstance(data, dict):
         return {}
     tasks_raw = data.get("tasks", {})

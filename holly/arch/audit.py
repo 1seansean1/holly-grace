@@ -98,19 +98,6 @@ def _grep_count_assertion(text: str, patterns: list[str]) -> int | None:
     return None
 
 
-# ── Import architecture modules ──────────────────────────────────────
-
-
-def _import_arch_modules() -> tuple | None:
-    """Lazy import architecture modules. Return (manifest_parser, registry, extract) or None."""
-    try:
-        from holly.arch import extract, manifest_parser, registry
-
-        return (manifest_parser, registry, extract)
-    except ImportError:
-        return None
-
-
 # ── Individual check functions ───────────────────────────────────────
 
 
