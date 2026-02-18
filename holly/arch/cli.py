@@ -14,6 +14,7 @@ import argparse
 import io
 import sys
 from pathlib import Path
+from typing import Any
 
 from holly.arch.extract import extract_from_file, to_yaml, write_architecture_yaml
 from holly.arch.sad_parser import parse_sad_file
@@ -153,6 +154,71 @@ def cmd_progress(args: argparse.Namespace) -> None:
         print(line)
 
 
+def cmd_gate(args: argparse.Namespace) -> None:
+    """Run spiral gate evaluation and produce pass/fail report."""
+    from holly.arch.audit import run_audit
+    from holly.arch.gate_report import evaluate_gate, render_report, write_report
+    from holly.arch.tracker import load_status
+
+    root = _find_repo_root()
+    status_path = root / "docs" / "status.yaml"
+
+    # Load task statuses
+    status = load_status(status_path)
+    task_statuses: dict[str, Any] = {}
+    for tid, state in status.items():
+        task_statuses[tid] = {
+            "status": state.status,
+            "note": state.note or "",
+        }
+
+    # Run audit to check if clean
+    audit_results = run_audit(root)
+    audit_pass = all(r.status != "FAIL" for r in audit_results)
+
+    # Count tests by running pytest --co -q (collect only)
+    import subprocess
+
+    result = subprocess.run(
+        [sys.executable, "-m", "pytest", "tests/", "--co", "-q"],
+        capture_output=True,
+        text=True,
+        cwd=str(root),
+    )
+    test_count = 0
+    for line in result.stdout.splitlines():
+        if "test" in line and ("selected" in line or "collected" in line):
+            # e.g. "302 tests collected in 2.04s"
+            parts = line.split()
+            if parts and parts[0].isdigit():
+                test_count = int(parts[0])
+                break
+
+    # Evaluate gate
+    report = evaluate_gate(
+        task_statuses,
+        test_count=test_count,
+        audit_pass=audit_pass,
+    )
+
+    # Write report
+    output = Path(args.output) if args.output else root / "docs" / "architecture" / "GATE_REPORT_S1.md"
+    write_report(report, output)
+
+    # Print report to stdout
+    rendered = render_report(report)
+    out = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+    try:
+        out.write(rendered + "\n")
+        out.flush()
+    finally:
+        out.detach()
+
+    print(f"\nReport written to: {output}")
+    if not report.all_pass:
+        sys.exit(1)
+
+
 def cmd_audit(args: argparse.Namespace) -> None:
     """Run cross-document consistency audit."""
     from holly.arch.audit import format_audit_report, run_audit
@@ -210,6 +276,11 @@ def main() -> None:
     # audit
     p_audit = sub.add_parser("audit", help="Run cross-document consistency audit")
     p_audit.set_defaults(func=cmd_audit)
+
+    # gate
+    p_gate = sub.add_parser("gate", help="Run spiral gate evaluation and produce report")
+    p_gate.add_argument("-o", "--output", help="Output path for gate report (default: docs/architecture/GATE_REPORT_S1.md)")
+    p_gate.set_defaults(func=cmd_gate)
 
     args = parser.parse_args()
     args.func(args)

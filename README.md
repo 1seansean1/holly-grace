@@ -108,7 +108,7 @@ Audit instrument: [`Artifact_Genealogy_Checklist.md`](docs/audit/Artifact_Geneal
 
 | Slice | Phase | Done | Total | Progress | Critical Path |
 |------:|-------|-----:|------:|---------:|---------------|
-| 1 | Phase A Spiral (Steps 1, 2, 3, 3a) | 11 | 39 | 28% [##........] | 11/12 |
+| 1 | Phase A Spiral (Steps 1, 2, 3, 3a) | 12 | 39 | 30% [###.......] | 12/12 |
 | 2 | Phase A Backfill (Steps 4-11) | 0 | 39 | 0% [..........] | 0/10 |
 | 3 | Phase B: Failure Analysis & Kernel | 0 | 62 | 0% [..........] | 0/19 |
 | 4 | Phase C: Storage Layer (Steps 22-26) | 0 | 23 | 0% [..........] | 0/7 |
@@ -123,7 +123,7 @@ Audit instrument: [`Artifact_Genealogy_Checklist.md`](docs/audit/Artifact_Geneal
 | 13 | Phase L: Config (Steps 70-72) | 0 | 12 | 0% [..........] | 0/4 |
 | 14 | Phase M: Console L5 (Steps 73-78) | 0 | 18 | 0% [..........] | 0/7 |
 | 15 | Phase N: Deploy & Ops (Steps 79-86) | 0 | 29 | 0% [..........] | 0/14 |
-| **Σ** | **All** | **11** | **442** | **2%** | |
+| **Σ** | **All** | **12** | **442** | **2%** | |
 
 ---
 

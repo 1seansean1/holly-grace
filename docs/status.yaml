@@ -99,4 +99,7 @@ tasks:
     date: "2026-02-18"
     note: "K8 eval gate, PredicateRegistry, @eval_gated decorator enforcement (26 tests)"
   3a.11: pending
-  3a.12: pending
+  3a.12:
+    status: done
+    date: "2026-02-18"
+    note: "Spiral gate report: 3 PASS, 9 WAIVED, 0 FAIL - Slice 2 unlocked (17 tests)"

@@ -97,7 +97,7 @@ graph TD
         GANTT["GANTT.mermaid\nGANTT_critical.mermaid"]
         PROG["PROGRESS.md"]
         STATYS["status.yaml"]
-        TESTS["Test Suite\n302 tests across\n15 test modules"]
+        TESTS["Test Suite\n319 tests across\n16 test modules"]
         CODE["holly/ source tree"]
     end
 
@@ -336,7 +336,7 @@ Remaining Slice 1 critical path: `3.7 -> 3a.8 -> 3a.10 -> 3a.12` (ICD enforcemen
 | 28 | PROGRESS.md | `docs/architecture/PROGRESS.md` | ε | 25 KB | Tracker + Dep Graph + status.yaml |
 | 29 | Architecture Registry | `holly/arch/registry.py` | ε | 9 KB | Schema + Extract (Tasks 2.6, 2.7, 2.8) |
 | 30 | Core Decorators | `holly/arch/decorators.py` | ε | 12 KB | Registry API (Task 3.6) |
-| 31 | Test Suite (302 tests) | `tests/unit/test_*.py` (15 modules) | ε | 55 KB | All ε modules + TGS |
+| 31 | Test Suite (319 tests) | `tests/unit/test_*.py` (16 modules) | ε | 58 KB | All ε modules + TGS |
 | — | END_TO_END_AUDIT_CHECKLIST | `(external, user desktop)` | α | 12 KB | Audit process research (Allen) |
 | — | **Total in-repo documentation + code** | | | **~750 KB** | |
 
@@ -436,6 +436,16 @@ These rules govern how new artifacts enter the genealogy:
                      302 total tests across 15 test modules
                      External dependency added: jsonschema>=4.20
 2026-02-18  Artifact Genealogy updated with Phase ε Task 3.7 completion
+2026-02-18  Task 3a.10: K8 eval gate
+                     holly/kernel/k8.py — K8 eval gate implementation
+                     holly/kernel/predicate_registry.py — thread-safe predicate store
+                     tests/unit/test_k8_eval_gate.py — 26 new tests
+2026-02-18  Task 3a.12: Spiral gate report
+                     holly/arch/gate_report.py — gate evaluation + markdown report
+                     tests/unit/test_gate_report.py — 17 new tests
+                     docs/architecture/GATE_REPORT_S1.md — generated gate report
+                     319 total tests across 16 test modules
+                     Slice 1 critical path complete (12/12) — Slice 2 unlocked
 ```
 
 ---
