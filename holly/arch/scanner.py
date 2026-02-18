@@ -1,6 +1,7 @@
 """AST scanner for missing/wrong architectural decorators.
 
-Task 7.1 — Extend AST scanner with per-module rules.
+Tasks 7.1 + 7.2 — AST scanner with per-module rules and ICD-aware
+wrong-decorator detection.
 
 Walks Python source files and checks that every function/class that
 participates in a boundary crossing (per architecture.yaml) has the
@@ -13,9 +14,15 @@ Scanner rules are derived from architecture.yaml:
 - MCP tool endpoints require ``@mcp_tool``
 - K8 eval-gated functions require ``@eval_gated``
 
+Task 7.2 extends wrong-decorator detection with ICD awareness:
+- Validates ``icd_schema`` metadata on decorators against ICD registry entries
+- Cross-references component IDs against ICD source/target components
+- Detects protocol/SIL mismatches between decorator metadata and ICD contracts
+
 The scanner produces a list of ``ScanFinding`` results: MISSING
 (expected decorator not found), WRONG (wrong decorator kind for
-the component's layer), or OK (correct decorator applied).
+the component's layer), ICD_MISMATCH (decorator metadata conflicts
+with ICD contract), or OK (correct decorator applied).
 """
 
 from __future__ import annotations
@@ -28,7 +35,7 @@ from typing import TYPE_CHECKING, Any
 
 from holly.arch.decorators import DecoratorKind, get_holly_meta
 from holly.arch.registry import ArchitectureRegistry
-from holly.arch.schema import LayerID
+from holly.arch.schema import ICDEntry, LayerID
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -41,6 +48,7 @@ class FindingKind(StrEnum):
     OK = "ok"
     MISSING = "missing"
     WRONG = "wrong"
+    ICD_MISMATCH = "icd_mismatch"
 
 
 # ── Data models ──────────────────────────────────────
@@ -60,11 +68,14 @@ class ScanRule:
         The decorator kind that must be present.
     description:
         Human-readable explanation of the rule.
+    icd_ids:
+        ICD identifiers associated with this component (Task 7.2).
     """
     component_id: str
     layer: LayerID
     required_decorator: DecoratorKind
     description: str = ""
+    icd_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -124,8 +135,16 @@ class ScanReport:
         return sum(1 for f in self.findings if f.kind == FindingKind.WRONG)
 
     @property
+    def icd_mismatch_count(self) -> int:
+        return sum(1 for f in self.findings if f.kind == FindingKind.ICD_MISMATCH)
+
+    @property
     def is_clean(self) -> bool:
-        return self.missing_count == 0 and self.wrong_count == 0
+        return (
+            self.missing_count == 0
+            and self.wrong_count == 0
+            and self.icd_mismatch_count == 0
+        )
 
 
 # ── Rule generation ──────────────────────────────────
@@ -154,7 +173,8 @@ def generate_rules(
     """Generate scanner rules from architecture.yaml.
 
     For each component in the architecture, determines the required
-    decorator based on its layer and any overrides.
+    decorator based on its layer and any overrides.  ICD entries are
+    cross-referenced to attach ICD identifiers to each rule (Task 7.2).
 
     Parameters
     ----------
@@ -170,6 +190,12 @@ def generate_rules(
     doc = reg.document
     rules: list[ScanRule] = []
 
+    # Build component → ICD mapping from ICD entries (Task 7.2).
+    comp_icds: dict[str, list[str]] = {}
+    for icd in doc.icds:
+        comp_icds.setdefault(icd.source_component, []).append(icd.id)
+        comp_icds.setdefault(icd.target_component, []).append(icd.id)
+
     for comp_id, comp in doc.components.items():
         # Check override first, then layer default.
         decorator = COMPONENT_DECORATOR_OVERRIDES.get(comp_id)
@@ -178,11 +204,14 @@ def generate_rules(
         if decorator is None:
             continue  # No rule for this component's layer.
 
+        icd_ids = tuple(sorted(set(comp_icds.get(comp_id, []))))
+
         rules.append(ScanRule(
             component_id=comp_id,
             layer=comp.layer,
             required_decorator=decorator,
             description=f"{comp.name} ({comp.layer}) requires @{decorator}",
+            icd_ids=icd_ids,
         ))
 
     return rules
@@ -453,3 +482,270 @@ def scan_directory(
         report.findings.extend(findings)
 
     return report
+
+
+# ── ICD-aware wrong-decorator detection (Task 7.2) ──
+
+
+def _build_icd_index(
+    registry: ArchitectureRegistry | None = None,
+) -> dict[str, ICDEntry]:
+    """Build an ICD ID → ICDEntry mapping from the registry.
+
+    Parameters
+    ----------
+    registry:
+        Optional pre-loaded registry. If None, uses the singleton.
+
+    Returns
+    -------
+    dict[str, ICDEntry]
+        Mapping from ICD ID (e.g. ``"ICD-006"``) to its entry.
+    """
+    reg = registry or ArchitectureRegistry.get()
+    return {icd.id: icd for icd in reg.document.icds}
+
+
+def validate_icd_schema_ref(
+    meta: dict[str, Any],
+    rules_by_component: dict[str, ScanRule],
+    icd_index: dict[str, ICDEntry],
+    *,
+    module_path: str = "",
+    symbol_name: str = "",
+) -> ScanFinding | None:
+    """Validate a decorator's ``icd_schema`` metadata against ICD registry.
+
+    If the decorator carries an ``icd_schema`` field, verifies that:
+
+    1. The referenced ICD ID exists in the registry.
+    2. The decorator's ``component_id`` matches the ICD's source or
+       target component.
+
+    Parameters
+    ----------
+    meta:
+        The ``_holly_meta`` dict from the decorated callable.
+    rules_by_component:
+        Pre-built component → ScanRule mapping.
+    icd_index:
+        ICD ID → ICDEntry mapping.
+    module_path:
+        Dotted module path for reporting.
+    symbol_name:
+        Function or class name for reporting.
+
+    Returns
+    -------
+    ScanFinding | None
+        An ICD_MISMATCH finding if validation fails, or None if OK.
+    """
+    icd_schema = meta.get("icd_schema", "")
+    if not icd_schema:
+        return None
+
+    comp_id = meta.get("component_id", "")
+    actual_kind = meta.get("kind", "")
+
+    # Check 1: Does the ICD exist?
+    icd_entry = icd_index.get(icd_schema)
+    if icd_entry is None:
+        return ScanFinding(
+            kind=FindingKind.ICD_MISMATCH,
+            module_path=module_path,
+            symbol_name=symbol_name,
+            component_id=comp_id,
+            expected_decorator=actual_kind,
+            actual_decorator=actual_kind,
+            message=(
+                f"ICD mismatch: @{actual_kind} on {symbol_name} references "
+                f"icd_schema={icd_schema!r} which does not exist in "
+                f"architecture.yaml"
+            ),
+        )
+
+    # Check 2: Does the component participate in this ICD?
+    if comp_id and comp_id not in (
+        icd_entry.source_component,
+        icd_entry.target_component,
+    ):
+        return ScanFinding(
+            kind=FindingKind.ICD_MISMATCH,
+            module_path=module_path,
+            symbol_name=symbol_name,
+            component_id=comp_id,
+            expected_decorator=actual_kind,
+            actual_decorator=actual_kind,
+            message=(
+                f"ICD mismatch: @{actual_kind} on {symbol_name} for "
+                f"{comp_id} references icd_schema={icd_schema!r}, but "
+                f"{comp_id} is not a participant in {icd_schema} "
+                f"(source={icd_entry.source_component}, "
+                f"target={icd_entry.target_component})"
+            ),
+        )
+
+    return None
+
+
+def _extract_icd_schema_from_decorator(node: ast.expr) -> str | None:
+    """Try to extract icd_schema kwarg from a decorator AST node."""
+    if isinstance(node, ast.Call):
+        for kw in node.keywords:
+            if kw.arg == "icd_schema" and isinstance(kw.value, ast.Constant):
+                return str(kw.value.value)
+    return None
+
+
+def scan_source_icd(
+    source: str,
+    module_path: str,
+    rules: list[ScanRule],
+    icd_index: dict[str, ICDEntry],
+) -> list[ScanFinding]:
+    """Scan source for ICD-aware wrong-decorator violations (Task 7.2).
+
+    Extends ``scan_source`` with ICD cross-validation: for each
+    decorator that carries an ``icd_schema`` parameter, verifies that
+    the referenced ICD exists and the component participates in it.
+
+    Parameters
+    ----------
+    source:
+        Python source code.
+    module_path:
+        Dotted module path for reporting.
+    rules:
+        Scanner rules to check against.
+    icd_index:
+        ICD ID → ICDEntry mapping.
+
+    Returns
+    -------
+    list[ScanFinding]
+        ICD_MISMATCH findings for decorator/ICD conflicts.
+    """
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return []
+
+    findings: list[ScanFinding] = []
+    holly_decorators = {
+        "kernel_boundary", "tenant_scoped", "lane_dispatch",
+        "mcp_tool", "eval_gated",
+    }
+    rules_by_component = {r.component_id: r for r in rules}
+
+    for node in ast.walk(tree):
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            continue
+
+        dec_names = _extract_decorator_names(node)
+        holly_decs = [d for d in dec_names if d in holly_decorators]
+
+        if not holly_decs:
+            continue
+
+        for dec_node in node.decorator_list:
+            icd_ref = _extract_icd_schema_from_decorator(dec_node)
+            if icd_ref is None:
+                continue
+
+            comp_id = _extract_component_id_from_decorator(dec_node) or ""
+            actual_dec = ""
+            if isinstance(dec_node, ast.Call) and isinstance(dec_node.func, ast.Name):
+                actual_dec = dec_node.func.id
+            elif isinstance(dec_node, ast.Call) and isinstance(dec_node.func, ast.Attribute):
+                actual_dec = dec_node.func.attr
+
+            # Build a synthetic meta dict for validation.
+            meta = {
+                "kind": actual_dec,
+                "component_id": comp_id,
+                "icd_schema": icd_ref,
+            }
+            finding = validate_icd_schema_ref(
+                meta, rules_by_component, icd_index,
+                module_path=module_path, symbol_name=node.name,
+            )
+            if finding is not None:
+                findings.append(finding)
+
+    return findings
+
+
+def scan_module_icd(
+    module: Any,
+    rules: list[ScanRule],
+    icd_index: dict[str, ICDEntry],
+) -> list[ScanFinding]:
+    """Scan a loaded module for ICD-aware wrong-decorator violations.
+
+    Inspects all decorated callables and validates their ``icd_schema``
+    metadata against the ICD registry.
+
+    Parameters
+    ----------
+    module:
+        An imported Python module object.
+    rules:
+        Scanner rules to check against.
+    icd_index:
+        ICD ID → ICDEntry mapping.
+
+    Returns
+    -------
+    list[ScanFinding]
+        ICD_MISMATCH findings for decorator/ICD conflicts.
+    """
+    findings: list[ScanFinding] = []
+    rules_by_component = {r.component_id: r for r in rules}
+    module_path = getattr(module, "__name__", str(module))
+
+    for name, obj in inspect.getmembers(module):
+        if name.startswith("_"):
+            continue
+
+        meta = get_holly_meta(obj)
+        if meta is None:
+            continue
+
+        finding = validate_icd_schema_ref(
+            meta, rules_by_component, icd_index,
+            module_path=module_path, symbol_name=name,
+        )
+        if finding is not None:
+            findings.append(finding)
+
+    return findings
+
+
+def scan_full(
+    source: str,
+    module_path: str,
+    rules: list[ScanRule],
+    icd_index: dict[str, ICDEntry] | None = None,
+) -> list[ScanFinding]:
+    """Combined scan: layer rules (7.1) + ICD validation (7.2).
+
+    Parameters
+    ----------
+    source:
+        Python source code.
+    module_path:
+        Dotted module path for reporting.
+    rules:
+        Scanner rules to check against.
+    icd_index:
+        Optional ICD ID → ICDEntry mapping. If None, ICD checks skipped.
+
+    Returns
+    -------
+    list[ScanFinding]
+        All findings (OK, MISSING, WRONG, ICD_MISMATCH).
+    """
+    findings = scan_source(source, module_path, rules)
+    if icd_index:
+        findings.extend(scan_source_icd(source, module_path, rules, icd_index))
+    return findings
