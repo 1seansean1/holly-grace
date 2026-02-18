@@ -178,13 +178,21 @@ _RE_DIRECTION = re.compile(r"^\s*direction\s+(TB|BT|LR|RL|TD)\s*$")
 _RE_END = re.compile(r"^\s*end\s*$")
 
 # Node shape patterns  (id["label"], id("label"), id(["label"]), etc.)
+# Ordered longest-open first to avoid greedy mismatches.
 _NODE_SHAPES: list[tuple[str, str, str]] = [
-    (r'\["', r'"\]', "rect"),          # ["label"]
-    (r'\("', r'"\)', "round"),         # ("label")
+    # Quoted variants (standard Holly SAD format)
     (r'\(\["', r'"\]\)', "stadium"),   # (["label"])
     (r'\[\("', r'"\)\]', "cylinder"),  # [("label")]
     (r'\{\{"', r'"\}\}', "hexagon"),   # {{"label"}}
-    (r'\["', r'"\]', "rect"),          # fallback
+    (r'\["', r'"\]', "rect"),          # ["label"]
+    (r'\("', r'"\)', "round"),         # ("label")
+    # Unquoted variants (broader Mermaid compat)
+    (r'\(\[', r'\]\)', "stadium"),     # ([label])
+    (r'\[\(', r'\)\]', "cylinder"),    # [(label)]
+    (r'\{\{', r'\}\}', "hexagon"),     # {{label}}
+    (r'\[', r'\]', "rect"),            # [label]
+    (r'\(', r'\)', "round"),           # (label)
+    (r'\{', r'\}', "rhombus"),         # {label}
 ]
 
 # Edge patterns — order matters (longest match first)
@@ -246,9 +254,10 @@ def _parse_edge_line(line: str, line_no: int) -> tuple[list[MermaidNode], list[M
     edge_ops = sorted(_EDGE_PATTERNS, key=lambda x: -len(x[0]))
 
     # Build a single regex that matches: optional_pre_label edge_op optional_post_label
-    # Label format: |"text"| or |'text'|
+    # Label format: |"text"|, |'text'|, or |text| (unquoted)
     op_alts = "|".join(re.escape(pat) for pat, _, _ in edge_ops)
-    label_pat = r'(?:\|"([^"]*?)"\|)'
+    # Match: |"quoted"|, |'quoted'|, or |unquoted| (no pipe chars inside)
+    label_pat = r'(?:\|"([^"]*?)"\||\|' + r"'([^']*?)'" + r'\||\|([^|]*?)\|)'
     edge_re = re.compile(
         rf'\s*{label_pat}?\s*({op_alts})\s*{label_pat}?\s*'
     )
@@ -278,7 +287,9 @@ def _parse_edge_line(line: str, line_no: int) -> tuple[list[MermaidNode], list[M
             node_tokens.append(before)
 
         # Determine edge style/direction
-        op_str = match.group(2)
+        # Groups: 1=pre-dquote, 2=pre-squote, 3=pre-unquoted, 4=edge_op,
+        #         5=post-dquote, 6=post-squote, 7=post-unquoted
+        op_str = match.group(4)
         style = EdgeStyle.SOLID
         direction = EdgeDirection.FORWARD
         for pat, s, d in edge_ops:
@@ -287,8 +298,12 @@ def _parse_edge_line(line: str, line_no: int) -> tuple[list[MermaidNode], list[M
                 direction = d
                 break
 
-        # Edge label (from pre-label or post-label)
-        label = match.group(1) or match.group(3) or ""
+        # Edge label (from pre-label or post-label, any quoting style)
+        label = (
+            match.group(1) or match.group(2) or match.group(3)
+            or match.group(5) or match.group(6) or match.group(7)
+            or ""
+        )
         edge_infos.append((style, direction, label))
 
         prev_end = match.end()
@@ -429,17 +444,23 @@ def parse_sad(source: str, *, source_path: str = "<string>") -> MermaidAST:
             re.search(re.escape(pat), stripped)
             for pat, _, _ in _EDGE_PATTERNS
         )
-        has_node_def = bool(re.search(r'\w+\[', stripped))
+        has_node_def = bool(re.search(r'\w+[\[\(\{]', stripped))
 
         if has_edge_op or has_node_def:
             new_nodes, new_edges = _parse_edge_line(stripped, line_no)
             current_sg = subgraph_stack[-1] if subgraph_stack else None
             for node in new_nodes:
-                if node.node_id not in ast.nodes:
+                existing = ast.nodes.get(node.node_id)
+                if existing is None:
                     node.parent_subgraph = current_sg
                     ast.nodes[node.node_id] = node
                     if current_sg and current_sg in ast.subgraphs:
                         ast.subgraphs[current_sg].children_ids.append(node.node_id)
+                elif existing.shape == "bare" and node.shape != "bare":
+                    # Upgrade: a richer definition replaces a bare reference
+                    node.parent_subgraph = existing.parent_subgraph or current_sg
+                    node.style_classes = existing.style_classes
+                    ast.nodes[node.node_id] = node
             for edge in new_edges:
                 ast.edges.append(edge)
 

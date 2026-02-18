@@ -257,7 +257,7 @@ Seven specification documents were derived from the SAD, monograph, and research
 
 | Document | Derived From | Content |
 |----------|-------------|---------|
-| **ICD v0.1** | SAD (40+ arrows → 49 contracts) | Schema, error codes, latency budgets, backpressure, tenant isolation, redaction per interface |
+| **ICD v0.1** | SAD (49 boundary-crossing edges → 49 contracts) | Schema, error codes, latency budgets, backpressure, tenant isolation, redaction per interface |
 | **Component Behavior Specs** | SAD (SIL-3 nodes) + Monograph (state machines) + Anthropic (defense-in-depth) | Formal state machines for Kernel, Sandbox, Egress |
 | **Goal Hierarchy Formal Spec** | Monograph (Ch 6–9) | 7-level hierarchy, L0–L6 predicates, 3 theorems, 4 APIs |
 | **SIL Classification Matrix** | SAD (48 components) + SpaceX (stratification) + Failure Research (consequence analysis) | SIL-1/2/3 per component, verification requirements |

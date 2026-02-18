@@ -90,9 +90,33 @@ def has_holly_decorator(obj: Any, kind: DecoratorKind | None = None) -> bool:
 
 
 def _attach_meta(func: F, meta: dict[str, Any]) -> F:
-    """Attach ``_holly_meta`` to *func* and return it."""
+    """Attach ``_holly_meta`` to *func* and return it.
+
+    Works on both functions and classes.  For classes, metadata is
+    attached directly without wrapping (preserving ``isinstance``,
+    ``issubclass``, and class attribute access).
+    """
     func._holly_meta = meta  # type: ignore[attr-defined]
     return func
+
+
+def _decorate(fn: F, meta: dict[str, Any]) -> F:
+    """Apply metadata to *fn*, wrapping only if it is a function (not a class).
+
+    Classes receive metadata directly — no wrapper — to preserve
+    ``isinstance``, ``issubclass``, and class attribute access.
+    Functions get a thin ``functools.wraps`` wrapper for future
+    runtime enforcement hooks (Task 3.7+).
+    """
+    if isinstance(fn, type):
+        # Class: attach metadata directly, return unchanged class.
+        return _attach_meta(fn, meta)  # type: ignore[return-value]
+    # Function: wrap to enable future runtime enforcement.
+    @functools.wraps(fn)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        return fn(*args, **kwargs)
+
+    return _attach_meta(wrapper, meta)  # type: ignore[return-value]
 
 
 def _validate_component(
@@ -159,21 +183,13 @@ def kernel_boundary(
 
     def decorator(fn: F) -> F:
         _validate_component(component_id, "kernel_boundary", validate)
-
-        @functools.wraps(fn)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
-            return fn(*args, **kwargs)
-
-        return _attach_meta(
-            wrapper,  # type: ignore[return-value]
-            {
-                "kind": "kernel_boundary",
-                "gate_id": gate_id,
-                "invariant": invariant,
-                "component_id": component_id,
-                "layer": "L1",
-            },
-        )
+        return _decorate(fn, {
+            "kind": "kernel_boundary",
+            "gate_id": gate_id,
+            "invariant": invariant,
+            "component_id": component_id,
+            "layer": "L1",
+        })
 
     if func is not None:
         # Bare @kernel_boundary usage.
@@ -219,19 +235,11 @@ def tenant_scoped(
 
     def decorator(fn: F) -> F:
         _validate_component(component_id, "tenant_scoped", validate)
-
-        @functools.wraps(fn)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
-            return fn(*args, **kwargs)
-
-        return _attach_meta(
-            wrapper,  # type: ignore[return-value]
-            {
-                "kind": "tenant_scoped",
-                "isolation": isolation,
-                "component_id": component_id,
-            },
-        )
+        return _decorate(fn, {
+            "kind": "tenant_scoped",
+            "isolation": isolation,
+            "component_id": component_id,
+        })
 
     if func is not None:
         return decorator(func)
@@ -276,19 +284,11 @@ def lane_dispatch(
 
     def decorator(fn: F) -> F:
         _validate_component(component_id, "lane_dispatch", validate)
-
-        @functools.wraps(fn)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
-            return fn(*args, **kwargs)
-
-        return _attach_meta(
-            wrapper,  # type: ignore[return-value]
-            {
-                "kind": "lane_dispatch",
-                "semantics": semantics,
-                "component_id": component_id,
-            },
-        )
+        return _decorate(fn, {
+            "kind": "lane_dispatch",
+            "semantics": semantics,
+            "component_id": component_id,
+        })
 
     if func is not None:
         return decorator(func)
@@ -338,20 +338,12 @@ def mcp_tool(
     def decorator(fn: F) -> F:
         _validate_component(component_id, "mcp_tool", validate)
         resolved_name = tool_name or fn.__name__
-
-        @functools.wraps(fn)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
-            return fn(*args, **kwargs)
-
-        return _attach_meta(
-            wrapper,  # type: ignore[return-value]
-            {
-                "kind": "mcp_tool",
-                "tool_name": resolved_name,
-                "permission_mask": permission_mask,
-                "component_id": component_id,
-            },
-        )
+        return _decorate(fn, {
+            "kind": "mcp_tool",
+            "tool_name": resolved_name,
+            "permission_mask": permission_mask,
+            "component_id": component_id,
+        })
 
     if func is not None:
         return decorator(func)
@@ -400,20 +392,12 @@ def eval_gated(
 
     def decorator(fn: F) -> F:
         _validate_component(component_id, "eval_gated", validate)
-
-        @functools.wraps(fn)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
-            return fn(*args, **kwargs)
-
-        return _attach_meta(
-            wrapper,  # type: ignore[return-value]
-            {
-                "kind": "eval_gated",
-                "predicate": predicate,
-                "gate_id": gate_id,
-                "component_id": component_id,
-            },
-        )
+        return _decorate(fn, {
+            "kind": "eval_gated",
+            "predicate": predicate,
+            "gate_id": gate_id,
+            "component_id": component_id,
+        })
 
     if func is not None:
         return decorator(func)

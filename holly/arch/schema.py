@@ -177,10 +177,4 @@ class ArchitectureDocument(BaseModel):
         """Return all components belonging to a specific layer."""
         return [c for c in self.components.values() if c.layer == layer]
 
-    Annotated_version: str = Field(
-        default="1.0.0",
-        alias="version",
-        description="Schema version for forward compatibility",
-    )
-
     model_config = {"populate_by_name": True}

@@ -62,8 +62,17 @@ class StatusRegistry:
         return done, len(tasks)
 
     def overall_progress(self) -> tuple[int, int]:
-        """Return (done_count, total_count) overall."""
-        done = sum(1 for s in self.states.values() if s.status == TaskStatus.DONE)
+        """Return (done_count, total_count) overall.
+
+        Only counts tasks that exist in the manifest to prevent phantom
+        task IDs in status.yaml from inflating done count beyond total.
+        """
+        manifest_ids = set(self.manifest.tasks.keys())
+        done = sum(
+            1
+            for tid, s in self.states.items()
+            if s.status == TaskStatus.DONE and tid in manifest_ids
+        )
         return done, self.manifest.total_tasks
 
     @property

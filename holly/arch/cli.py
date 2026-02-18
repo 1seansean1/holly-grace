@@ -137,6 +137,19 @@ def cmd_progress(args: argparse.Namespace) -> None:
         print(line)
 
 
+def cmd_audit(args: argparse.Namespace) -> None:
+    """Run cross-document consistency audit."""
+    from holly.arch.audit import format_audit_report, run_audit
+
+    root = _find_repo_root()
+    results = run_audit(root)
+    print(format_audit_report(results))
+
+    fail_count = sum(1 for r in results if r.status == "FAIL")
+    if fail_count > 0:
+        sys.exit(1)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog="holly-arch",
@@ -169,6 +182,10 @@ def main() -> None:
     p_progress.add_argument("-m", "--manifest", help="Path to Task_Manifest.md")
     p_progress.add_argument("-s", "--status", help="Path to status.yaml")
     p_progress.set_defaults(func=cmd_progress)
+
+    # audit
+    p_audit = sub.add_parser("audit", help="Run cross-document consistency audit")
+    p_audit.set_defaults(func=cmd_audit)
 
     args = parser.parse_args()
     args.func(args)
