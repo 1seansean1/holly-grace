@@ -21,7 +21,11 @@ from __future__ import annotations
 import threading
 from typing import Any, ClassVar
 
-from holly.kernel.exceptions import SchemaNotFoundError, SchemaParseError
+from holly.kernel.exceptions import (
+    SchemaAlreadyRegisteredError,
+    SchemaNotFoundError,
+    SchemaParseError,
+)
 
 
 class SchemaRegistry:
@@ -55,7 +59,13 @@ class SchemaRegistry:
             raise SchemaParseError(
                 schema_id, f"Expected dict, got {type(schema).__name__}"
             )
+        if "type" not in schema:
+            raise SchemaParseError(
+                schema_id, "Schema dict must contain a 'type' key"
+            )
         with cls._lock:
+            if schema_id in cls._schemas:
+                raise SchemaAlreadyRegisteredError(schema_id)
             cls._schemas[schema_id] = schema
 
     @classmethod

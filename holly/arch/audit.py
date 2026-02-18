@@ -896,10 +896,13 @@ def _check_c011_gantt_freshness(repo_root: Path) -> AuditResult:
                 "GANTT.mermaid is fresh ✓",
             )
 
-        # Count diff lines
+        # Count differing lines (changed content + length delta)
         gen_lines = gen_normalized.split("\n")
         file_lines = file_normalized.split("\n")
-        diff_count = abs(len(gen_lines) - len(file_lines))
+        min_len = min(len(gen_lines), len(file_lines))
+        diff_count = sum(
+            1 for i in range(min_len) if gen_lines[i] != file_lines[i]
+        ) + abs(len(gen_lines) - len(file_lines))
 
         return AuditResult(
             "C011",

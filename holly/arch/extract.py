@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING
 import yaml
 
 from holly.arch.sad_parser import (
+    EdgeDirection,
     EdgeStyle,
     MermaidAST,
     MermaidEdge,
@@ -27,6 +28,7 @@ from holly.arch.schema import (
     ArchitectureDocument,
     Component,
     Connection,
+    ConnectionDirection,
     ConnectionStyle,
     EdgeKind,
     KernelInvariant,
@@ -298,11 +300,26 @@ def extract(ast: MermaidAST, *, sad_file: str = "docs/architecture/SAD_0.1.0.5.m
             source=SourceRef(file=sad_file, line=node.line_no, raw=node.label),
         )
 
+    # Map parser EdgeDirection → schema ConnectionDirection
+    _dir_map = {
+        EdgeDirection.FORWARD: ConnectionDirection.FORWARD,
+        EdgeDirection.BACKWARD: ConnectionDirection.BACKWARD,
+        EdgeDirection.BOTH: ConnectionDirection.BOTH,
+        EdgeDirection.NONE: ConnectionDirection.NONE,
+    }
+
     # Extract edges → connections
     connections: list[Connection] = []
     for edge in ast.edges:
-        source_comp = components.get(edge.source)
-        target_comp = components.get(edge.target)
+        # Normalise direction: for BACKWARD edges, swap source/target so
+        # Connection.source_id always represents the semantic origin.
+        if edge.direction == EdgeDirection.BACKWARD:
+            src_id, tgt_id = edge.target, edge.source
+        else:
+            src_id, tgt_id = edge.source, edge.target
+
+        source_comp = components.get(src_id)
+        target_comp = components.get(tgt_id)
         if not source_comp or not target_comp:
             continue  # skip edges to/from unknown nodes
 
@@ -312,11 +329,12 @@ def extract(ast: MermaidAST, *, sad_file: str = "docs/architecture/SAD_0.1.0.5.m
         crosses = source_layer != target_layer
 
         connections.append(Connection(
-            source_id=edge.source,
-            target_id=edge.target,
+            source_id=src_id,
+            target_id=tgt_id,
             label=edge.label,
             kind=kind,
             style=_edge_style_to_connection(edge.style),
+            direction=_dir_map.get(edge.direction, ConnectionDirection.FORWARD),
             crosses_boundary=crosses,
             source_layer=source_layer,
             target_layer=target_layer,

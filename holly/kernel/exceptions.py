@@ -72,6 +72,18 @@ class ValidationError(KernelError):
         self.payload_hash = payload_hash
 
 
+class SchemaAlreadyRegisteredError(KernelError):
+    """Raised when attempting to re-register an existing schema_id."""
+
+    __slots__ = ("schema_id",)
+
+    def __init__(self, schema_id: str) -> None:
+        super().__init__(
+            f"Schema {schema_id!r} is already registered and cannot be overwritten"
+        )
+        self.schema_id = schema_id
+
+
 class PayloadTooLargeError(KernelError):
     """Raised when payload exceeds the size or nesting depth limit."""
 

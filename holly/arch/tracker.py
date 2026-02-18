@@ -9,6 +9,7 @@ Status lifecycle: pending → active → done | blocked
 
 from __future__ import annotations
 
+import logging
 import re
 from dataclasses import dataclass, field
 from datetime import date
@@ -109,18 +110,24 @@ def load_status(path: Path) -> dict[str, TaskState]:
         return {}
     tasks_raw = data.get("tasks", {})
     states: dict[str, TaskState] = {}
+    _log = logging.getLogger(__name__)
     for task_id, info in tasks_raw.items():
         tid = str(task_id)
-        if isinstance(info, str):
-            states[tid] = TaskState(task_id=tid, status=TaskStatus(info))
-        elif isinstance(info, dict):
-            states[tid] = TaskState(
-                task_id=tid,
-                status=TaskStatus(info.get("status", "pending")),
-                commit=str(info.get("commit", "")),
-                date_completed=str(info.get("date", "")),
-                note=str(info.get("note", "")),
-            )
+        try:
+            if isinstance(info, str):
+                states[tid] = TaskState(task_id=tid, status=TaskStatus(info))
+            elif isinstance(info, dict):
+                states[tid] = TaskState(
+                    task_id=tid,
+                    status=TaskStatus(info.get("status", "pending")),
+                    commit=str(info.get("commit", "")),
+                    date_completed=str(info.get("date", "")),
+                    note=str(info.get("note", "")),
+                )
+        except ValueError:
+            raw = info if isinstance(info, str) else info.get("status", info)
+            _log.warning("Unknown status %r for task %s — defaulting to pending", raw, tid)
+            states[tid] = TaskState(task_id=tid, status=TaskStatus.PENDING)
     return states
 
 

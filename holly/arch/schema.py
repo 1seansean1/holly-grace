@@ -98,6 +98,14 @@ class SubgraphEntry(BaseModel):
 
 # ── Connection model ─────────────────────────────────
 
+class ConnectionDirection(StrEnum):
+    """Semantic direction of a connection edge."""
+    FORWARD = "forward"       # A --> B
+    BACKWARD = "backward"     # A <-- B (source is B, target is A)
+    BOTH = "both"             # A <--> B
+    NONE = "none"             # A --- B
+
+
 class Connection(BaseModel):
     """A directed edge between two components."""
     source_id: str = Field(description="Source component ID")
@@ -105,6 +113,10 @@ class Connection(BaseModel):
     label: str = Field(default="", description="Edge annotation text")
     kind: EdgeKind = Field(description="Semantic classification")
     style: ConnectionStyle = Field(default=ConnectionStyle.SOLID)
+    direction: ConnectionDirection = Field(
+        default=ConnectionDirection.FORWARD,
+        description="Arrow direction from the original mermaid edge",
+    )
     crosses_boundary: bool = Field(
         default=False,
         description="True if this edge crosses a layer boundary",
