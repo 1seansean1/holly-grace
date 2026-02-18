@@ -92,9 +92,16 @@ _RE_CRITICAL_PATH = re.compile(
 
 def _parse_critical_path_line(line: str) -> list[str]:
     """Parse a critical path line like '1.5 → 1.6 → 1.7' into task IDs."""
+    stripped = line.strip()
+    if not stripped or not re.match(r"\d+a?\.\d+", stripped):
+        return []
     # Split on arrow variants
-    parts = re.split(r"\s*[→→]\s*", line.strip())
-    return [p.strip() for p in parts if p.strip()]
+    parts = re.split(r"\s*[→→]\s*", stripped)
+    ids = [p.strip() for p in parts if p.strip()]
+    # Validate all parts are task IDs
+    if all(re.match(r"^\d+a?\.\d+$", p) for p in ids):
+        return ids
+    return []
 
 
 def parse_manifest(source: str) -> Manifest:
@@ -142,7 +149,7 @@ def parse_manifest(source: str) -> Manifest:
             if stripped.startswith("```"):
                 continue
             path_ids = _parse_critical_path_line(stripped)
-            if path_ids and len(path_ids) >= 2:
+            if path_ids:
                 current_slice.critical_path = path_ids
                 manifest.all_critical_path_ids.update(path_ids)
                 in_critical_path_block = False

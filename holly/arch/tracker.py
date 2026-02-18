@@ -20,6 +20,7 @@ import yaml
 if TYPE_CHECKING:
     from pathlib import Path
 
+from holly.arch.dependencies import DependencyGraph, build_dependency_graph
 from holly.arch.manifest_parser import Manifest, parse_manifest_file
 
 
@@ -167,8 +168,15 @@ def _task_gantt_status(state: TaskState, is_critical: bool) -> str:
     return ""
 
 
-def generate_gantt(registry: StatusRegistry) -> str:
-    """Generate mermaid Gantt chart from status registry."""
+def generate_gantt(
+    registry: StatusRegistry,
+    dep_graph: DependencyGraph | None = None,
+) -> str:
+    """Generate mermaid Gantt chart from status registry.
+
+    If dep_graph is provided, uses `after` syntax for dependencies and
+    estimated durations. Otherwise falls back to date-based placeholders.
+    """
     lines: list[str] = []
     lines.append("gantt")
     lines.append("    title Holly Grace — Development Progress")
@@ -193,19 +201,32 @@ def generate_gantt(registry: StatusRegistry) -> str:
             status_tag = _task_gantt_status(state, is_crit)
             label = _mermaid_safe(f"{task.task_id} {task.name}")
             task_alias = f"t{task.task_id.replace('.', '_')}"
+            duration = dep_graph.durations.get(task.task_id, "1d") if dep_graph else "1d"
 
             if state.status == TaskStatus.DONE and state.date_completed:
-                # Done tasks: show as completed on their date
-                lines.append(f"    {label} :{status_tag}{task_alias}, {state.date_completed}, 1d")
+                lines.append(
+                    f"    {label} :{status_tag}{task_alias}, {state.date_completed}, {duration}"
+                )
+            elif dep_graph and dep_graph.has_deps(task.task_id):
+                dep_aliases = ", ".join(
+                    f"t{d.replace('.', '_')}" for d in dep_graph.deps_of(task.task_id)
+                )
+                lines.append(
+                    f"    {label} :{status_tag}{task_alias}, after {dep_aliases}, {duration}"
+                )
             else:
-                # Pending/active/blocked: placeholder from today
-                lines.append(f"    {label} :{status_tag}{task_alias}, {today}, 1d")
+                lines.append(
+                    f"    {label} :{status_tag}{task_alias}, {today}, {duration}"
+                )
 
     lines.append("")
     return "\n".join(lines)
 
 
-def generate_gantt_critical_only(registry: StatusRegistry) -> str:
+def generate_gantt_critical_only(
+    registry: StatusRegistry,
+    dep_graph: DependencyGraph | None = None,
+) -> str:
     """Generate a compact Gantt showing only critical-path tasks per slice."""
     lines: list[str] = []
     lines.append("gantt")
@@ -236,11 +257,23 @@ def generate_gantt_critical_only(registry: StatusRegistry) -> str:
             status_tag = _task_gantt_status(state, is_critical=True)
             label = _mermaid_safe(f"{task.task_id} {task.name}")
             task_alias = f"t{task.task_id.replace('.', '_')}"
+            duration = dep_graph.durations.get(task_id, "1d") if dep_graph else "1d"
 
             if state.status == TaskStatus.DONE and state.date_completed:
-                lines.append(f"    {label} :{status_tag}{task_alias}, {state.date_completed}, 1d")
+                lines.append(
+                    f"    {label} :{status_tag}{task_alias}, {state.date_completed}, {duration}"
+                )
+            elif dep_graph and dep_graph.has_deps(task_id):
+                dep_aliases = ", ".join(
+                    f"t{d.replace('.', '_')}" for d in dep_graph.deps_of(task_id)
+                )
+                lines.append(
+                    f"    {label} :{status_tag}{task_alias}, after {dep_aliases}, {duration}"
+                )
             else:
-                lines.append(f"    {label} :{status_tag}{task_alias}, {today}, 1d")
+                lines.append(
+                    f"    {label} :{status_tag}{task_alias}, {today}, {duration}"
+                )
 
     lines.append("")
     return "\n".join(lines)
@@ -276,6 +309,41 @@ def generate_summary_table(registry: StatusRegistry) -> str:
     return "\n".join(lines)
 
 
+def generate_task_detail_table(
+    registry: StatusRegistry,
+    dep_graph: DependencyGraph | None = None,
+) -> str:
+    """Generate a per-task markdown table with status, duration, and dependencies.
+
+    This table can be appended to the task manifest or used standalone.
+    """
+    lines: list[str] = []
+    lines.append("| ID | Task | Status | Duration | Dependencies | Commit |")
+    lines.append("|---:|------|--------|----------|-------------|--------|")
+
+    for sl in registry.manifest.slices:
+        lines.append(f"| | **Slice {sl.slice_num}** | | | | |")
+        tasks = registry.manifest.tasks_in_slice(sl.slice_num)
+        crit_set = set(sl.critical_path)
+
+        for task in tasks:
+            state = registry.state_of(task.task_id)
+            status = state.status.value
+            if task.task_id in crit_set:
+                status += " (crit)"
+
+            duration = dep_graph.durations.get(task.task_id, "1d") if dep_graph else "1d"
+            deps = ", ".join(dep_graph.deps_of(task.task_id)) if dep_graph else ""
+            commit = state.commit[:7] if state.commit else ""
+            name = task.name[:50]
+
+            lines.append(
+                f"| {task.task_id} | {name} | {status} | {duration} | {deps} | {commit} |"
+            )
+
+    return "\n".join(lines)
+
+
 # ── High-level API ───────────────────────────────────────────
 
 def build_registry(
@@ -298,23 +366,34 @@ def generate_progress_report(
     Returns dict of artifact_name → output_path.
     """
     registry = build_registry(manifest_path, status_path)
+    dep_graph = build_dependency_graph(registry.manifest)
     outputs: dict[str, Path] = {}
 
-    # Full Gantt
+    # Full Gantt (with dependencies and durations)
     gantt_path = output_dir / "GANTT.mermaid"
-    gantt_path.write_text(generate_gantt(registry), encoding="utf-8")
+    gantt_path.write_text(generate_gantt(registry, dep_graph), encoding="utf-8")
     outputs["gantt"] = gantt_path
 
-    # Critical-path Gantt
+    # Critical-path Gantt (with dependencies and durations)
     crit_path = output_dir / "GANTT_critical.mermaid"
-    crit_path.write_text(generate_gantt_critical_only(registry), encoding="utf-8")
+    crit_path.write_text(
+        generate_gantt_critical_only(registry, dep_graph), encoding="utf-8"
+    )
     outputs["gantt_critical"] = crit_path
 
     # Summary table
     summary_path = output_dir / "PROGRESS.md"
-    header = f"# Holly Grace — Development Progress\n\n_Generated: {date.today().isoformat()}_\n\n"
+    header = (
+        f"# Holly Grace — Development Progress\n\n"
+        f"_Generated: {date.today().isoformat()}_\n\n"
+    )
+    detail_header = "\n\n## Task Detail\n\n"
     summary_path.write_text(
-        header + generate_summary_table(registry) + "\n",
+        header
+        + generate_summary_table(registry)
+        + detail_header
+        + generate_task_detail_table(registry, dep_graph)
+        + "\n",
         encoding="utf-8",
     )
     outputs["summary"] = summary_path

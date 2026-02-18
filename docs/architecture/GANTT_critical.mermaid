@@ -8,160 +8,160 @@ gantt
     1.5 Write SAD parser (mermaid → AST) :done, t1_5, 2026-02-18, 1d
     1.6 Define architecture.yaml schema :done, t1_6, 2026-02-18, 1d
     1.7 Build extraction pipeline :done, t1_7, 2026-02-18, 1d
-    1.8 Link YAML entries to SAD source lines :done, t1_8, 2026-02-18, 1d
-    2.6 Implement singleton loader :crit, t2_6, 2026-02-17, 1d
-    2.7 Implement component/boundary/ICD lookups :crit, t2_7, 2026-02-17, 1d
-    2.8 Implement hot-reload with validation :crit, t2_8, 2026-02-17, 1d
-    3.6 Implement core decorators :crit, t3_6, 2026-02-17, 1d
-    3.7 Implement ICD contract enforcement :crit, t3_7, 2026-02-17, 1d
-    3a.8 Validate full pipeline - YAML → registry → decorator →  :crit, t3a_8, 2026-02-17, 1d
-    3a.10 Implement minimal K8 eval gate :crit, t3a_10, 2026-02-17, 1d
-    3a.12 Run gate, produce pass/fail report :crit, t3a_12, 2026-02-17, 1d
+    1.8 Link YAML entries to SAD source lines :done, t1_8, 2026-02-18, 0.5d
+    2.6 Implement singleton loader :crit, t2_6, after t1_8, t2_5, 1d
+    2.7 Implement component/boundary/ICD lookups :crit, t2_7, after t2_6, 1d
+    2.8 Implement hot-reload with validation :crit, t2_8, after t2_7, 1d
+    3.6 Implement core decorators :crit, t3_6, after t2_8, t3_5, 1d
+    3.7 Implement ICD contract enforcement :crit, t3_7, after t3_6, 1d
+    3a.8 Validate full pipeline - YAML → registry → decorator →  :crit, t3a_8, after t3_7, t3a_7, 1d
+    3a.10 Implement minimal K8 eval gate :crit, t3a_10, after t3a_8, t3a_9, 1d
+    3a.12 Run gate, produce pass/fail report :crit, t3a_12, after t3a_10, t3a_11, 0.5d
     section Slice 2 (0%)
-    5.8 Build ICD Schema Registry :crit, t5_8, 2026-02-17, 1d
-    5.5 Implement ICD as Pydantic models :crit, t5_5, 2026-02-17, 1d
-    5.6 Register ICDs in architecture.yaml :crit, t5_6, 2026-02-17, 1d
-    7.1 Extend AST scanner with per-module rules :crit, t7_1, 2026-02-17, 1d
-    7.2 Add wrong-decorator detection :crit, t7_2, 2026-02-17, 1d
-    8.3 Write contract fixture generator :crit, t8_3, 2026-02-17, 1d
-    9.2 Implement fitness functions :crit, t9_2, 2026-02-17, 1d
-    10.2 Build RTM generator :crit, t10_2, 2026-02-17, 1d
-    11.1 Integrate drift, scanner, fitness, RTM into unified gat :crit, t11_1, 2026-02-17, 1d
-    11.3 Define Phase A gate checklist :crit, t11_3, 2026-02-17, 1d
+    5.8 Build ICD Schema Registry :crit, t5_8, after t5_7, t3a_12, 0.5d
+    5.5 Implement ICD as Pydantic models :crit, t5_5, after t5_8, t5_4, 0.5d
+    5.6 Register ICDs in architecture.yaml :crit, t5_6, after t5_5, 0.5d
+    7.1 Extend AST scanner with per-module rules :crit, t7_1, after t5_6, 0.5d
+    7.2 Add wrong-decorator detection :crit, t7_2, after t7_1, 0.5d
+    8.3 Write contract fixture generator :crit, t8_3, after t7_2, t8_2, 0.5d
+    9.2 Implement fitness functions :crit, t9_2, after t8_3, t9_1, 0.5d
+    10.2 Build RTM generator :crit, t10_2, after t9_2, t10_1, 0.5d
+    11.1 Integrate drift, scanner, fitness, RTM into unified gat :crit, t11_1, after t10_2, 0.5d
+    11.3 Define Phase A gate checklist :crit, t11_3, after t11_1, t11_2, 0.5d
     section Slice 3 (0%)
-    13.1 FMEA - kernel invariant desynchronization :crit, t13_1, 2026-02-17, 1d
-    14.1 TLA+ spec - kernel invariant state machine :crit, t14_1, 2026-02-17, 1d
-    14.5 Implement formal state-machine validator :crit, t14_5, 2026-02-17, 1d
-    15.4 Implement per TLA+ state machine spec :crit, t15_4, 2026-02-17, 1d
-    16.3 Implement K1 schema validation per TLA+ :crit, t16_3, 2026-02-17, 1d
-    16.4 Implement K2 permission gating per TLA+ :crit, t16_4, 2026-02-17, 1d
-    16.5 Implement K3 bounds checking per TLA+ :crit, t16_5, 2026-02-17, 1d
-    16.6 Implement K4 trace injection per TLA+ :crit, t16_6, 2026-02-17, 1d
-    16.9 Verify K1–K4 Guard Condition Determinism :crit, t16_9, 2026-02-17, 1d
-    17.3 Implement K5 idempotency (RFC 8785) per TLA+ :crit, t17_3, 2026-02-17, 1d
-    17.4 Implement K6 audit WAL per TLA+ :crit, t17_4, 2026-02-17, 1d
-    17.7 Verify K5–K6 Invariant Preservation :crit, t17_7, 2026-02-17, 1d
-    18.3 Implement K7 HITL gate per TLA+ :crit, t18_3, 2026-02-17, 1d
-    18.4 Implement K8 eval gate per TLA+ :crit, t18_4, 2026-02-17, 1d
-    18.9 Verify K7–K8 Failure Isolation :crit, t18_9, 2026-02-17, 1d
-    20.3 Implement dissimilar verification channel :crit, t20_3, 2026-02-17, 1d
-    20.5 Verify Dissimilar Verifier State Machine :crit, t20_5, 2026-02-17, 1d
-    21.2 Execute SIL-3 verification :crit, t21_2, 2026-02-17, 1d
-    21.6 Define Phase B gate checklist :crit, t21_6, 2026-02-17, 1d
+    13.1 FMEA - kernel invariant desynchronization :crit, t13_1, after t11_3, 0.5d
+    14.1 TLA+ spec - kernel invariant state machine :crit, t14_1, after t13_1, 1.5d
+    14.5 Implement formal state-machine validator :crit, t14_5, after t14_1, t14_4, 1.5d
+    15.4 Implement per TLA+ state machine spec :crit, t15_4, after t14_5, t15_3, 1.5d
+    16.3 Implement K1 schema validation per TLA+ :crit, t16_3, after t15_4, t16_2, 1.5d
+    16.4 Implement K2 permission gating per TLA+ :crit, t16_4, after t16_3, 1.5d
+    16.5 Implement K3 bounds checking per TLA+ :crit, t16_5, after t16_4, 1.5d
+    16.6 Implement K4 trace injection per TLA+ :crit, t16_6, after t16_5, 1.5d
+    16.9 Verify K1–K4 Guard Condition Determinism :crit, t16_9, after t16_6, t16_8, 1.5d
+    17.3 Implement K5 idempotency (RFC 8785) per TLA+ :crit, t17_3, after t16_9, t17_2, 1.5d
+    17.4 Implement K6 audit WAL per TLA+ :crit, t17_4, after t17_3, 1.5d
+    17.7 Verify K5–K6 Invariant Preservation :crit, t17_7, after t17_4, t17_6, 1.5d
+    18.3 Implement K7 HITL gate per TLA+ :crit, t18_3, after t17_7, t18_2, 1.5d
+    18.4 Implement K8 eval gate per TLA+ :crit, t18_4, after t18_3, 1.5d
+    18.9 Verify K7–K8 Failure Isolation :crit, t18_9, after t18_4, t18_8, 1.5d
+    20.3 Implement dissimilar verification channel :crit, t20_3, after t18_9, t20_2, 1d
+    20.5 Verify Dissimilar Verifier State Machine :crit, t20_5, after t20_3, t20_4, 1.5d
+    21.2 Execute SIL-3 verification :crit, t21_2, after t20_5, t21_1, 0.5d
+    21.6 Define Phase B gate checklist :crit, t21_6, after t21_2, t21_5, 0.5d
     section Slice 4 (0%)
-    22.5 Implement async pool, models, RLS, migrations :crit, t22_5, 2026-02-17, 1d
-    22.7 Apply RLS per ICD Boundary :crit, t22_7, 2026-02-17, 1d
-    23.3 Implement time-based partitions, auto-create, S3 archiv :crit, t23_3, 2026-02-17, 1d
-    24.3 Implement pool, pub/sub, queues, cache, HA :crit, t24_3, 2026-02-17, 1d
-    25.3 Implement client, tenant-isolated collections, embeddin :crit, t25_3, 2026-02-17, 1d
-    26.2 Execute SIL-2 test suite :crit, t26_2, 2026-02-17, 1d
-    26.4 Phase C gate checklist :crit, t26_4, 2026-02-17, 1d
+    22.5 Implement async pool, models, RLS, migrations :crit, t22_5, after t22_4, t21_6, 0.5d
+    22.7 Apply RLS per ICD Boundary :crit, t22_7, after t22_5, t22_6, 0.5d
+    23.3 Implement time-based partitions, auto-create, S3 archiv :crit, t23_3, after t22_7, t23_2, 0.5d
+    24.3 Implement pool, pub/sub, queues, cache, HA :crit, t24_3, after t23_3, t24_2, 0.5d
+    25.3 Implement client, tenant-isolated collections, embeddin :crit, t25_3, after t24_3, t25_2, 0.5d
+    26.2 Execute SIL-2 test suite :crit, t26_2, after t25_3, t26_1, 0.5d
+    26.4 Phase C gate checklist :crit, t26_4, after t26_2, t26_3, 0.5d
     section Slice 5 (0%)
-    27.4 Implement canonical redaction library :crit, t27_4, 2026-02-17, 1d
-    28.3 Implement input sanitization, output redaction, injecti :crit, t28_3, 2026-02-17, 1d
-    30.3 Implement detect + redact in traces per ICD-v0.1 redact :crit, t30_3, 2026-02-17, 1d
-    31.4 Implement per TLA+ egress spec :crit, t31_4, 2026-02-17, 1d
-    31.5 Verify egress as independent safety layer :crit, t31_5, 2026-02-17, 1d
-    31.7 Verify Egress Filter Pipeline Guarantees :crit, t31_7, 2026-02-17, 1d
-    33.1 Aggregate FMEA results for D.27–D.32 :crit, t33_1, 2026-02-17, 1d
-    33.2 Build structured safety argument :crit, t33_2, 2026-02-17, 1d
-    33.5 Integrate all 49 ICDs into Phase D Safety Case :crit, t33_5, 2026-02-17, 1d
-    33.4 Phase D gate checklist :crit, t33_4, 2026-02-17, 1d
+    27.4 Implement canonical redaction library :crit, t27_4, after t27_3, t26_4, 1d
+    28.3 Implement input sanitization, output redaction, injecti :crit, t28_3, after t27_4, t28_2, 1d
+    30.3 Implement detect + redact in traces per ICD-v0.1 redact :crit, t30_3, after t28_3, t30_2, 1d
+    31.4 Implement per TLA+ egress spec :crit, t31_4, after t30_3, t31_3, 1.5d
+    31.5 Verify egress as independent safety layer :crit, t31_5, after t31_4, 1d
+    31.7 Verify Egress Filter Pipeline Guarantees :crit, t31_7, after t31_5, t31_6, 1.5d
+    33.1 Aggregate FMEA results for D.27–D.32 :crit, t33_1, after t31_7, 0.5d
+    33.2 Build structured safety argument :crit, t33_2, after t33_1, 1d
+    33.5 Integrate all 49 ICDs into Phase D Safety Case :crit, t33_5, after t33_2, t33_4, 0.5d
+    33.4 Phase D gate checklist :crit, t33_4, after t33_5, t33_3, 0.5d
     section Slice 6 (0%)
-    36.8 Implement L0–L4 Predicate Functions :crit, t36_8, 2026-02-17, 1d
-    36.9 Validate L0–L4 Predicates with Property-Based Testing :crit, t36_9, 2026-02-17, 1d
-    36.4 Implement 7-level hierarchy + lexicographic gating per  :crit, t36_4, 2026-02-17, 1d
-    36.5 Implement Celestial L0–L4 as executable predicates per  :crit, t36_5, 2026-02-17, 1d
-    37.4 Implement T0–T3 classification + Assembly Index per Goa :crit, t37_4, 2026-02-17, 1d
-    37.7 Validate APS Assembly Index per Goal Hierarchy Agency R :crit, t37_7, 2026-02-17, 1d
-    38.4 Implement spawn/steer/dissolve, contracts, eigenspectru :crit, t38_4, 2026-02-17, 1d
-    38.8 Verify Steer Operations maintain Contract Satisfaction :crit, t38_8, 2026-02-17, 1d
-    39.4 Implement 3-tier - short (Redis via ICD-041), medium (P :crit, t39_4, 2026-02-17, 1d
-    40.2 Execute SIL-2 test suite :crit, t40_2, 2026-02-17, 1d
-    40.3 Run all Core eval suites :crit, t40_3, 2026-02-17, 1d
-    40.5 Phase E gate checklist :crit, t40_5, 2026-02-17, 1d
+    36.8 Implement L0–L4 Predicate Functions :crit, t36_8, after t36_7, t33_4, 0.5d
+    36.9 Validate L0–L4 Predicates with Property-Based Testing :crit, t36_9, after t36_8, 0.5d
+    36.4 Implement 7-level hierarchy + lexicographic gating per  :crit, t36_4, after t36_9, t36_3, 0.5d
+    36.5 Implement Celestial L0–L4 as executable predicates per  :crit, t36_5, after t36_4, 0.5d
+    37.4 Implement T0–T3 classification + Assembly Index per Goa :crit, t37_4, after t36_5, t37_3, 0.5d
+    37.7 Validate APS Assembly Index per Goal Hierarchy Agency R :crit, t37_7, after t37_4, t37_6, 0.5d
+    38.4 Implement spawn/steer/dissolve, contracts, eigenspectru :crit, t38_4, after t37_7, t38_3, 0.5d
+    38.8 Verify Steer Operations maintain Contract Satisfaction :crit, t38_8, after t38_4, t38_7, 0.5d
+    39.4 Implement 3-tier - short (Redis via ICD-041), medium (P :crit, t39_4, after t38_8, t39_3, 0.5d
+    40.2 Execute SIL-2 test suite :crit, t40_2, after t39_4, t40_1, 0.5d
+    40.3 Run all Core eval suites :crit, t40_3, after t40_2, 0.5d
+    40.5 Phase E gate checklist :crit, t40_5, after t40_3, t40_4, 0.5d
     section Slice 7 (0%)
-    41.4 Implement lane manager, policy engine, dispatchers per  :crit, t41_4, 2026-02-17, 1d
-    42.4 Implement registry per ICD-019/020, per-agent permissio :crit, t42_4, 2026-02-17, 1d
-    43.3 Implement code (gRPC→sandbox per ICD-022), web (HTTP pe :crit, t43_3, 2026-02-17, 1d
-    44.5 Implement durable engine per ICD-021, saga, compensatio :crit, t44_5, 2026-02-17, 1d
-    45.2 Execute SIL-2 test suite :crit, t45_2, 2026-02-17, 1d
-    45.4 Phase F gate checklist :crit, t45_4, 2026-02-17, 1d
+    41.4 Implement lane manager, policy engine, dispatchers per  :crit, t41_4, after t41_3, t40_5, 0.5d
+    42.4 Implement registry per ICD-019/020, per-agent permissio :crit, t42_4, after t41_4, t42_3, 0.5d
+    43.3 Implement code (gRPC→sandbox per ICD-022), web (HTTP pe :crit, t43_3, after t42_4, t43_2, 0.5d
+    44.5 Implement durable engine per ICD-021, saga, compensatio :crit, t44_5, after t43_3, t44_4, 0.5d
+    45.2 Execute SIL-2 test suite :crit, t45_2, after t44_5, t45_1, 0.5d
+    45.4 Phase F gate checklist :crit, t45_4, after t45_2, t45_3, 0.5d
     section Slice 8 (0%)
-    46.5 Build minimal container - no network, no Holly deps per :crit, t46_5, 2026-02-17, 1d
-    47.3 Implement per TLA+ sandbox spec per Behavior Spec §2 :crit, t47_3, 2026-02-17, 1d
-    47.5 Validate gRPC Proto Constraints per ICD-022 :crit, t47_5, 2026-02-17, 1d
-    48.3 Implement per TLA+ isolation spec per Behavior Spec §2 :crit, t48_3, 2026-02-17, 1d
-    48.5 Verify Isolation Invariant Preservation per Behavior Sp :crit, t48_5, 2026-02-17, 1d
-    49.4 Implement production runtime configs per Behavior Spec  :crit, t49_4, 2026-02-17, 1d
-    49.5 Adversarial Runtime Escape Testing per Behavior Spec §2 :crit, t49_5, 2026-02-17, 1d
-    50.2 Execute SIL-3 test suite per Behavior Spec §2 Acceptanc :crit, t50_2, 2026-02-17, 1d
-    50.3 Run TLA+ model checker against sandbox spec per Behavio :crit, t50_3, 2026-02-17, 1d
-    50.6 Phase G gate checklist :crit, t50_6, 2026-02-17, 1d
+    46.5 Build minimal container - no network, no Holly deps per :crit, t46_5, after t46_4, t45_4, 1d
+    47.3 Implement per TLA+ sandbox spec per Behavior Spec §2 :crit, t47_3, after t46_5, t47_2, 1.5d
+    47.5 Validate gRPC Proto Constraints per ICD-022 :crit, t47_5, after t47_3, t47_4, 1.5d
+    48.3 Implement per TLA+ isolation spec per Behavior Spec §2 :crit, t48_3, after t47_5, t48_2, 1.5d
+    48.5 Verify Isolation Invariant Preservation per Behavior Sp :crit, t48_5, after t48_3, t48_4, 1.5d
+    49.4 Implement production runtime configs per Behavior Spec  :crit, t49_4, after t48_5, t49_3, 1d
+    49.5 Adversarial Runtime Escape Testing per Behavior Spec §2 :crit, t49_5, after t49_4, 1.5d
+    50.2 Execute SIL-3 test suite per Behavior Spec §2 Acceptanc :crit, t50_2, after t49_5, t50_1, 0.5d
+    50.3 Run TLA+ model checker against sandbox spec per Behavio :crit, t50_3, after t50_2, 1.5d
+    50.6 Phase G gate checklist :crit, t50_6, after t50_3, t50_5, 0.5d
     section Slice 9 (0%)
-    51.4 Implement Starlette app factory per ICD-001/002/003, mi :crit, t51_4, 2026-02-17, 1d
-    52.3 Implement JWKS verification per ICD-047, claims extract :crit, t52_3, 2026-02-17, 1d
-    53.3 Implement RBAC enforcement from JWT claims per K2 :crit, t53_3, 2026-02-17, 1d
-    54.1 Implement routes per ICD-003/023/024/025/026/027/028 (c :crit, t54_1, 2026-02-17, 1d
-    55.3 Implement WS manager per ICD-025/027, 9 channels, tenan :crit, t55_3, 2026-02-17, 1d
-    56.2 Execute SIL-2 test suite per ICD routes :crit, t56_2, 2026-02-17, 1d
-    56.5 Verify All 49 ICDs have Corresponding API Routes or Con :crit, t56_5, 2026-02-17, 1d
-    56.4 Phase H gate checklist :crit, t56_4, 2026-02-17, 1d
+    51.4 Implement Starlette app factory per ICD-001/002/003, mi :crit, t51_4, after t50_6, 0.5d
+    52.3 Implement JWKS verification per ICD-047, claims extract :crit, t52_3, after t51_4, 0.5d
+    53.3 Implement RBAC enforcement from JWT claims per K2 :crit, t53_3, after t52_3, 0.5d
+    54.1 Implement routes per ICD-003/023/024/025/026/027/028 (c :crit, t54_1, after t53_3, 0.5d
+    55.3 Implement WS manager per ICD-025/027, 9 channels, tenan :crit, t55_3, after t54_1, 0.5d
+    56.2 Execute SIL-2 test suite per ICD routes :crit, t56_2, after t55_3, 0.5d
+    56.5 Verify All 49 ICDs have Corresponding API Routes or Con :crit, t56_5, after t56_2, 0.5d
+    56.4 Phase H gate checklist :crit, t56_4, after t56_5, 0.5d
     section Slice 10 (0%)
-    57.4 Implement unified ingest per ICD-023/024, sampling, bac :crit, t57_4, 2026-02-17, 1d
-    58.2 Implement structured JSON logger per ICD-026, correlati :crit, t58_2, 2026-02-17, 1d
-    59.3 Implement decision tree persistence per ICD-025, redact :crit, t59_3, 2026-02-17, 1d
-    60.2 Implement Prometheus collectors :crit, t60_2, 2026-02-17, 1d
-    61.2 Implement PG (partitioned per ICD-036) + Redis (real-ti :crit, t61_2, 2026-02-17, 1d
-    61.6 Implement Observability Trace Correlation per ICD Bound :crit, t61_6, 2026-02-17, 1d
-    61.5 Phase I gate checklist :crit, t61_5, 2026-02-17, 1d
+    57.4 Implement unified ingest per ICD-023/024, sampling, bac :crit, t57_4, after t56_4, 0.5d
+    58.2 Implement structured JSON logger per ICD-026, correlati :crit, t58_2, after t57_4, 0.5d
+    59.3 Implement decision tree persistence per ICD-025, redact :crit, t59_3, after t58_2, 0.5d
+    60.2 Implement Prometheus collectors :crit, t60_2, after t59_3, 0.5d
+    61.2 Implement PG (partitioned per ICD-036) + Redis (real-ti :crit, t61_2, after t60_2, 0.5d
+    61.6 Implement Observability Trace Correlation per ICD Bound :crit, t61_6, after t61_2, 0.5d
+    61.5 Phase I gate checklist :crit, t61_5, after t61_6, 0.5d
     section Slice 11 (0%)
-    62.5 Implement BaseAgent - lifecycle, message protocol per I :crit, t62_5, 2026-02-17, 1d
-    63.4 Implement type catalog, capability declarations with ev :crit, t63_4, 2026-02-17, 1d
-    64.2 Implement Holly, researcher, builder, reviewer, planner :crit, t64_2, 2026-02-17, 1d
-    64.3 Establish eval baselines :crit, t64_3, 2026-02-17, 1d
-    65.2 Implement Celestial L0–L4 as executable predicate funct :crit, t65_2, 2026-02-17, 1d
-    65.7 Implement Terrestrial L5–L6 Predicate Functions per Goa :crit, t65_7, 2026-02-17, 1d
-    65.8 Verify Lexicographic Gating Enforcement per Goal Hierar :crit, t65_8, 2026-02-17, 1d
-    65.9 Implement Multi-Agent Feasibility Checker per Goal Hier :crit, t65_9, 2026-02-17, 1d
-    65.4 Build constitution eval suite per Goal Hierarchy §2 :crit, t65_4, 2026-02-17, 1d
-    65.6 Phase J gate checklist :crit, t65_6, 2026-02-17, 1d
+    62.5 Implement BaseAgent - lifecycle, message protocol per I :crit, t62_5, after t61_5, 0.5d
+    63.4 Implement type catalog, capability declarations with ev :crit, t63_4, after t62_5, 0.5d
+    64.2 Implement Holly, researcher, builder, reviewer, planner :crit, t64_2, after t63_4, 0.5d
+    64.3 Establish eval baselines :crit, t64_3, after t64_2, 0.5d
+    65.2 Implement Celestial L0–L4 as executable predicate funct :crit, t65_2, after t64_3, 0.5d
+    65.7 Implement Terrestrial L5–L6 Predicate Functions per Goa :crit, t65_7, after t65_2, 0.5d
+    65.8 Verify Lexicographic Gating Enforcement per Goal Hierar :crit, t65_8, after t65_7, 0.5d
+    65.9 Implement Multi-Agent Feasibility Checker per Goal Hier :crit, t65_9, after t65_8, 0.5d
+    65.4 Build constitution eval suite per Goal Hierarchy §2 :crit, t65_4, after t65_9, 0.5d
+    65.6 Phase J gate checklist :crit, t65_6, after t65_4, 0.5d
     section Slice 12 (0%)
-    66.2 Implement eval framework harness :crit, t66_2, 2026-02-17, 1d
-    66.3 Implement dataset loaders :crit, t66_3, 2026-02-17, 1d
-    66.4 Implement metric collectors + regression tracker :crit, t66_4, 2026-02-17, 1d
-    67.1 Build per-agent property-based eval suites per Goal Hie :crit, t67_1, 2026-02-17, 1d
-    67.2 Build adversarial eval suites per Goal Hierarchy Celest :crit, t67_2, 2026-02-17, 1d
-    67.3 Establish production baselines per Goal Hierarchy L0–L4 :crit, t67_3, 2026-02-17, 1d
-    68.1 Implement constitution gate per Goal Hierarchy §2.4 :crit, t68_1, 2026-02-17, 1d
-    68.4 Integrate Constitution Gate with K8 Eval Gate :crit, t68_4, 2026-02-17, 1d
-    69.1 Implement eval CI pipeline stage :crit, t69_1, 2026-02-17, 1d
-    69.5 Phase K gate checklist :crit, t69_5, 2026-02-17, 1d
+    66.2 Implement eval framework harness :crit, t66_2, after t65_6, 0.5d
+    66.3 Implement dataset loaders :crit, t66_3, after t66_2, 0.5d
+    66.4 Implement metric collectors + regression tracker :crit, t66_4, after t66_3, 0.5d
+    67.1 Build per-agent property-based eval suites per Goal Hie :crit, t67_1, after t66_4, 0.5d
+    67.2 Build adversarial eval suites per Goal Hierarchy Celest :crit, t67_2, after t67_1, 0.5d
+    67.3 Establish production baselines per Goal Hierarchy L0–L4 :crit, t67_3, after t67_2, 0.5d
+    68.1 Implement constitution gate per Goal Hierarchy §2.4 :crit, t68_1, after t67_3, 0.5d
+    68.4 Integrate Constitution Gate with K8 Eval Gate :crit, t68_4, after t68_1, 0.5d
+    69.1 Implement eval CI pipeline stage :crit, t69_1, after t68_4, 0.5d
+    69.5 Phase K gate checklist :crit, t69_5, after t69_1, 0.5d
     section Slice 13 (0%)
-    70.2 Implement Pydantic env-driven config :crit, t70_2, 2026-02-17, 1d
-    71.2 Implement runtime hot reload without restart :crit, t71_2, 2026-02-17, 1d
-    72.3 Implement change logging, HITL on dangerous keys, versi :crit, t72_3, 2026-02-17, 1d
-    72.6 Phase L gate checklist :crit, t72_6, 2026-02-17, 1d
+    70.2 Implement Pydantic env-driven config :crit, t70_2, after t69_5, 0.5d
+    71.2 Implement runtime hot reload without restart :crit, t71_2, after t70_2, 0.5d
+    72.3 Implement change logging, HITL on dangerous keys, versi :crit, t72_3, after t71_2, 0.5d
+    72.6 Phase L gate checklist :crit, t72_6, after t72_3, 0.5d
     section Slice 14 (0%)
-    73.3 Scaffold React + Vite + Tailwind + Zustand :crit, t73_3, 2026-02-17, 1d
-    74.1 Implement chat panel per ICD-025/027, message bubbles,  :crit, t74_1, 2026-02-17, 1d
-    75.2 Implement live agent graph, contract cards per Goal Hie :crit, t75_2, 2026-02-17, 1d
-    76.2 Implement tree explorer, celestial badges per Goal Hier :crit, t76_2, 2026-02-17, 1d
-    77.1 Implement lane monitor, task timeline per ICD-013/014/0 :crit, t77_1, 2026-02-17, 1d
-    78.1 Implement log viewer, trace tree, metrics dashboard per :crit, t78_1, 2026-02-17, 1d
-    78.4 Phase M gate checklist :crit, t78_4, 2026-02-17, 1d
+    73.3 Scaffold React + Vite + Tailwind + Zustand :crit, t73_3, after t72_6, 0.5d
+    74.1 Implement chat panel per ICD-025/027, message bubbles,  :crit, t74_1, after t73_3, 0.5d
+    75.2 Implement live agent graph, contract cards per Goal Hie :crit, t75_2, after t74_1, 0.5d
+    76.2 Implement tree explorer, celestial badges per Goal Hier :crit, t76_2, after t75_2, 0.5d
+    77.1 Implement lane monitor, task timeline per ICD-013/014/0 :crit, t77_1, after t76_2, 0.5d
+    78.1 Implement log viewer, trace tree, metrics dashboard per :crit, t78_1, after t77_1, 0.5d
+    78.4 Phase M gate checklist :crit, t78_4, after t78_1, 0.5d
     section Slice 15 (0%)
-    79.2 Build Docker Compose (dev) + production Dockerfile :crit, t79_2, 2026-02-17, 1d
-    80.2 Implement VPC/CFn, ALB/WAF, ECS Fargate task defs per I :crit, t80_2, 2026-02-17, 1d
-    81.1 Implement Authentik OIDC flows per ICD-004/005/047, RBA :crit, t81_1, 2026-02-17, 1d
-    82.1 Implement feature flags :crit, t82_1, 2026-02-17, 1d
-    82.2 Implement canary deploys per ICD staged deployment :crit, t82_2, 2026-02-17, 1d
-    82.3 Implement progressive delivery gates per eval framework :crit, t82_3, 2026-02-17, 1d
-    84.1 Aggregate all FMEA results across all phases (A–N) :crit, t84_1, 2026-02-17, 1d
-    84.2 Build full system safety argument per ISO 42010, cite a :crit, t84_2, 2026-02-17, 1d
-    84.7 Final Behavior Spec Validation :crit, t84_7, 2026-02-17, 1d
-    84.8 Verify Goal Hierarchy Theorems per Goal Hierarchy §3 :crit, t84_8, 2026-02-17, 1d
-    84.4 Verify all TLA+ specs pass final model check (kernel, s :crit, t84_4, 2026-02-17, 1d
-    84.5 Independent safety review per SIL-3 rigor (Kernel, Sand :crit, t84_5, 2026-02-17, 1d
-    84.6 Release gate - safety case complete? :crit, t84_6, 2026-02-17, 1d
-    86.5 Phase N gate checklist :crit, t86_5, 2026-02-17, 1d
+    79.2 Build Docker Compose (dev) + production Dockerfile :crit, t79_2, after t78_4, 1d
+    80.2 Implement VPC/CFn, ALB/WAF, ECS Fargate task defs per I :crit, t80_2, after t79_2, 0.5d
+    81.1 Implement Authentik OIDC flows per ICD-004/005/047, RBA :crit, t81_1, after t80_2, 1d
+    82.1 Implement feature flags :crit, t82_1, after t81_1, 0.5d
+    82.2 Implement canary deploys per ICD staged deployment :crit, t82_2, after t82_1, 0.5d
+    82.3 Implement progressive delivery gates per eval framework :crit, t82_3, after t82_2, 0.5d
+    84.1 Aggregate all FMEA results across all phases (A–N) :crit, t84_1, after t82_3, 0.5d
+    84.2 Build full system safety argument per ISO 42010, cite a :crit, t84_2, after t84_1, 1d
+    84.7 Final Behavior Spec Validation :crit, t84_7, after t84_2, 1.5d
+    84.8 Verify Goal Hierarchy Theorems per Goal Hierarchy §3 :crit, t84_8, after t84_7, 0.5d
+    84.4 Verify all TLA+ specs pass final model check (kernel, s :crit, t84_4, after t84_8, 1.5d
+    84.5 Independent safety review per SIL-3 rigor (Kernel, Sand :crit, t84_5, after t84_4, 1d
+    84.6 Release gate - safety case complete? :crit, t84_6, after t84_5, 0.5d
+    86.5 Phase N gate checklist :crit, t86_5, after t84_6, 0.5d

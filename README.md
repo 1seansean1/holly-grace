@@ -117,6 +117,8 @@ Two meta-conclusions emerged. First, execution had to shift from waterfall to sp
 
 Net result: 73 steps → 86. 13 phases → 14. Waterfall → spiral. Uniform rigor → SIL-tiered. Every addition traces to a specific research finding, and every finding traces to a specific gap.
 
+> **Checkpoint:** [Task Manifest](docs/Task_Manifest.md) | **Next:** Task 1.5 — Write SAD parser (mermaid → AST), first implementation task on the Slice 1 critical path.
+
 ### Entry #2 — 17 February 2026
 
 The task manifest existed — 545 tasks across 15 spiral slices — but a simple question exposed the problem: could a developer actually build from it? The manifest says *what* to build and *when*. The SAD says *what exists* and *how it connects*. Neither says *what crosses each boundary*, *how each component behaves*, or *what "correct" means computationally*. Three documents were missing.
@@ -134,6 +136,8 @@ The ICD pass found 8 gaps — no tasks existed for building an ICD schema regist
 The 47 acceptance criteria refinements replaced vague statements with specific document references. "Schema validated" became "Per ICD-006/007 Kernel boundary schema, YAML components map 1:1 to KernelContext entry points." "Goal compliance verified" became "Per Goal Hierarchy §2.0–2.4, each Celestial predicate returns GoalResult with satisfaction distance metric; zero violations in adversarial eval suite." "Failure mode tested" became "Per Behavior Spec §1.4 K3 state machine, BOUNDS_EXCEEDED state reached on over-budget input; compensating action fires within 100ms."
 
 Net result: 545 → 583 tasks. 113 → 127 critical-path tasks. Three formal engineering documents now underpin every acceptance criterion. The task manifest is no longer a project management artifact disconnected from engineering specifications — it's a validated, cross-referenced development contract where every task traces to an ICD interface, a behavior spec state machine, or a goal hierarchy predicate.
+
+> **Checkpoint:** [Task Manifest](docs/Task_Manifest.md) | **Next:** Task 1.5 — Write SAD parser (mermaid → AST), begin Phase ε Execution Slice 1.
 
 ### Entry #3 — 18 February 2026
 
@@ -153,6 +157,8 @@ The README was also restructured today. The old version mixed contextualization 
 
 Net result: six document-control defects fixed (X-001 through X-006), README cut from 282 to 141 lines, audit checklist v2.0 pushed, and the first external validation confirms the specification corpus is structurally sound. The limiting factor going forward is not design or specification — it's configuration management discipline. The tooling exists (the checklist). The question is whether we use it.
 
+> **Checkpoint:** [Task Manifest](docs/Task_Manifest.md) | **Next:** Run the Artifact Genealogy Checklist v2.0 to establish clean baseline before Slice 1 execution.
+
 ### Entry #4 — 18 February 2026
 
 We used it. The Artifact Genealogy Checklist v2.0 ran its first audit today — run ID `AGC-2026-02-17-001` — against the full specification corpus. Seven parallel agents executed §0 through §9 in two waves: §0 first to extract state variables, then §1-2, §3-4, §5, §6, §7, and §9 simultaneously. The run took roughly 20 minutes and covered 183 base checkboxes.
@@ -170,6 +176,8 @@ All 12 findings (10 original + 2 discovered during remediation) were fixed in a 
 The meta-lesson is about agent reliability as auditors. Of the 7 agents, two produced incorrect counts (§6 counted 77 edges instead of 80; §7 counted ~34 SAD components instead of 45). Both were caused by incomplete reads — the agent's context window truncated the input, and it counted what it could see rather than flagging that it couldn't see everything. The §0 agent made the same error with N_sil (50 instead of 43). The fix is structural: any agent reporting a count must also report its read coverage (bytes read / file size) and flag when coverage is incomplete. The checklist doesn't currently require this, but it should — the count verification procedure needs a completeness attestation, not just a number.
 
 Net result: first audit run complete, 12/12 findings resolved, specification corpus internally consistent, baseline established. The repo is clean for slice 1.
+
+> **Checkpoint:** [Task Manifest](docs/Task_Manifest.md) | **Next:** Task 1.5 — Write SAD parser (mermaid → AST). Slice 1 critical path: `1.5 → 1.6 → 1.7 → 1.8 → 2.6 → 2.7 → 2.8 → 3.6 → 3.7 → 3a.8 → 3a.10 → 3a.12`.
 
 ---
 

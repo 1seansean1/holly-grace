@@ -516,6 +516,11 @@ P6.1  Task Manifest update:
         - Update task status counts in summary table
         - If new tasks discovered during implementation → append to manifest
 
+P6.1a Status tracking update:
+        - Update docs/status.yaml with task completion state
+        - Fields: status (done), commit SHA, date, optional note
+        - Run `python -m holly.arch gantt` to regenerate tracking artifacts
+
 P6.2  Architecture sync (if architecture changed):
   P6.2.1  Update SAD mermaid if new components added or edges changed
   P6.2.2  Update RTD mermaid if new files/directories created
@@ -651,18 +656,32 @@ P9.1  Generate Phase Gate Report:
         - Open risks / tech debt carried forward
         - Person-weeks expended vs. estimated
 
-P9.2  Update Task Manifest:
-        - Slice status → COMPLETED
-        - Record gate passage date and commit SHA
+P9.2  Artifact Genealogy Checklist Re-Run (MANDATORY):
+        - Execute Artifact_Genealogy_Checklist.md (docs/audit/) against full corpus
+        - Run ID format: AGC-{date}-{slice_num}
+        - All §0–§9 sections executed
+        - Disposition must be PASS (not CONDITIONAL PASS)
+        - Any findings must be resolved before proceeding to P9.3
+        - Record: run_id, disposition, finding_count, resolution_summary
 
-P9.3  Tag release:
+P9.3  Update Task Manifest:
+        - Mark completed tasks as DONE with date and commit SHA
+        - Update task status counts in summary table
+
+P9.4  Regenerate Tracking Artifacts:
+        - Run `python -m holly.arch gantt` to regenerate GANTT.mermaid,
+          GANTT_critical.mermaid, and PROGRESS.md
+        - Verify generated artifacts reflect current status.yaml
+
+P9.5  Tag release:
         - git tag v0.{slice}.0 -m "Phase {letter} gate passed"
         - Push tag to both remotes
 
-P9.4  Designer's Diary Entry:
+P9.6  Designer's Diary Entry:
         - Record phase completion, key learnings, risks
+        - End with checkpoint/bookmark: link to Task Manifest + next action
 
-P9.5  Advance slice counter → proceed to P0 for next slice
+P9.7  Advance slice counter → proceed to P0 for next slice
 ```
 
 ---
@@ -712,6 +731,8 @@ These invariants are checked continuously, not just at gates:
 | **I11** | Every test traces to a control, every control traces to a requirement | P4.6 test governance compliance check |
 | **I12** | Falsification-first: no SIL-2+ task completes without negative tests | P4.6.2 falsification ratio check |
 | **I13** | No applicable control left untested at gate passage | P8.2.6 maturity gate; P4.6.1 coverage |
+| **I14** | Artifact Genealogy Checklist passes PASS at every slice boundary | P9.2 mandatory re-run |
+| **I15** | status.yaml reflects actual completion state; Gantt artifacts regenerated after each commit | P6.1a tracking update |
 
 ---
 
