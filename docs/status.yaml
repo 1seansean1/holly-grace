@@ -56,7 +56,10 @@ tasks:
     status: done
     date: "2026-02-18"
     note: "get_component/get_boundary/get_icd lookups (24 tests)"
-  2.8: pending
+  2.8:
+    status: done
+    date: "2026-02-18"
+    note: "Hot-reload with validation, generation counter (18 tests)"
   2.9: pending
 
   # Step 3 — Decorators

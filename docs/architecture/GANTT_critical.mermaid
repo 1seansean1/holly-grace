@@ -4,14 +4,14 @@ gantt
     axisFormat %b %d
     excludes weekends
 
-    section Slice 1 (50%)
+    section Slice 1 (58%)
     1.5 Write SAD parser (mermaid -> AST) :done, t1_5, 2026-02-18, 1d
     1.6 Define architecture.yaml schema :done, t1_6, 2026-02-18, 1d
     1.7 Build extraction pipeline :done, t1_7, 2026-02-18, 1d
     1.8 Link YAML entries to SAD source lines :done, t1_8, 2026-02-18, 0.5d
     2.6 Implement singleton loader :done, t2_6, 2026-02-18, 1d
     2.7 Implement component/boundary/ICD lookups :done, t2_7, 2026-02-18, 1d
-    2.8 Implement hot-reload with validation :crit, t2_8, after t2_7, 1d
+    2.8 Implement hot-reload with validation :done, t2_8, 2026-02-18, 1d
     3.6 Implement core decorators :crit, t3_6, after t2_8, 1d
     3.7 Implement ICD contract enforcement :crit, t3_7, after t3_6, 1d
     3a.8 Validate full pipeline - YAML -> registry -> :crit, t3a_8, after t3_7, 1d

@@ -2,6 +2,7 @@
 
 Task 2.6 — Implement singleton loader.
 Task 2.7 — Component / boundary / ICD lookups.
+Task 2.8 — Hot-reload with validation.
 
 The ``ArchitectureRegistry`` is the single Python entry-point for
 querying the machine-readable SAD.  It lazily loads and validates
@@ -13,7 +14,7 @@ drift detection, traceability matrix).
 Design decisions (per Task 2.3 ADR scope):
 - **Singleton via class-level lock** rather than module-level global:
   avoids import-time side effects; allows explicit ``reset()`` for
-  testing and hot-reload (Task 2.8).
+  testing and hot-reload.
 - **Lazy init**: YAML is not read until the first query, so importing
   the module has zero I/O cost.
 - **Thread-safety**: a single ``threading.Lock`` guards the load path;
@@ -24,6 +25,12 @@ Design decisions (per Task 2.3 ADR scope):
   ``get_icd`` provide O(1) or O(n) access to components, boundary-
   crossing connections, and per-component interface control documents.
   Unknown keys raise ``ComponentNotFoundError``.
+- **Hot-reload** (Task 2.8): ``reload()`` re-reads and re-validates
+  the YAML under the lock.  On success the new document replaces the
+  old atomically.  On failure (validation error, missing file) the
+  previous state is retained — callers never see a partially loaded
+  registry.  A version counter (``generation``) increments on every
+  successful reload so consumers can detect staleness.
 """
 
 from __future__ import annotations
@@ -75,10 +82,11 @@ class ArchitectureRegistry:
     _yaml_path: ClassVar[Path | None] = None
 
     # ── instance state ───────────────────────────────────
-    __slots__ = ("_document",)
+    __slots__ = ("_document", "_generation")
 
-    def __init__(self, document: ArchitectureDocument) -> None:
+    def __init__(self, document: ArchitectureDocument, generation: int = 1) -> None:
         self._document = document
+        self._generation = generation
 
     # ── public API ───────────────────────────────────────
 
@@ -130,6 +138,58 @@ class ArchitectureRegistry:
         """Tear down the singleton (for testing / hot-reload)."""
         with cls._lock:
             cls._instance = None
+
+    @classmethod
+    def reload(cls) -> "ArchitectureRegistry":
+        """Hot-reload architecture.yaml with validation.
+
+        Re-reads and re-validates the YAML file.  On success the
+        singleton's document is replaced atomically and the generation
+        counter increments.  On failure (``FileNotFoundError``,
+        ``RegistryValidationError``) the previous state is retained
+        and the exception propagates — callers never see a partially
+        loaded registry.
+
+        If the registry has never been loaded, this behaves like
+        ``get()`` (initial load at generation 1).
+
+        Returns
+        -------
+        ArchitectureRegistry
+            The singleton with the freshly loaded document.
+
+        Raises
+        ------
+        FileNotFoundError
+            If the YAML path does not exist.
+        RegistryValidationError
+            If the new YAML fails Pydantic schema validation.
+        """
+        with cls._lock:
+            path = cls._resolve_path()
+            # Validate new YAML *before* touching any state.
+            new_doc = cls._load(path)
+
+            if cls._instance is not None:
+                # Atomic swap: bump generation, replace document.
+                new_gen = cls._instance._generation + 1
+                cls._instance._document = new_doc
+                cls._instance._generation = new_gen
+            else:
+                # First load via reload() path.
+                cls._instance = cls(new_doc, generation=1)
+
+            return cls._instance
+
+    @property
+    def generation(self) -> int:
+        """Monotonically increasing version counter.
+
+        Starts at 1 on first load.  Increments by 1 on every
+        successful ``reload()``.  Consumers can cache this value
+        to detect when the registry contents have changed.
+        """
+        return self._generation
 
     @property
     def document(self) -> ArchitectureDocument:
