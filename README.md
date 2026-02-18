@@ -74,7 +74,7 @@ Audit instrument: [`Artifact_Genealogy_Checklist.md`](docs/audit/Artifact_Geneal
 
 ### Task Manifest and Current Progress
 
-583 tasks across 15 spiral slices, validated against ICD v0.1, Component Behavior Specs SIL-3, and Goal Hierarchy Formal Spec. Full manifest: [`Task_Manifest.md`](docs/Task_Manifest.md) | Gantt: [`GANTT.mermaid`](docs/architecture/GANTT.mermaid) | Critical path: [`GANTT_critical.mermaid`](docs/architecture/GANTT_critical.mermaid)
+583 tasks across 15 spiral slices, validated against ICD v0.1, Component Behavior Specs SIL-3, and Goal Hierarchy Formal Spec. Full manifest: [`Task_Manifest.md`](docs/Task_Manifest.md) | Progress: [`PROGRESS.md`](docs/architecture/PROGRESS.md) | Gantt: [`GANTT.mermaid`](docs/architecture/GANTT.mermaid) | Critical path: [`GANTT_critical.mermaid`](docs/architecture/GANTT_critical.mermaid)
 
 | Slice | Phase | Done | Total | Progress | Critical Path |
 |------:|-------|-----:|------:|---------:|---------------|
