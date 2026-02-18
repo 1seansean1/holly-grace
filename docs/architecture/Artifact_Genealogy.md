@@ -55,7 +55,7 @@ graph TD
         ICD["ICD v0.1\n49 interface contracts\nSchema, error, latency,\nbackpressure, redaction"]
         CBS["Component Behavior Specs\nSIL-3 state machines\nKernel, Sandbox, Egress"]
         GHS["Goal Hierarchy\nFormal Spec\n7-level hierarchy,\nL0-L6 predicates,\n3 theorems"]
-        SIL["SIL Classification\nMatrix v1.0\n43 components,\nSIL-1/2/3"]
+        SIL["SIL Classification\nMatrix v1.0\n47 components,\nSIL-1/2/3"]
         DEV["Dev Environment\nSpec v1.0\ntoolchain, CI,\nbranch strategy"]
         MGE["Monograph Glossary\nExtract\n104 symbols,\ntheory-impl mapping"]
     end

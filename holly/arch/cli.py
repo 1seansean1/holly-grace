@@ -143,7 +143,15 @@ def cmd_audit(args: argparse.Namespace) -> None:
 
     root = _find_repo_root()
     results = run_audit(root)
-    print(format_audit_report(results))
+    report = format_audit_report(results)
+    # Wrap stdout in UTF-8 to avoid UnicodeEncodeError on Windows cp1252
+    # when printing Unicode box-drawing and status icons.
+    out = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+    try:
+        out.write(report + "\n")
+        out.flush()
+    finally:
+        out.detach()  # release stdout.buffer without closing it
 
     fail_count = sum(1 for r in results if r.status == "FAIL")
     if fail_count > 0:

@@ -1,4 +1,4 @@
-# ruff: noqa: UP047
+# ruff: noqa: UP047  # TypeVar-based generics used until ParamSpec migration
 """Core architectural decorators for Holly boundary enforcement.
 
 Task 3.6 - Implement core decorators.

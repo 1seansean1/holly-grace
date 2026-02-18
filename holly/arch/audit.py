@@ -70,6 +70,17 @@ def _extract_number(text: str, pattern: str) -> int | None:
     return None
 
 
+def _extract_version(text: str, pattern: str) -> str | None:
+    """Extract first version string matching a regex pattern (e.g. '0.1.0.5')."""
+    match = re.search(pattern, text, re.IGNORECASE)
+    if match:
+        try:
+            return match.group(1)
+        except IndexError:
+            return None
+    return None
+
+
 def _read_file_safe(path: Path) -> str | None:
     """Read a file safely; return None if not found."""
     try:
@@ -578,20 +589,20 @@ def _check_c007_version_refs(repo_root: Path) -> AuditResult:
     Check DPG header and other files reference correct SAD/RTD versions.
     """
     try:
-        # Get SAD version from architecture.yaml
+        # Get SAD version from architecture.yaml (dotted semver, e.g. "0.1.0.5")
         arch_path = repo_root / "docs" / "architecture.yaml"
         arch_text = _read_file_safe(arch_path)
         sad_version = None
         if arch_text:
-            sad_version = _extract_number(arch_text, r'sad_version:\s*["\']?([0-9.]+)')
+            sad_version = _extract_version(arch_text, r'sad_version:\s*["\']?([0-9]+(?:\.[0-9]+)+)')
 
         # Check README for matching version
         readme_path = repo_root / "README.md"
         readme_text = _read_file_safe(readme_path)
         readme_sad_version = None
         if readme_text:
-            readme_sad_version = _extract_number(
-                readme_text, r'SAD\s+v?([0-9.]+)'
+            readme_sad_version = _extract_version(
+                readme_text, r'SAD\s+v?([0-9]+(?:\.[0-9]+)+)'
             )
 
         # Check Genealogy
@@ -599,16 +610,16 @@ def _check_c007_version_refs(repo_root: Path) -> AuditResult:
         genealogy_text = _read_file_safe(genealogy_path)
         genealogy_sad_version = None
         if genealogy_text:
-            genealogy_sad_version = _extract_number(
-                genealogy_text, r'SAD\s+v?([0-9.]+)'
+            genealogy_sad_version = _extract_version(
+                genealogy_text, r'SAD\s+v?([0-9]+(?:\.[0-9]+)+)'
             )
 
-        # Parse versions for comparison
+        # Compare version strings
         mismatches = []
         if (
             sad_version
             and readme_sad_version
-            and str(sad_version) != str(readme_sad_version)
+            and sad_version != readme_sad_version
         ):
             mismatches.append(
                 f"README v{readme_sad_version} vs architecture.yaml v{sad_version}"
@@ -616,7 +627,7 @@ def _check_c007_version_refs(repo_root: Path) -> AuditResult:
         if (
             sad_version
             and genealogy_sad_version
-            and str(sad_version) != str(genealogy_sad_version)
+            and sad_version != genealogy_sad_version
         ):
             mismatches.append(
                 f"Genealogy v{genealogy_sad_version} vs architecture.yaml v{sad_version}"
@@ -670,21 +681,27 @@ def _check_c008_sil_count(repo_root: Path) -> AuditResult:
                 "SIL_Classification_Matrix.md not found",
             )
 
-        # Count SIL assignments (rows in table)
-        sil_count = len(re.findall(r'^\|\s*\d+', sil_text, re.MULTILINE))
+        # Count SIL assignments — data rows have SIL level (1/2/3) in 4th column:
+        # | Component Name | SAD Node | Layer | SIL | ...
+        sil_count = len(re.findall(
+            r'^\|[^|]+\|[^|]+\|[^|]+\|\s*[123]\s*\|',
+            sil_text,
+            re.MULTILINE,
+        ))
 
-        # Extract from Genealogy
+        # Extract from Genealogy — the SIL node label says e.g. "43 components,\nSIL-1/2/3"
         genealogy_path = repo_root / "docs" / "architecture" / "Artifact_Genealogy.md"
         genealogy_text = _read_file_safe(genealogy_path)
         genealogy_sil_count = None
         if genealogy_text:
-            genealogy_sil_count = _grep_count_assertion(
+            # Look for the SIL Classification mermaid node: SIL["...N components..."]
+            sil_node_match = re.search(
+                r'SIL\["SIL Classification.*?(\d+)\s+components',
                 genealogy_text,
-                [
-                    r'(\d+)\s+SIL',
-                    r'SIL.*?(\d+)',
-                ],
+                re.DOTALL,
             )
+            if sil_node_match:
+                genealogy_sil_count = int(sil_node_match.group(1))
 
         if genealogy_sil_count is None or genealogy_sil_count == sil_count:
             return AuditResult(
