@@ -267,3 +267,9 @@ tasks:
     status: done
     date: "2026-02-19"
     note: "K6 WAL gate: WALEntry dataclass, WALBackend protocol, InMemoryWALBackend, redact() (email/api_key/credit_card/ssn/phone), k6_write_entry(), k6_gate() factory; WALWriteError + WALFormatError + RedactionError exceptions; 57 tests"
+  17.5: pending
+  17.6: pending
+  17.7:
+    status: done
+    date: "2026-02-19"
+    note: "K5-K6 Invariant Preservation: property-based tests for all 6 KernelContext invariants (INV-1 through INV-6); 10,000-operation master trace test; zero invariant violations; redact determinism + k5_generate_key determinism properties; 36 tests"

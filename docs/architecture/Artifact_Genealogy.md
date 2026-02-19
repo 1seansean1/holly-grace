@@ -671,6 +671,27 @@ These rules govern how new artifacts enter the genealogy:
                      TestDetectPII (5), TestK6WriteEntry (8), TestK6Gate (6),
                      TestTimestampOrdering (3), TestPropertyBased (4) — 57 new
                      1877 total tests (+57 new)
+
+2026-02-19  Task 17.7: K5-K6 Invariant Preservation — property-based
+            integration tests verifying all six KernelContext invariants
+            hold across randomly-generated K5+K6 operation sequences
+            Traces to: Behavior Spec §1.1 (INV-1—INV-6), TLA+ spec §14.1
+            New files:
+                     tests/integration/test_k5_k6_invariants.py — NEW:
+                     TestINV1GateRequiresContext (3) — structural gate sig,
+                     TestINV2NoReentrancy (6) — success/fail/body-exc/seq,
+                     TestINV3ValidStateAlways (4) — valid state every path,
+                     TestINV4GuardDeterminism (8) — k5 + redact determinism
+                       + property tests (200 examples each),
+                     TestINV5ActiveRequiresGatesPass (6) — ACTIVE gate guard
+                       + property test (100 examples),
+                     TestINV6WALEntryFields (6) — corr_id/tenant_id/timestamp
+                       + property test (200 examples),
+                     TestMasterInvariantPreservation (3) — 10,000-operation
+                       trace test (acceptance criterion satisfied), random
+                       sequence property (200 examples), mixed failure seq
+                     36 tests total, zero invariant violations
+                     1913 total tests (+36 new)
 ```
 
 ---
