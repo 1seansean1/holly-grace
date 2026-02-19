@@ -316,5 +316,5 @@ tasks:
   20.5:
     status: done
     date: "2026-02-19"
-    commit: pending
+    commit: 5a0b56c
     note: "Dissimilar SM verifier: independent hardcoded _VALID_TRANSITIONS frozenset, ExecutionTrace/StateViolation/StateMachineReport dataclasses, TraceCollector, parse_trace(), verify_execution_traces(); zero imports from state_machine.py/context.py; _TracedKernelContext captures transient EXITING state; all injected violations detected; AC 1-2 covered (47 tests)"
