@@ -329,3 +329,10 @@ tasks:
     status: done
     date: "2026-02-19"
     note: "Phase B gate checklist: GATE_ITEMS_PHASE_B (18 items), evaluate_phase_b_gate(), render_phase_b_report(), gate-b CLI subcommand; 18 PASS, 0 FAIL - Phase C unlocked (68 tests)"
+
+  # ── Slice 4: Phase C — Storage Layer ────────────────────────────────────
+  # Step 22 — Postgres
+  22.5:
+    status: done
+    date: "2026-02-19"
+    note: "Async Postgres pool: TenantIsolatedPool (SET LOCAL RLS), SchemaManager (11 tables, 16 indexes, 10 RLS policies), GoalsRepo/AuditRepo/CheckpointsRepo/TaskStateRepo/MemoryRepo, PostgresBackend facade, _with_deadlock_retry backoff; Protocol-based abstraction; non-fatal AuditRepo+TaskStateRepo; asyncpg 0.31.0 (41 tests)"
