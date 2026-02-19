@@ -213,4 +213,7 @@ tasks:
   14.2: pending
   14.3: pending
   14.4: pending
-  14.5: pending
+  14.5:
+    status: done
+    date: "2026-02-19"
+    note: "Formal state-machine validator: KernelState/KernelEvent enums, VALID_TRANSITIONS frozenset, pure guards, validate_trace, KernelStateMachineValidator; mirrors TLA+ spec §14.1; Hypothesis property tests for determinism/purity/state-space (96 tests)"

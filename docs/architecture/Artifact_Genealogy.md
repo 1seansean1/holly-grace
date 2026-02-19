@@ -505,6 +505,15 @@ These rules govern how new artifacts enter the genealogy:
                      docs/tla/KernelInvariants_ModelCheck.md — TLC 2.20 report: 14 distinct
                      states, 25 generated, depth 5, 0 violations (Slice 3: 2/19)
                      1454 total tests (formal methods artifact; TLC is the verification tool)
+2026-02-19  Task 14.5: Formal state-machine validator
+                     holly/kernel/state_machine.py — KernelState/KernelEvent StrEnums (5/8),
+                     VALID_TRANSITIONS frozenset (8 pairs), _EVENT_TRANSITION dict, pure guards
+                     validate_transition/apply_event/validate_trace/reachable_from, stateful
+                     KernelStateMachineValidator; mirrors TLA+ spec from Task 14.1 (Slice 3: 3/19)
+                     tests/unit/test_state_machine.py — structure, unit, Hypothesis property-based
+                     (determinism, purity, state-space, trace/transition consistency, invariant
+                     preservation) — 96 new tests
+                     1550 total tests (+96 new)
 ```
 
 ---
