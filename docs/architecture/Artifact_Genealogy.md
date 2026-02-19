@@ -498,6 +498,13 @@ These rules govern how new artifacts enter the genealogy:
                      docs/FMEA_Kernel_Invariants.md — KernelContext + K1–K8, 3 failure modes
                      each, S/O/D/RPN/mitigation, 5 open high-RPN items (Slice 3 begins: 1/19)
                      1454 total tests (document-only task; no new tests)
+2026-02-19  Task 14.1: TLA+ spec kernel invariant state machine
+                     docs/tla/KernelInvariants.tla — KernelContext state machine (5 states,
+                     8 actions, 8 safety invariants, 5 liveness properties under WF fairness)
+                     docs/tla/KernelInvariants.cfg — TLC model configuration
+                     docs/tla/KernelInvariants_ModelCheck.md — TLC 2.20 report: 14 distinct
+                     states, 25 generated, depth 5, 0 violations (Slice 3: 2/19)
+                     1454 total tests (formal methods artifact; TLC is the verification tool)
 ```
 
 ---

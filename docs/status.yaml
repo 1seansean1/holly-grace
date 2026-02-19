@@ -204,3 +204,13 @@ tasks:
   13.5: pending
   13.6: pending
   13.7: pending
+
+  # Step 14 — TLA+
+  14.1:
+    status: done
+    date: "2026-02-19"
+    note: "TLA+ KernelContext state machine: 5 states, 8 actions, 8 safety invariants, 5 liveness properties; TLC 14 distinct states, 0 violations (0 tests — formal methods artifact)"
+  14.2: pending
+  14.3: pending
+  14.4: pending
+  14.5: pending

@@ -6,7 +6,7 @@ _Generated: 2026-02-19_
 |------:|-------|-----:|------:|---------:|---------------|
 | 1 | Phase A Spiral (Steps 1, 2, 3, 3a) | 12 | 39 | 30% [###.......] | 12/12 |
 | 2 | Phase A Backfill (Steps 4–11) | 10 | 39 | 25% [##........] | 10/10 |
-| 3 | Phase B: Failure Analysis & Kernel (Step | 1 | 62 | 1% [..........] | 1/19 |
+| 3 | Phase B: Failure Analysis & Kernel (Step | 2 | 62 | 3% [..........] | 2/19 |
 | 4 | Phase C: Storage Layer (Steps 22–26) | 0 | 23 | 0% [..........] | 0/7 |
 | 5 | Phase D: Safety & Infra (Steps 27–33) | 0 | 33 | 0% [..........] | 0/10 |
 | 6 | Phase E: Core L2 (Steps 34–40) | 0 | 45 | 0% [..........] | 0/12 |
@@ -19,7 +19,7 @@ _Generated: 2026-02-19_
 | 13 | Phase L: Config (Steps 70–72) | 0 | 12 | 0% [..........] | 0/4 |
 | 14 | Phase M: Console L5 (Steps 73–78) | 0 | 18 | 0% [..........] | 0/7 |
 | 15 | Phase N: Deploy & Ops (Steps 79–86) | 0 | 29 | 0% [..........] | 0/14 |
-| **Σ** | **All** | **23** | **442** | **5%** | |
+| **Σ** | **All** | **24** | **442** | **5%** | |
 
 ## Task Detail
 
@@ -116,7 +116,7 @@ _Generated: 2026-02-19_
 | 13.5 | FMEA: topology desynchronization | pending | 0.5d | 13.4 |  |
 | 13.6 | Compile residual risk register | pending | 0.5d | 13.5 |  |
 | 13.7 | Link FMEA mitigations to roadmap steps | pending | 0.5d | 13.6 |  |
-| 14.1 | TLA+ spec: kernel invariant state machine | pending (crit) | 1.5d | 13.1 |  |
+| 14.1 | TLA+ spec: kernel invariant state machine | done (crit) | 1.5d | 13.1 |  |
 | 14.2 | TLA+ spec: sandbox isolation | pending | 1.5d | 14.1 |  |
 | 14.3 | TLA+ spec: egress filter pipeline | pending | 1.5d | 14.2 |  |
 | 14.4 | Document assumption register | pending | 1.5d | 14.3 |  |

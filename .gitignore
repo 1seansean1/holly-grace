@@ -47,3 +47,4 @@ htmlcov/
 _regen.py
 tmp_msg.txt
 uv.lock
+docs/tla/states/
