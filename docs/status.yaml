@@ -285,6 +285,7 @@ tasks:
     note: "K7 HITL gate: ApprovalRequest/HumanDecision dataclasses, ConfidenceEvaluator/ThresholdConfig/ApprovalChannel protocols, InMemoryApprovalChannel, k7_check_confidence pure guard, k7_gate factory; ConfidenceError/ApprovalTimeout/OperationRejected/ApprovalChannelError exceptions; fail-safe deny on all error paths (52 tests)"
   18.4:
     status: done
+    commit: 512b861
     date: "2026-02-19"
     note: "K8 full gate factory: CELESTIAL_PREDICATE_IDS tuple (L0-L4), k8_gate() factory running all 5 Celestial predicates in strict ascending order with fail-fast on first failure; Gate protocol async adapter; EvalGateFailure/PredicateNotFoundError/EvalError fail-safe paths (38 tests)"
   18.5: pending
