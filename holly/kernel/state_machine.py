@@ -27,7 +27,10 @@ Design constraints (Behavior Spec §1.1 INV-4):
 
 from __future__ import annotations
 
-from enum import StrEnum
+try:
+    from enum import StrEnum
+except ImportError:  # Python < 3.11
+    from strenum import StrEnum  # type: ignore[no-redef]
 from typing import TYPE_CHECKING
 
 from holly.kernel.exceptions import KernelInvariantError

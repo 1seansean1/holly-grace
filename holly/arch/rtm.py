@@ -36,7 +36,11 @@ import csv
 import io
 import os
 from dataclasses import dataclass, field
-from enum import StrEnum
+
+try:
+    from enum import StrEnum
+except ImportError:  # Python < 3.11
+    from strenum import StrEnum  # type: ignore[no-redef]
 from typing import TYPE_CHECKING
 
 from holly.arch.registry import ArchitectureRegistry

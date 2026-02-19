@@ -28,8 +28,15 @@ from __future__ import annotations
 import uuid
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
+
+try:
+    from datetime import UTC
+except ImportError:  # Python < 3.11 — datetime.UTC added in 3.11
+    from datetime import timezone as _tz
+
+    UTC = _tz.utc  # type: ignore[assignment]  # noqa: UP017
 
 from holly.kernel.exceptions import (
     ApprovalChannelError,

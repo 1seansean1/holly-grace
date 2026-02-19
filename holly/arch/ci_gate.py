@@ -20,7 +20,11 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
-from enum import StrEnum
+
+try:
+    from enum import StrEnum
+except ImportError:  # Python < 3.11
+    from strenum import StrEnum  # type: ignore[no-redef]
 from typing import TYPE_CHECKING, Any
 
 from holly.arch.fitness import run_all as run_fitness

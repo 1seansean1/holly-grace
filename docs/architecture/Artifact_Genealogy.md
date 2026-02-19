@@ -97,7 +97,7 @@ graph TD
         GANTT["GANTT.mermaid\nGANTT_critical.mermaid"]
         PROG["PROGRESS.md"]
         STATYS["status.yaml"]
-        TESTS["Test Suite\n2137 tests across\n31 test modules"]
+        TESTS["Test Suite\n2195 tests across\n43 test modules"]
         CODE["holly/ source tree"]
     end
 
@@ -337,7 +337,7 @@ Remaining Slice 1 critical path: `3.7 -> 3a.8 -> 3a.10 -> 3a.12` (ICD enforcemen
 | 29 | Architecture Registry | `holly/arch/registry.py` | ε | 9 KB | Schema + Extract (Tasks 2.6, 2.7, 2.8) |
 | 30 | Core Decorators | `holly/arch/decorators.py` | ε | 12 KB | Registry API (Task 3.6) |
 | 31 | AST Scanner | `holly/arch/scanner.py` | ε | 12 KB | Decorators + Registry + Schema (Task 7.1) |
-| 32 | Test Suite (2137 tests) | `tests/unit/test_*.py`, `tests/integration/test_*.py` (31 modules) | ε | 96 KB | All ε modules + TGS |
+| 32 | Test Suite (2195 tests) | `tests/unit/test_*.py`, `tests/integration/test_*.py` (43 modules) | ε | 96 KB | All ε modules + TGS |
 | — | END_TO_END_AUDIT_CHECKLIST | `(external, user desktop)` | α | 12 KB | Audit process research (Allen) |
 | — | **Total in-repo documentation + code** | | | **~750 KB** | |
 
@@ -840,6 +840,45 @@ These rules govern how new artifacts enter the genealogy:
                          KernelContext not imported at runtime, K1-K8 gate modules not imported
                      47 tests total, all 2 AC covered (AC 1-2 from Task_Manifest.md §20.5)
                      2137 total tests (+47 new)
+
+**Task 21.2** (2026-02-19) — SIL-3 Kernel Verification (K1-K8, Behavior Spec §1.2-1.9)
+```
+New: tests/integration/test_sil3_kernel_verification.py (58 tests, 8 classes)
+Modified: holly/kernel/k6.py — Python 3.10 compat shim for datetime.UTC
+Modified: holly/kernel/k7.py — Python 3.10 compat shim for datetime.UTC
+Modified: holly/kernel/state_machine.py — Python 3.10 compat shim for StrEnum
+
+Test classes:
+  TestK1SIL3Verification (§1.2, 7 tests): AC1 valid pass, AC2 invalid-always-fails
+    property (Hypothesis 200 examples), AC3 schema caching, AC4 error details,
+    AC6 oversized rejection, AC7 immutability property, valid-name-always-passes
+  TestK2SIL3Verification (§1.3, 8 tests): AC1 valid claims, AC2 None→JWTError
+    property, AC3 expired token + past-exp property, AC5 permission denied,
+    AC7 fail-safe deny on cache error, missing-sub property
+  TestK3SIL3Verification (§1.4, 7 tests): AC1 within-budget+increment, AC2 exceed
+    budget, AC3 atomicity property (sequential), AC4 tenant isolation, AC6 fail
+    tracker, over-budget-always-raises property, bounds-semantics property
+  TestK4SIL3Verification (§1.5, 9 tests): AC1 tenant extraction, AC2 corr propagate,
+    AC3 fresh UUID4 gen, AC4 provided UUID verbatim + property, AC6 missing tenant
+    raises, AC7 tenant-preserved property + UUID4-format property
+  TestK5SIL3Verification (§1.6, 5 tests): AC1 determinism property, AC2 field-order
+    independence, AC5 different-payloads collision property, AC6 non-serializable,
+    AC7 hex64 format property
+  TestK6SIL3Verification (§1.7, 5 tests): AC1 one-entry-per-crossing property,
+    AC3 redaction applied, AC5 timestamp ordering property, AC6 corr_id linked,
+    AC7 WALWriteError on backend failure property
+  TestK7SIL3Verification (§1.8, 10 tests): AC1 high-confidence no-emit + property,
+    AC2 low-confidence emits request, AC3 human approval passes, AC4 rejection
+    raises OperationRejected, AC5 timeout raises, AC7 fail-evaluator raises,
+    AC8 per-operation-type thresholds, check_confidence correctness + determinism
+  TestK8SIL3Verification (§1.9, 7 tests): AC1 true predicate passes, AC2 false→
+    EvalGateFailure, AC5 missing predicate, AC6 determinism property,
+    AC7 predicate exception→EvalError, deny-always-raises property,
+    allow-always-true property
+
+58 tests total, all AC1-AC8 covered per gate (AC-numbered docstrings)
+≥3 Hypothesis property-based tests per K gate, deadline=None
+2195 total tests (+58 new)
 ```
 
 ---

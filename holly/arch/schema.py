@@ -12,7 +12,10 @@ The schema is designed for consumption by:
 
 from __future__ import annotations
 
-from enum import StrEnum
+try:
+    from enum import StrEnum
+except ImportError:  # Python < 3.11
+    from strenum import StrEnum  # type: ignore[no-redef]
 
 from pydantic import BaseModel, Field
 

@@ -13,7 +13,11 @@ import logging
 import re
 from dataclasses import dataclass, field
 from datetime import date
-from enum import StrEnum
+
+try:
+    from enum import StrEnum
+except ImportError:  # Python < 3.11
+    from strenum import StrEnum  # type: ignore[no-redef]
 from typing import TYPE_CHECKING, Any
 
 import yaml
