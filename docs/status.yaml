@@ -9,7 +9,7 @@ tasks:
     status: done
     commit: b829279
     date: '2026-02-18'
-    note: SAD mermaid parser → typed AST (14 tests)
+    note: "SAD mermaid parser \u2192 typed AST (14 tests)"
   1.6:
     status: done
     commit: b829279
@@ -19,7 +19,7 @@ tasks:
     status: done
     commit: b829279
     date: '2026-02-18'
-    note: SAD AST → ArchitectureDocument pipeline (12 tests)
+    note: "SAD AST \u2192 ArchitectureDocument pipeline (12 tests)"
   1.8:
     status: done
     commit: b829279
@@ -71,7 +71,8 @@ tasks:
   3a.8:
     status: done
     date: '2026-02-18'
-    note: 'Full pipeline integration test: YAML → registry → decorator → K1 (13 tests)'
+    note: "Full pipeline integration test: YAML \u2192 registry \u2192 decorator \u2192\
+      \ K1 (13 tests)"
   3a.9: pending
   3a.10:
     status: done
@@ -118,8 +119,8 @@ tasks:
   7.1:
     status: done
     date: '2026-02-18'
-    note: AST scanner with per-module rules, layer→decorator mapping, component overrides,
-      source/module/directory scanning (31 tests)
+    note: "AST scanner with per-module rules, layer\u2192decorator mapping, component\
+      \ overrides, source/module/directory scanning (31 tests)"
   7.2:
     status: done
     date: '2026-02-18'
@@ -163,8 +164,8 @@ tasks:
   13.1:
     status: done
     date: '2026-02-19'
-    note: 'FMEA kernel invariant desynchronization: KernelContext + K1–K8, 3 failure
-      modes each, RPN table, mitigations (0 tests — document artifact)'
+    note: "FMEA kernel invariant desynchronization: KernelContext + K1\u2013K8, 3\
+      \ failure modes each, RPN table, mitigations (0 tests \u2014 document artifact)"
   13.2: pending
   13.3: pending
   13.4: pending
@@ -174,19 +175,19 @@ tasks:
   14.1:
     status: done
     date: '2026-02-19'
-    note: 'TLA+ KernelContext state machine: 5 states, 8 actions, 8 safety invariants,
-      5 liveness properties; TLC 14 distinct states, 0 violations (0 tests — formal
-      methods artifact)'
+    note: "TLA+ KernelContext state machine: 5 states, 8 actions, 8 safety invariants,\
+      \ 5 liveness properties; TLC 14 distinct states, 0 violations (0 tests \u2014\
+      \ formal methods artifact)"
   14.2: pending
   14.3: pending
   14.4: pending
   14.5:
     status: done
     date: '2026-02-19'
-    note: 'Formal state-machine validator: KernelState/KernelEvent enums, VALID_TRANSITIONS
-      frozenset, pure guards, validate_trace, KernelStateMachineValidator; mirrors
-      TLA+ spec §14.1; Hypothesis property tests for determinism/purity/state-space
-      (96 tests)'
+    note: "Formal state-machine validator: KernelState/KernelEvent enums, VALID_TRANSITIONS\
+      \ frozenset, pure guards, validate_trace, KernelStateMachineValidator; mirrors\
+      \ TLA+ spec \xA714.1; Hypothesis property tests for determinism/purity/state-space\
+      \ (96 tests)"
   15.1: pending
   15.2: pending
   15.3: pending
@@ -319,10 +320,10 @@ tasks:
     status: done
     date: '2026-02-19'
     commit: 21ee890
-    note: 'SIL-3 kernel verification: 58-test integration suite covering K1-K8 Behavior
-      Spec §1.2-1.9; ≥3 Hypothesis property-based invariants per gate; AC-numbered
-      docstrings for full traceability; Python 3.10 compat fixes for datetime.UTC
-      (k6,k7) and StrEnum (state_machine); 58/58 pass'
+    note: "SIL-3 kernel verification: 58-test integration suite covering K1-K8 Behavior\
+      \ Spec \xA71.2-1.9; \u22653 Hypothesis property-based invariants per gate; AC-numbered\
+      \ docstrings for full traceability; Python 3.10 compat fixes for datetime.UTC\
+      \ (k6,k7) and StrEnum (state_machine); 58/58 pass"
   21.6:
     status: done
     date: '2026-02-19'
@@ -373,16 +374,17 @@ tasks:
   26.2:
     status: done
     date: '2026-02-19'
-    note: 'SIL-2 storage test suite executed: 272 tests across 5 integration test
-      files (postgres_rls: 41, rls_boundary: 70, partition_manager: 58, redis_client:
-      61, chroma_client: 42); all pass; test results report generated at docs/architecture/SIL2_TEST_RESULTS_STORAGE.md
-      (0 new tests — execution task)'
+    note: "SIL-2 storage test suite executed: 272 tests across 5 integration test\
+      \ files (postgres_rls: 41, rls_boundary: 70, partition_manager: 58, redis_client:\
+      \ 61, chroma_client: 42); all pass; test results report generated at docs/architecture/SIL2_TEST_RESULTS_STORAGE.md\
+      \ (0 new tests \u2014 execution task)"
   26.4:
     status: done
     date: '2026-02-19'
-    note: 'Phase C gate checklist: GATE_REPORT_S3.md; critical-path trace (22.5→22.7→23.3→24.3→25.3→26.2→26.4)
-      all 7 tasks PASS; 272 tests all pass; 14 Phase C ICDs verified; findings F-001–F-039
-      resolved; Phase D unlocked'
+    note: "Phase C gate checklist: GATE_REPORT_S3.md; critical-path trace (22.5\u2192\
+      22.7\u219223.3\u219224.3\u219225.3\u219226.2\u219226.4) all 7 tasks PASS; 272\
+      \ tests all pass; 14 Phase C ICDs verified; findings F-001\u2013F-039 resolved;\
+      \ Phase D unlocked"
   27.4:
     status: done
     date: '2026-02-19'
@@ -398,3 +400,10 @@ tasks:
       GuardrailsResult, sanitize_input/detect_injections/redact_output/guard_input/guard_output/guard_roundtrip
       APIs; 8 injection pattern types (prompt/sql/command/unicode); canonical redaction
       rules integrated; 86 tests (62 unit + 24 integration, all pass)'
+  '29.3':
+    status: done
+    date: '2026-02-19'
+    note: 'Forbidden paths, code review analysis: GovernanceEngine (unified pipeline),
+      ForbiddenPath/GovernanceRule dataclasses, check_forbidden_paths/review_code_governance/register_*
+      APIs; canonical K2 permission gate rules (viewer/user/editor role restrictions);
+      43 tests (30 unit + 13 integration, all pass)'
