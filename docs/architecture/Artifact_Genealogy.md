@@ -97,7 +97,7 @@ graph TD
         GANTT["GANTT.mermaid\nGANTT_critical.mermaid"]
         PROG["PROGRESS.md"]
         STATYS["status.yaml"]
-        TESTS["Test Suite\n2090 tests across\n29 test modules"]
+        TESTS["Test Suite\n2137 tests across\n31 test modules"]
         CODE["holly/ source tree"]
     end
 
@@ -337,7 +337,7 @@ Remaining Slice 1 critical path: `3.7 -> 3a.8 -> 3a.10 -> 3a.12` (ICD enforcemen
 | 29 | Architecture Registry | `holly/arch/registry.py` | ε | 9 KB | Schema + Extract (Tasks 2.6, 2.7, 2.8) |
 | 30 | Core Decorators | `holly/arch/decorators.py` | ε | 12 KB | Registry API (Task 3.6) |
 | 31 | AST Scanner | `holly/arch/scanner.py` | ε | 12 KB | Decorators + Registry + Schema (Task 7.1) |
-| 32 | Test Suite (2090 tests) | `tests/unit/test_*.py`, `tests/integration/test_*.py` (29 modules) | ε | 94 KB | All ε modules + TGS |
+| 32 | Test Suite (2137 tests) | `tests/unit/test_*.py`, `tests/integration/test_*.py` (31 modules) | ε | 96 KB | All ε modules + TGS |
 | — | END_TO_END_AUDIT_CHECKLIST | `(external, user desktop)` | α | 12 KB | Audit process research (Allen) |
 | — | **Total in-repo documentation + code** | | | **~750 KB** | |
 
@@ -797,6 +797,49 @@ These rules govern how new artifacts enter the genealogy:
                        TestLegitimateFailurePasses (2): K2 denial exit_code=1, non-strict no-raise
                      57 tests total, all 5 AC covered (AC 1-5 from Task_Manifest.md §20.3)
                      2090 total tests (+57 new)
+
+2026-02-19  Task 20.5: Verify Dissimilar Verifier State Machine
+                     holly/kernel/dissimilar_sm.py — NEW (independent SM verifier):
+                       _VALID_STATES frozenset[str] — 5 states, hardcoded, no state_machine.py import
+                       _VALID_TRANSITIONS frozenset[tuple[str,str]] — 8 pairs matching Behavior Spec §1.1
+                       ExecutionTrace dataclass (frozen, slots): entry_id, states: tuple[str, ...]
+                       StateViolation dataclass (slots): detail, entry_id, invariant, step
+                       StateMachineReport dataclass (slots): passed, traces_checked, violations list
+                       TraceCollector class (slots): record(state), to_trace(entry_id), reset()
+                       parse_trace(entry_id, states) — construct ExecutionTrace from serialized data
+                       check_valid_state_names(trace) — SM_unknown_state invariant
+                       check_initial_state(trace) — SM_initial_state invariant
+                       check_terminal_state(trace) — SM_terminal_state invariant
+                       check_each_transition(trace) — SM_invalid_transition invariant
+                       verify_execution_traces(traces, *, strict=True) — main API; strict raises
+                         DissimilarVerificationError on first violation; strict=False collects all
+                     tests/unit/test_dissimilar_sm.py — NEW:
+                       TestCheckValidStateNames (4): all valid pass, one unknown fails, multiple unknown
+                       TestCheckInitialState (4): IDLE start passes, ENTERING start fails, empty trace
+                       TestCheckTerminalState (4): IDLE end passes, ACTIVE end fails, single-state traces
+                       TestCheckEachTransition (8): clean success, clean gate-fail, invalid IDLE->ACTIVE,
+                         invalid ENTERING->EXITING, valid ACTIVE->FAULTED, invalid FAULTED->ACTIVE,
+                         valid EXITING->FAULTED, self-loop IDLE->IDLE
+                       TestParseTrace (2): round-trip fidelity, empty states tuple
+                       TestTraceCollector (3): record+to_trace, reset, StrEnum member coercion
+                       TestVerifyExecutionTraces (7): strict raises DissimilarVerificationError with
+                         entry_id+invariant, non-strict returns StateMachineReport, passed=True for
+                         clean traces, empty list passes, multiple traces one buggy, all 4 bug types
+                     tests/integration/test_dissimilar_sm_verifier.py — NEW:
+                       _TracedKernelContext — KernelContext subclass overriding _run_exit_cleanup
+                         to capture transient EXITING state (not observable from __aexit__ caller)
+                       _run_and_trace() — produces real ["IDLE","ENTERING","ACTIVE","EXITING","IDLE"]
+                       _run_gate_fail_trace() — verifies ctx.state==IDLE post-KernelError, returns
+                         canonical ["IDLE","ENTERING","FAULTED","IDLE"] via parse_trace
+                       TestCleanTracesPasses (4): single crossing, 3 sequential crossings,
+                         gate-failure path, empty trace list
+                       TestInjectedViolationsCaught (7): SM_initial_state, SM_terminal_state,
+                         SM_invalid_transition (IDLE->ACTIVE), SM_invalid_transition (ENTERING->EXITING),
+                         SM_unknown_state, non-strict collects multiple violations, all 4 bug categories
+                       TestDissimilarityGuarantee (3): state_machine module not imported (regex-anchored),
+                         KernelContext not imported at runtime, K1-K8 gate modules not imported
+                     47 tests total, all 2 AC covered (AC 1-2 from Task_Manifest.md §20.5)
+                     2137 total tests (+47 new)
 ```
 
 ---
