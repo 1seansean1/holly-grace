@@ -598,6 +598,27 @@ These rules govern how new artifacts enter the genealogy:
                      (valid tenant IDLE / valid UUID IDLE / non-UUID raises) (3) —
                      39 new tests
                      1741 total tests (+39 new)
+2026-02-19  Task 16.9: K1-K4 guard condition determinism — INV-4 verification
+                     tests/integration/test_k1_k4_guard_determinism.py — NEW:
+                     property-based test suite verifying Behavior Spec §1.1 INV-4
+                     (guards are pure functions; no side effects on evaluation);
+                     TestK1Determinism (6): valid payload idempotent, invalid
+                     idempotent, unknown schema, registry not mutated, Hypothesis
+                     valid always passes, Hypothesis wrong type always fails;
+                     TestK2Determinism (5): authorized idempotent, unauthorized
+                     idempotent, None claims, registry not mutated, Hypothesis
+                     sub-field variation always passes with correct role;
+                     TestK3Determinism (6): within-budget idempotent (fresh
+                     tracker), over-budget idempotent, same usage same outcome,
+                     registry not mutated, Hypothesis deterministic given state;
+                     TestK4Determinism (6): auto corr_id stable, provided corr_id
+                     returned, missing tenant raises, invalid UUID raises, no
+                     global state mutated, Hypothesis same input same output;
+                     TestCrossGuardIsolation (5+3): K1 doesn't pollute K2, K2
+                     doesn't pollute K3, K3 doesn't pollute K1, K4 doesn't pollute
+                     any registry, all four guards interleaved deterministic —
+                     31 new tests (Slice 3: 9/19)
+                     1772 total tests (+31 new)
 ```
 
 ---

@@ -251,4 +251,7 @@ tasks:
     note: "K4 trace injection gate: k4_inject_trace + k4_gate factory; TenantContextError; KernelContext._set_trace + tenant_id/trace_started_at slots; UUID validation; 39 tests"
   16.7: pending
   16.8: pending
-  16.9: pending
+  16.9:
+    status: done
+    date: "2026-02-19"
+    note: "K1-K4 guard condition determinism: property-based tests verifying INV-4 (guards pure, no side effects); 31 tests across TestK1/K2/K3/K4Determinism + TestCrossGuardIsolation"
