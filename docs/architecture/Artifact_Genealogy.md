@@ -952,4 +952,33 @@ New: tests/integration/test_postgres_rls.py (41 tests, 11 classes + property tes
 
 ---
 
+**Task 22.7** (2026-02-19) — RLS Boundary Audit (ICD-032/036/038/039/040/042)
+
+```
+New: holly/storage/rls_boundary.py — CREATED (Slice 4, Step 22)
+  ICDBoundarySpec dataclass (frozen, slots) — one ICD's Postgres boundary contract
+  ICD_BOUNDARY: tuple[ICDBoundarySpec, ...] — 6 entries (ICD-045 is credentials, no table)
+    ICD-032: agents/goals/topologies/conversations/goals_history/idempotency_keys (RLS required)
+    ICD-036: logs (RLS required)
+    ICD-038: kernel_audit_log (RLS EXEMPT — append-only per ICD-038 §Auth)
+    ICD-039: workflow_checkpoints (RLS required)
+    ICD-040: task_state (RLS required)
+    ICD-042: memory_store (RLS required)
+  EXPECTED_POLICY_NAME = "tenant_isolation" / EXPECTED_USING_CLAUSE = current_setting ref
+  get_rls_required_tables() → frozenset[str] — 10 tables
+  get_rls_exempt_tables() → frozenset[str] — {kernel_audit_log}
+  RLSTableVerdict / RLSBoundaryReport dataclasses
+  validate_icd_boundary_static() — pure, no-DB cross-check vs SchemaManager._RLS_TABLES
+  audit_rls_policies(conn) — async, queries pg_policies, validates USING clause
+  render_rls_boundary_report() — markdown report
+
+New: tests/integration/test_rls_boundary.py (70 tests, 11 classes + property tests)
+  AC1-AC10 covered; parametrized per-table FAIL injection (21 tests); 3 Hypothesis properties
+
+70 tests total, all 10 AC covered
+2374 total tests (+70 new)
+```
+
+---
+
 *This document is the map of the map. Every artifact in Holly Grace traces through this graph back to the monograph, the six research streams, or the audit checklist. No artifact exists without provenance.*

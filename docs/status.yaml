@@ -336,3 +336,7 @@ tasks:
     status: done
     date: "2026-02-19"
     note: "Async Postgres pool: TenantIsolatedPool (SET LOCAL RLS), SchemaManager (11 tables, 16 indexes, 10 RLS policies), GoalsRepo/AuditRepo/CheckpointsRepo/TaskStateRepo/MemoryRepo, PostgresBackend facade, _with_deadlock_retry backoff; Protocol-based abstraction; non-fatal AuditRepo+TaskStateRepo; asyncpg 0.31.0 (41 tests)"
+  22.7:
+    status: done
+    date: "2026-02-19"
+    note: "RLS boundary audit: ICD_BOUNDARY (6 specs), ICDBoundarySpec, RLSTableVerdict, RLSBoundaryReport, validate_icd_boundary_static(), audit_rls_policies() (pg_policies catalog), render_rls_boundary_report(); 10 RLS-required tables, 1 exempt (kernel_audit_log/ICD-038); cross-tenant isolation verified (70 tests)"
