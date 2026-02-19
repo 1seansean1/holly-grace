@@ -345,3 +345,8 @@ tasks:
     status: done
     date: "2026-02-19"
     note: "Partition lifecycle manager: PartitionName (frozen/slots, from_tenant_id/parse), PartitionManager (ensure_partition, archive_partition, restore_partition, list_expired_partitions, run_archival_cycle), day_epoch_range, create_partition_ddl, PartitionNotFoundError, S3ClientProto/PartitionConnectionProto Protocols; ICD-036 (logs date+tenant), ICD-038 (kernel_audit_log date-only), 90-day TTL; Hypothesis epoch+name invariants (58 tests)"
+  # Step 24 — Redis
+  24.3:
+    status: done
+    date: "2026-02-19"
+    note: "Redis module: CacheClient (ICD-033/041, tenant-namespaced keys, fail-open), QueueClient (ICD-035, LPUSH/RPOP, ZADD/ZRANGEBYSCORE cron, depth limit 10k), PubSubClient (ICD-035, publish/subscribe/get_message), StreamClient (ICD-037, XADD maxlen 1M, XRANGE), RevocationCache (ICD-049, fail-open), CircuitBreaker (threshold 3, recovery 30s, CLOSED/OPEN/HALF_OPEN), RedisBackend facade (from_client factory), tenant_key/queue_key/stream_key/revocation_key helpers (61 tests)"

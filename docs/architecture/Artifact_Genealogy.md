@@ -1012,6 +1012,47 @@ New: tests/integration/test_partition_manager.py (58 tests, 13 classes + Hypothe
 2432 total tests (+58 new)
 ```
 
+**Task 24.3** (2026-02-19) — Redis Pool, Pub/Sub, Queues, Cache, HA (ICD-033/035/037/041/049)
+
+```
+New: holly/storage/redis/__init__.py — package re-export shim
+New: holly/storage/redis/client.py — full Redis module
+
+Constants: TTL_GOAL_HIERARCHY=3600, TTL_TIER_CLASSIFICATION=86400,
+  TTL_CONVERSATION_CONTEXT=604800, TTL_AGENT_CHECKPOINT=2592000,
+  TTL_IDEMPOTENCY_CACHE=86400, TTL_AGENT_SHORT_TERM=1800 (ICD-033/041)
+  QUEUE_DEPTH_LIMIT=10000 (ICD-035), STREAM_MAXLEN=1000000 (ICD-037)
+
+Key helpers: tenant_key(tenant_id, key) → "tenant:{id}:{key}"
+  queue_key / stream_key → "{name}_{tenant_id}"
+  revocation_key(jti) → "revoked_token:{jti}" (ICD-049)
+
+RedisClientProto — Protocol interface for mock-based testing
+
+CircuitState (Enum): CLOSED / OPEN / HALF_OPEN
+CircuitBreaker (dataclass): failure_threshold=3, recovery_timeout=30.0
+  allow_request() — auto-transitions OPEN→HALF_OPEN on recovery_timeout expiry
+  record_success() / record_failure() / reset()
+QueueFull exception — depth/limit/queue attributes
+
+CacheClient (ICD-033/041): get/set/delete; fail-open when circuit open
+QueueClient (ICD-035): enqueue (QueueFull guard), dequeue, enqueue_scheduled (ZADD),
+  dequeue_ready (ZRANGEBYSCORE), depth
+PubSubClient (ICD-035): publish, subscribe, get_message
+StreamClient (ICD-037): append (XADD maxlen), read_range (XRANGE)
+RevocationCache (ICD-049): is_revoked (fail-open on error), revoke
+RedisBackend facade: from_client() factory — wires all components with shared CircuitBreaker
+
+New: tests/integration/test_redis_client.py (61 tests, 14 classes + Hypothesis)
+  AC1-AC14 covered; pub/sub delivery, tenant cache isolation, HA failover,
+  queue depth limit, cron queue ordering, stream round-trip, JWT revocation,
+  fail-open semantics, key naming conventions, backend factory wiring
+  Hypothesis: tenant_key injects tenant_id, revocation_key contains jti
+
+61 tests total, all 14 AC covered
+2493 total tests (+61 new)
+```
+
 ---
 
 *This document is the map of the map. Every artifact in Holly Grace traces through this graph back to the monograph, the six research streams, or the audit checklist. No artifact exists without provenance.*
