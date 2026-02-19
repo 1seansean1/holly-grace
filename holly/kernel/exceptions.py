@@ -647,3 +647,37 @@ class ApprovalChannelError(KernelError):
     def __init__(self, detail: str) -> None:
         super().__init__(f"Approval channel unavailable: {detail}")
         self.detail = detail
+
+
+# ── Dissimilar verification exceptions (Task 20.3) ────────────────────────
+
+
+class DissimilarVerificationError(KernelError):
+    """Raised when the dissimilar verification channel detects an invariant
+    violation in a WAL audit record.
+
+    This exception signals that a kernel invariant was satisfied by the kernel
+    itself (execution succeeded and a WALEntry was produced) yet the independent
+    dissimilar verifier — which re-checks invariants *without* executing kernel
+    gate code — found a contradiction in the audit evidence.
+
+    Attributes
+    ----------
+    invariant : str
+        Short identifier for the violated invariant (e.g. ``"K2_permission"``).
+    entry_id : str
+        ``WALEntry.id`` of the offending record, or ``"(multi-entry)"`` for
+        cross-entry checks.
+    detail : str
+        Human-readable description of the contradiction detected.
+    """
+
+    __slots__ = ("entry_id", "invariant")
+
+    def __init__(self, invariant: str, entry_id: str, detail: str = "") -> None:
+        msg = f"Dissimilar verification failed [{invariant}] entry={entry_id!r}"
+        if detail:
+            msg += f": {detail}"
+        super().__init__(msg)
+        self.invariant = invariant
+        self.entry_id = entry_id

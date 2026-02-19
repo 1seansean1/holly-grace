@@ -297,3 +297,19 @@ tasks:
     date: "2026-02-19"
     commit: 1c4dfe4
     note: "K7-K8 Failure Isolation: 7-class integration test suite verifying independent exception paths; _AlwaysRejectChannel, _SpyGate helpers; Hypothesis property-based tests; 0 cascade failures across all K7/K8 failure modes; AC 1-7 all covered (30 tests)"
+
+  # Step 19 — Exceptions
+  19.1: pending
+  19.2: pending
+  19.3: pending
+  19.4: pending
+
+  # Step 20 — Dissimilar Verification
+  20.1: pending
+  20.2: pending
+  20.3:
+    status: done
+    date: "2026-02-19"
+    note: "Dissimilar verification channel: VerificationViolation/VerificationReport dataclasses, 8 per-entry checkers (K1-K8), 2 cross-entry checkers (tenant isolation, duplicate IDs), verify_wal_entries() API; DissimilarVerificationError added to exceptions.py; zero false negatives on injected bugs; AC 1-5 all covered (57 tests)"
+  20.4: pending
+  20.5: pending

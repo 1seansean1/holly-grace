@@ -6,7 +6,7 @@ _Generated: 2026-02-19_
 |------:|-------|-----:|------:|---------:|---------------|
 | 1 | Phase A Spiral (Steps 1, 2, 3, 3a) | 12 | 39 | 30% [###.......] | 12/12 |
 | 2 | Phase A Backfill (Steps 4–11) | 10 | 39 | 25% [##........] | 10/10 |
-| 3 | Phase B: Failure Analysis & Kernel (Step | 15 | 62 | 24% [##........] | 15/19 |
+| 3 | Phase B: Failure Analysis & Kernel (Step | 16 | 62 | 25% [##........] | 16/19 |
 | 4 | Phase C: Storage Layer (Steps 22–26) | 0 | 23 | 0% [..........] | 0/7 |
 | 5 | Phase D: Safety & Infra (Steps 27–33) | 0 | 33 | 0% [..........] | 0/10 |
 | 6 | Phase E: Core L2 (Steps 34–40) | 0 | 45 | 0% [..........] | 0/12 |
@@ -19,7 +19,7 @@ _Generated: 2026-02-19_
 | 13 | Phase L: Config (Steps 70–72) | 0 | 12 | 0% [..........] | 0/4 |
 | 14 | Phase M: Console L5 (Steps 73–78) | 0 | 18 | 0% [..........] | 0/7 |
 | 15 | Phase N: Deploy & Ops (Steps 79–86) | 0 | 29 | 0% [..........] | 0/14 |
-| **Σ** | **All** | **37** | **442** | **8%** | |
+| **Σ** | **All** | **38** | **442** | **8%** | |
 
 ## Task Detail
 
@@ -152,14 +152,14 @@ _Generated: 2026-02-19_
 | 18.6 | Verify K7+K8 as independent safety layers | pending | 1d | 18.5 |  |
 | 18.7 | Register, decorate | pending | 1d | 18.6 |  |
 | 18.8 | Link to requirements and tests | pending | 0.5d | 18.7 |  |
-| 18.9 | Verify K7–K8 Failure Isolation | done (crit) | 1.5d | 18.4, 18.8 |  |
+| 18.9 | Verify K7–K8 Failure Isolation | done (crit) | 1.5d | 18.4, 18.8 | 1c4dfe4 |
 | 19.1 | Map exception hierarchy to monograph failure conce | pending | 0.5d |  |  |
 | 19.2 | Inherit SIL-3 from kernel | pending | 0.5d | 19.1 |  |
 | 19.3 | Implement exception classes | pending | 1d | 19.2 |  |
 | 19.4 | Link to requirements | pending | 0.5d | 19.3 |  |
 | 20.1 | Design dissimilar channel from FMEA | pending | 0.5d |  |  |
 | 20.2 | Formally verify independence | pending | 1.5d | 20.1 |  |
-| 20.3 | Implement dissimilar verification channel | pending (crit) | 1d | 18.9, 20.2 |  |
+| 20.3 | Implement dissimilar verification channel | done (crit) | 1d | 18.9, 20.2 |  |
 | 20.4 | Link to requirement and test | pending | 0.5d | 20.3 |  |
 | 20.5 | Verify Dissimilar Verifier State Machine | pending (crit) | 1.5d | 20.3, 20.4 |  |
 | 21.1 | Assign verification methods per SIL-3 | pending | 0.5d |  |  |

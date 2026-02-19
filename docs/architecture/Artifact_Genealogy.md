@@ -97,7 +97,7 @@ graph TD
         GANTT["GANTT.mermaid\nGANTT_critical.mermaid"]
         PROG["PROGRESS.md"]
         STATYS["status.yaml"]
-        TESTS["Test Suite\n1446 tests across\n26 test modules"]
+        TESTS["Test Suite\n2090 tests across\n29 test modules"]
         CODE["holly/ source tree"]
     end
 
@@ -337,7 +337,7 @@ Remaining Slice 1 critical path: `3.7 -> 3a.8 -> 3a.10 -> 3a.12` (ICD enforcemen
 | 29 | Architecture Registry | `holly/arch/registry.py` | ε | 9 KB | Schema + Extract (Tasks 2.6, 2.7, 2.8) |
 | 30 | Core Decorators | `holly/arch/decorators.py` | ε | 12 KB | Registry API (Task 3.6) |
 | 31 | AST Scanner | `holly/arch/scanner.py` | ε | 12 KB | Decorators + Registry + Schema (Task 7.1) |
-| 32 | Test Suite (2033 tests) | `tests/unit/test_*.py`, `tests/integration/test_*.py` (27 modules) | ε | 92 KB | All ε modules + TGS |
+| 32 | Test Suite (2090 tests) | `tests/unit/test_*.py`, `tests/integration/test_*.py` (29 modules) | ε | 94 KB | All ε modules + TGS |
 | — | END_TO_END_AUDIT_CHECKLIST | `(external, user desktop)` | α | 12 KB | Audit process research (Allen) |
 | — | **Total in-repo documentation + code** | | | **~750 KB** | |
 
@@ -760,6 +760,43 @@ These rules govern how new artifacts enter the genealogy:
                        incompatibility)
                      30 tests total, all 7 AC covered
                      2033 total tests (+30 new)
+
+2026-02-19  Task 20.3: Dissimilar Verification Channel
+                     holly/kernel/dissimilar.py — NEW (dissimilar verification channel):
+                       VerificationViolation dataclass (entry_id, invariant, detail)
+                       VerificationReport dataclass (passed, entries_checked, violations)
+                       check_k1..check_k8 — 8 independent per-entry invariant checkers
+                         operating solely on WALEntry audit fields, no kernel gate imports
+                       check_tenant_isolation — cross-entry: same correlation_id => same tenant_id
+                       check_no_duplicate_ids — cross-entry: all WALEntry.id values unique
+                       verify_wal_entries(entries, *, strict=True) — main API;
+                         strict=True raises DissimilarVerificationError on first violation;
+                         strict=False collects all violations into VerificationReport
+                     holly/kernel/exceptions.py — MODIFIED:
+                       DissimilarVerificationError(KernelError) added with invariant + entry_id slots
+                     tests/unit/test_dissimilar_verifier.py — NEW:
+                       TestCheckK1 (3): pass, violation, boundary in detail
+                       TestCheckK2 (3): pass, violation, boundary in detail
+                       TestCheckK3 (5): pass, violation, arithmetic cross-check, budget mismatch
+                       TestCheckK4 (4): pass, tenant_id empty, correlation_id empty, tz-naive
+                       TestCheckK5 (3): None key passes, blank key violation, present+non-empty passes
+                       TestCheckK6 (4): pass, id empty, caller_roles not list, exit_code negative
+                       TestCheckK7 (5): pass, confidence OOB, human_approved False+exit0, None approved
+                       TestCheckK8 (3): pass, eval_passed False+exit0, eval_passed True passes
+                       TestCrossEntryChecks (4): tenant isolation violation, isolation passes,
+                         duplicate IDs caught, unique IDs pass
+                       TestVerifyWalEntries (7): strict raises, non-strict reports, injected bug
+                         zero-false-negatives (K1+K2+K3+K7+K8 all caught), empty list passes,
+                         clean batch passes, multiple violations in non-strict mode
+                     tests/integration/test_dissimilar_channel.py — NEW:
+                       TestCleanGateChainPasses (4): single crossing, multiple crossings,
+                         K7 fields populated, K8 field populated
+                       TestInjectedBugsCaught (8): K1-K8 bug injection via dataclasses.replace
+                         on real WALEntries from live K4+K6 gate execution
+                       TestCrossEntryInvariants (2): tenant isolation, duplicate entry IDs
+                       TestLegitimateFailurePasses (2): K2 denial exit_code=1, non-strict no-raise
+                     57 tests total, all 5 AC covered (AC 1-5 from Task_Manifest.md §20.3)
+                     2090 total tests (+57 new)
 ```
 
 ---
