@@ -52,7 +52,7 @@ After completing:
 - **Next:** Slice 3 critical path begins
 - **Test count:** 1446
 - **Components:** 48
-- **Audit findings resolved:** F-001 through F-030
+- **Audit findings resolved:** F-001 through F-035 (F-031: gate_pass enforcement on 11.1; F-032: drift stage root isolation; F-033: C010 audit timeout 60→180s; F-034: C011 gantt --stdout dep_graph parity; F-035: jsonschema undeclared dependency)
 
 ## Code Conventions
 

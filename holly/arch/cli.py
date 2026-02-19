@@ -116,9 +116,12 @@ def cmd_gantt(args: argparse.Namespace) -> None:
             out.flush()
             out.detach()  # prevent closing underlying stdout
         elif args.stdout:
+            from holly.arch.tracker import build_dependency_graph, parse_manifest_file
+            manifest = parse_manifest_file(manifest_path)
             registry = build_registry(manifest_path, status_path)
+            dep_graph = build_dependency_graph(manifest)
             out = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
-            out.write(generate_gantt(registry))
+            out.write(generate_gantt(registry, dep_graph))
             out.write("\n")
             out.flush()
             out.detach()  # prevent closing underlying stdout

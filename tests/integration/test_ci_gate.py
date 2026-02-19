@@ -183,12 +183,20 @@ class TestDriftStage:
     def test_runs_without_error(self, tmp_path: Path) -> None:
         result = _run_drift_stage(tmp_path, package="holly")
         assert result.stage == StageKind.DRIFT
-        assert result.severity == Severity.WARNING
+        assert result.passed is True
         assert result.duration_ms >= 0
 
-    def test_loads_architecture(self, tmp_path: Path) -> None:
-        result = _run_drift_stage(tmp_path, package="holly")
-        assert "48 components" in result.message
+    def test_no_arch_yaml_returns_info(self, tmp_path: Path) -> None:
+        """Without architecture.yaml at root, drift returns INFO (not WARNING).
+
+        Guards against the singleton binding to the workspace registry instead
+        of the target repo; tmp_path has no docs/architecture.yaml.
+        """
+        result = _run_drift_stage(tmp_path)
+        assert result.severity == Severity.INFO
+        assert result.passed is True
+        assert "architecture.yaml" in result.message
+        assert "48 components" not in result.message  # must NOT read workspace registry
 
 
 # ═══════════════════════════════════════════════════════════

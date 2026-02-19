@@ -160,14 +160,19 @@ class TestAutoChecks:
         rtm = next(i for i in report.items if i.task_id == "10.2")
         assert rtm.verdict == "FAIL"
 
-    def test_ci_gate_done_without_gate_pass(self) -> None:
-        """CI gate marked done passes even without gate_pass flag."""
+    def test_ci_gate_done_without_gate_pass_fails(self) -> None:
+        """CI gate marked done but gate_pass=False → FAIL.
+
+        Implementation alone does not suffice; the gate must produce a clean
+        live-codebase run before Phase B is unlocked.
+        """
         statuses = _all_done_statuses()
         report = evaluate_phase_a_gate(
             statuses, test_count=1421, audit_pass=True, gate_pass=False,
         )
         ci = next(i for i in report.items if i.task_id == "11.1")
-        assert ci.verdict == "PASS"
+        assert ci.verdict == "FAIL"
+        assert "not confirmed" in ci.evidence
 
     def test_ci_gate_with_gate_pass(self) -> None:
         statuses = _all_done_statuses()
@@ -201,7 +206,9 @@ class TestReportRendering:
 
     def test_pass_report_contains_verdict(self) -> None:
         statuses = _all_done_statuses()
-        report = evaluate_phase_a_gate(statuses, test_count=1421, audit_pass=True)
+        report = evaluate_phase_a_gate(
+            statuses, test_count=1421, audit_pass=True, gate_pass=True,
+        )
         md = render_phase_a_report(report)
         assert "Phase A Gate Report" in md
         assert "PASS" in md
@@ -228,7 +235,9 @@ class TestReportRendering:
 
     def test_report_summary_line(self) -> None:
         statuses = _all_done_statuses()
-        report = evaluate_phase_a_gate(statuses, test_count=1421, audit_pass=True)
+        report = evaluate_phase_a_gate(
+            statuses, test_count=1421, audit_pass=True, gate_pass=True,
+        )
         md = render_phase_a_report(report)
         assert "10 passed, 0 failed" in md
 

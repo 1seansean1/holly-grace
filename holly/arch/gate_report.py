@@ -459,13 +459,15 @@ def evaluate_phase_a_gate(
                     verdict = "FAIL"
                     evidence = "RTM generator not confirmed"
             elif task_id == "11.1":
-                # CI gate — verify done + gate passes
+                # CI gate — must be implemented AND pass on live codebase.
+                # "Done" alone is insufficient: the gate must actually pass to
+                # confirm Phase B can proceed safely.
                 if is_done and gate_pass:
                     verdict = "PASS"
                     evidence = f"CI gate passes on live codebase ({note})"
                 elif is_done:
-                    verdict = "PASS"
-                    evidence = f"CI gate implemented ({note})"
+                    verdict = "FAIL"
+                    evidence = "CI gate implemented but live run not confirmed (gate_pass=False)"
                 else:
                     verdict = "FAIL"
                     evidence = "CI gate not implemented"

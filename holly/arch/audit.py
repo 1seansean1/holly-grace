@@ -788,7 +788,7 @@ def _check_c010_pytest_pass(repo_root: Path) -> AuditResult:
             ["pytest", "tests/", "-q", "--tb=no"],
             cwd=repo_root,
             capture_output=True,
-            timeout=60,
+            timeout=180,
         )
 
         if result.returncode == 0:

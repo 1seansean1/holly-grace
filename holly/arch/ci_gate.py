@@ -278,6 +278,17 @@ def _run_drift_stage(
     """
     t0 = time.monotonic()
 
+    arch_yaml = root / "docs" / "architecture.yaml"
+    if not arch_yaml.exists():
+        duration = (time.monotonic() - t0) * 1000
+        return StageResult(
+            stage=StageKind.DRIFT,
+            passed=True,
+            severity=Severity.INFO,
+            duration_ms=duration,
+            message=f"Drift check skipped — no architecture.yaml at {root}",
+        )
+
     try:
         reg = ArchitectureRegistry.get()
         doc = reg.document
