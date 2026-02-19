@@ -271,5 +271,6 @@ tasks:
   17.6: pending
   17.7:
     status: done
+    commit: 2114590
     date: "2026-02-19"
     note: "K5-K6 Invariant Preservation: property-based tests for all 6 KernelContext invariants (INV-1 through INV-6); 10,000-operation master trace test; zero invariant violations; redact determinism + k5_generate_key determinism properties; 36 tests"
