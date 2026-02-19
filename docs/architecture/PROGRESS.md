@@ -5,7 +5,7 @@ _Generated: 2026-02-19_
 | Slice | Phase | Done | Total | Progress | Critical Path |
 |------:|-------|-----:|------:|---------:|---------------|
 | 1 | Phase A Spiral (Steps 1, 2, 3, 3a) | 12 | 39 | 30% [###.......] | 12/12 |
-| 2 | Phase A Backfill (Steps 4–11) | 9 | 39 | 23% [##........] | 9/10 |
+| 2 | Phase A Backfill (Steps 4–11) | 10 | 39 | 25% [##........] | 10/10 |
 | 3 | Phase B: Failure Analysis & Kernel (Step | 0 | 62 | 0% [..........] | 0/19 |
 | 4 | Phase C: Storage Layer (Steps 22–26) | 0 | 23 | 0% [..........] | 0/7 |
 | 5 | Phase D: Safety & Infra (Steps 27–33) | 0 | 33 | 0% [..........] | 0/10 |
@@ -19,7 +19,7 @@ _Generated: 2026-02-19_
 | 13 | Phase L: Config (Steps 70–72) | 0 | 12 | 0% [..........] | 0/4 |
 | 14 | Phase M: Console L5 (Steps 73–78) | 0 | 18 | 0% [..........] | 0/7 |
 | 15 | Phase N: Deploy & Ops (Steps 79–86) | 0 | 29 | 0% [..........] | 0/14 |
-| **Σ** | **All** | **21** | **442** | **4%** | |
+| **Σ** | **All** | **22** | **442** | **4%** | |
 
 ## Task Detail
 
@@ -71,7 +71,7 @@ _Generated: 2026-02-19_
 | 10.3 | Add gap detection | pending | 0.5d | 10.2 |  |
 | 11.1 | Integrate drift, scanner, fitness, RTM into unifie | done (crit) | 0.5d | 10.2 |  |
 | 11.2 | Add staged canary for arch changes | pending | 0.5d | 11.1 |  |
-| 11.3 | Define Phase A gate checklist | pending (crit) | 0.5d | 11.1, 11.2 |  |
+| 11.3 | Define Phase A gate checklist | done (crit) | 0.5d | 11.1, 11.2 |  |
 | 11.4 | Implement ICD audit trail logging | pending | 0.5d | 11.3 |  |
 | 4.1 | Verify package names trace to monograph | pending | 0.5d |  |  |
 | 4.2 | Generate packages per 42010 viewpoint structure | pending | 0.5d | 4.1 |  |

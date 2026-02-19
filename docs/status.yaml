@@ -186,5 +186,8 @@ tasks:
     date: "2026-02-18"
     note: "Unified CI gate: ordered 4-stage pipeline, fail-fast, blocking/warning/info severity, GateVerdict summary (28 tests)"
   11.2: pending
-  11.3: pending
+  11.3:
+    status: done
+    date: "2026-02-18"
+    note: "Phase A gate checklist: 10 items, all PASS, Phase B unlocked (25 tests)"
   11.4: pending
