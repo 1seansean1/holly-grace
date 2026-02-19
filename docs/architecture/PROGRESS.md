@@ -7,7 +7,7 @@ _Generated: 2026-02-19_
 | 1 | Phase A Spiral (Steps 1, 2, 3, 3a) | 12 | 39 | 30% [###.......] | 12/12 |
 | 2 | Phase A Backfill (Steps 4–11) | 10 | 39 | 25% [##........] | 10/10 |
 | 3 | Phase B: Failure Analysis & Kernel (Step | 19 | 62 | 30% [###.......] | 19/19 |
-| 4 | Phase C: Storage Layer (Steps 22–26) | 2 | 23 | 8% [..........] | 2/7 |
+| 4 | Phase C: Storage Layer (Steps 22–26) | 3 | 23 | 13% [#.........] | 3/7 |
 | 5 | Phase D: Safety & Infra (Steps 27–33) | 0 | 33 | 0% [..........] | 0/10 |
 | 6 | Phase E: Core L2 (Steps 34–40) | 0 | 45 | 0% [..........] | 0/12 |
 | 7 | Phase F: Engine L3 (Steps 41–45) | 0 | 24 | 0% [..........] | 0/6 |
@@ -19,7 +19,7 @@ _Generated: 2026-02-19_
 | 13 | Phase L: Config (Steps 70–72) | 0 | 12 | 0% [..........] | 0/4 |
 | 14 | Phase M: Console L5 (Steps 73–78) | 0 | 18 | 0% [..........] | 0/7 |
 | 15 | Phase N: Deploy & Ops (Steps 79–86) | 0 | 29 | 0% [..........] | 0/14 |
-| **Σ** | **All** | **43** | **442** | **9%** | |
+| **Σ** | **All** | **44** | **442** | **9%** | |
 
 ## Task Detail
 
@@ -178,7 +178,7 @@ _Generated: 2026-02-19_
 | 22.7 | Apply RLS per ICD Boundary | done (crit) | 0.5d | 22.5, 22.6 |  |
 | 23.1 | Inherit SIL-2 | pending | 0.5d |  |  |
 | 23.2 | FMEA: orphan partition, failed archival, restore f | pending | 0.5d | 23.1 |  |
-| 23.3 | Implement time-based partitions, auto-create, S3 a | pending (crit) | 0.5d | 22.7, 23.2 |  |
+| 23.3 | Implement time-based partitions, auto-create, S3 a | done (crit) | 0.5d | 22.7, 23.2 |  |
 | 23.4 | Link to requirement and test | pending | 0.5d | 23.3 |  |
 | 24.1 | Assign SIL-2 | pending | 0.5d |  |  |
 | 24.2 | FMEA: cache poisoning, pub/sub message loss, HA fa | pending | 0.5d | 24.1 |  |

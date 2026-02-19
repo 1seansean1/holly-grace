@@ -340,3 +340,8 @@ tasks:
     status: done
     date: "2026-02-19"
     note: "RLS boundary audit: ICD_BOUNDARY (6 specs), ICDBoundarySpec, RLSTableVerdict, RLSBoundaryReport, validate_icd_boundary_static(), audit_rls_policies() (pg_policies catalog), render_rls_boundary_report(); 10 RLS-required tables, 1 exempt (kernel_audit_log/ICD-038); cross-tenant isolation verified (70 tests)"
+  # Step 23 — Partitioning
+  23.3:
+    status: done
+    date: "2026-02-19"
+    note: "Partition lifecycle manager: PartitionName (frozen/slots, from_tenant_id/parse), PartitionManager (ensure_partition, archive_partition, restore_partition, list_expired_partitions, run_archival_cycle), day_epoch_range, create_partition_ddl, PartitionNotFoundError, S3ClientProto/PartitionConnectionProto Protocols; ICD-036 (logs date+tenant), ICD-038 (kernel_audit_log date-only), 90-day TTL; Hypothesis epoch+name invariants (58 tests)"

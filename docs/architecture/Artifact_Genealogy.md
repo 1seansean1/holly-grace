@@ -981,4 +981,37 @@ New: tests/integration/test_rls_boundary.py (70 tests, 11 classes + property tes
 
 ---
 
+**Task 23.3** (2026-02-19) — Time-Based Partition Manager (ICD-036/ICD-038)
+
+```
+New: holly/storage/partition_manager.py — CREATED (Slice 4, Step 23)
+  PartitionName dataclass (frozen, slots) — identity of one time-based partition
+    partition_date: date / tenant_short: str | None (8 hex chars of UUID)
+    table_name property — canonical SQL name (e.g. logs_2026_02_19_aaaaaaaa)
+    s3_key property — archival S3 path under partitions/{parent}/{table_name}.csv
+    from_tenant_id() classmethod — construct per-tenant PartitionName from UUID
+    parse() classmethod — parse canonical partition table name back to PartitionName
+  PARTITIONED_TABLES: dict[str, bool] — logs (by_tenant=True), kernel_audit_log (False)
+  PartitionConnectionProto / S3ClientProto — Protocol interfaces for mock-based testing
+  PartitionNotFoundError — ICD-036 PartitionNotFound error contract
+  day_epoch_range(d) → (start, end) — UTC epoch bounds for a calendar day (86400s)
+  create_partition_ddl(name) — CREATE TABLE IF NOT EXISTS with LIKE + CHECK constraints
+  drop_partition_ddl(name) / copy_out_sql(name) / copy_in_sql(name) — SQL generators
+  PartitionManager dataclass — ttl_days=90; lifecycle methods:
+    ensure_partition(conn, parent_table, date, tenant_id?) → PartitionName (idempotent)
+    archive_partition(conn, name, s3, bucket) — COPY OUT → S3 upload → DROP TABLE
+    restore_partition(conn, name, s3, bucket) — S3 download → CREATE → COPY IN
+    list_expired_partitions(conn, reference_date?) → list[PartitionName] (pg_tables scan)
+    run_archival_cycle(conn, s3, bucket, reference_date?) → int (count archived)
+
+New: tests/integration/test_partition_manager.py (58 tests, 13 classes + Hypothesis)
+  AC1-AC14 covered; ordering invariants (tracker lists); TTL boundary conditions
+  Hypothesis: epoch bounds in DDL, deterministic table_name, parse round-trip
+
+58 tests total, all 14 AC covered
+2432 total tests (+58 new)
+```
+
+---
+
 *This document is the map of the map. Every artifact in Holly Grace traces through this graph back to the monograph, the six research streams, or the audit checklist. No artifact exists without provenance.*
