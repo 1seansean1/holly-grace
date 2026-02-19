@@ -74,10 +74,18 @@ class TestSchemaRegistryImmutability:
 
 
 class TestSchemaRegistryTypeKeyValidation:
-    def test_missing_type_key_raises(self) -> None:
+    # F-037: SchemaRegistry now accepts valid JSON Schema 2020-12 without a
+    # top-level "type" key.  Schemas with anyOf / oneOf / $ref / properties /
+    # etc. at the root are valid and must be accepted.  Only structurally empty
+    # dicts (no recognised JSON Schema keyword at all) are rejected.
+
+    def test_metadata_only_dict_raises(self) -> None:
+        """Schema with only title/description but no structural keyword is rejected."""
         with pytest.raises(SchemaParseError) as exc_info:
-            SchemaRegistry.register("ICD-NOTYPE", {"properties": {"x": {}}})
-        assert "type" in exc_info.value.detail
+            SchemaRegistry.register(
+                "ICD-META-ONLY", {"title": "My Schema", "description": "empty"}
+            )
+        assert "structural" in exc_info.value.detail
 
     def test_empty_dict_raises(self) -> None:
         with pytest.raises(SchemaParseError):
@@ -86,6 +94,11 @@ class TestSchemaRegistryTypeKeyValidation:
     def test_type_key_present_succeeds(self) -> None:
         SchemaRegistry.register("ICD-OK", {"type": "object"})
         assert SchemaRegistry.has("ICD-OK")
+
+    def test_properties_only_succeeds(self) -> None:
+        """properties at root is a structural keyword — accepted without 'type'."""
+        SchemaRegistry.register("ICD-PROPS", {"properties": {"x": {"type": "string"}}})
+        assert SchemaRegistry.has("ICD-PROPS")
 
     def test_non_dict_still_raises_parse_error(self) -> None:
         with pytest.raises(SchemaParseError):

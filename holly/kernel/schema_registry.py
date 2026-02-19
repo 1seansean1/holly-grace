@@ -27,6 +27,27 @@ from holly.kernel.exceptions import (
     SchemaParseError,
 )
 
+# Keywords that make a JSON Schema 2020-12 dict structurally meaningful.
+# A valid schema need not have "type" at the root — anyOf, $ref, enum, etc.
+# are all legal top-level keywords per the spec.  We require at least one
+# structural keyword to prevent accidentally registering an empty {} schema.
+_STRUCTURAL_KEYS: frozenset[str] = frozenset(
+    {
+        "type",
+        "anyOf",
+        "oneOf",
+        "allOf",
+        "not",
+        "$ref",
+        "properties",
+        "items",
+        "enum",
+        "const",
+        "$defs",
+        "definitions",
+    }
+)
+
 
 class SchemaRegistry:
     """Process-global ICD schema registry.
@@ -53,15 +74,22 @@ class SchemaRegistry:
         Raises
         ------
         SchemaParseError
-            If *schema* is not a dict or lacks a ``"type"`` key.
+            If *schema* is not a dict, or contains no structural JSON Schema
+            keyword (``type``, ``anyOf``, ``oneOf``, ``$ref``, etc.).
+            Empty dicts ``{}`` are rejected.  Schemas do *not* require a
+            top-level ``"type"`` key — ``anyOf``/``$ref``-rooted schemas are
+            valid JSON Schema 2020-12 and are accepted here.
         """
         if not isinstance(schema, dict):
             raise SchemaParseError(
                 schema_id, f"Expected dict, got {type(schema).__name__}"
             )
-        if "type" not in schema:
+        if not schema.keys() & _STRUCTURAL_KEYS:
             raise SchemaParseError(
-                schema_id, "Schema dict must contain a 'type' key"
+                schema_id,
+                "Schema must contain at least one structural keyword "
+                "(type, anyOf, oneOf, allOf, $ref, properties, enum, …); "
+                "empty schemas {} are not permitted",
             )
         with cls._lock:
             if schema_id in cls._schemas:

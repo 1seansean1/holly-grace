@@ -179,23 +179,20 @@ def cmd_gate(args: argparse.Namespace) -> None:
     audit_results = run_audit(root)
     audit_pass = all(r.status != "FAIL" for r in audit_results)
 
-    # Count tests by running pytest --co -q (collect only)
+    # Count tests by running pytest --collect-only -q and counting node-ID
+    # lines (each contains "::").  This avoids parsing the human-readable
+    # summary line whose format varies across pytest versions.
     import subprocess
 
     result = subprocess.run(
-        [sys.executable, "-m", "pytest", "tests/", "--co", "-q"],
+        [sys.executable, "-m", "pytest", "tests/", "--collect-only", "-q"],
         capture_output=True,
         text=True,
         cwd=str(root),
     )
-    test_count = 0
-    for line in result.stdout.splitlines():
-        if "test" in line and ("selected" in line or "collected" in line):
-            # e.g. "302 tests collected in 2.04s"
-            parts = line.split()
-            if parts and parts[0].isdigit():
-                test_count = int(parts[0])
-                break
+    test_count = sum(
+        1 for line in result.stdout.splitlines() if "::" in line
+    )
 
     # Evaluate gate
     report = evaluate_gate(

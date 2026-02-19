@@ -108,6 +108,29 @@ class PayloadTooLargeError(KernelError):
 # ── K8 Eval Gate exceptions (Task 3a.10) ─────────────────────────
 
 
+class KernelInvariantError(KernelError):
+    """Raised when a runtime kernel invariant is violated.
+
+    Unlike assertions (which can be stripped with ``python -O``), this
+    exception always fires and is always catchable as a ``KernelError``.
+
+    Attributes
+    ----------
+    invariant : str
+        Short identifier for the invariant that was violated
+        (e.g. ``"payload_immutability"``).
+    """
+
+    __slots__ = ("invariant",)
+
+    def __init__(self, invariant: str, detail: str = "") -> None:
+        msg = f"Kernel invariant {invariant!r} violated"
+        if detail:
+            msg += f": {detail}"
+        super().__init__(msg)
+        self.invariant = invariant
+
+
 class PredicateNotFoundError(KernelError):
     """Raised when a predicate_id cannot be resolved from the registry."""
 

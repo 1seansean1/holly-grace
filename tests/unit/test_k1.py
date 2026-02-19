@@ -32,6 +32,7 @@ from hypothesis import strategies as st
 from holly.arch.decorators import kernel_boundary
 from holly.kernel.exceptions import (
     KernelError,
+    KernelInvariantError,
     PayloadTooLargeError,
     SchemaNotFoundError,
     SchemaParseError,
@@ -277,6 +278,37 @@ class TestAC7PayloadImmutability:
 # ══════════════════════════════════════════════════════════
 
 
+class TestKernelInvariantError:
+    """F-036: assert → KernelInvariantError (survives python -O)."""
+
+    def test_immutability_guard_fires_when_validator_mutates(
+        self, register_simple: str
+    ) -> None:
+        """Simulate a validator that mutates the payload; KernelInvariantError fires."""
+        from unittest.mock import patch
+
+        def _mutating_validator(schema: dict) -> object:
+            class _Mutator:
+                def iter_errors(self, payload: dict) -> list:
+                    payload["__injected__"] = True  # mutation!
+                    return []
+
+            return _Mutator()
+
+        with (
+            patch("holly.kernel.k1.Draft202012Validator", side_effect=_mutating_validator),
+            pytest.raises(KernelInvariantError) as exc_info,
+        ):
+            k1_validate({"name": "Alice"}, register_simple)
+        assert exc_info.value.invariant == "payload_immutability"
+        assert isinstance(exc_info.value, KernelError)
+
+    def test_no_invariant_error_on_clean_validation(self, register_simple: str) -> None:
+        """Normal validation does not raise KernelInvariantError."""
+        result = k1_validate({"name": "Alice"}, register_simple)
+        assert result == {"name": "Alice"}
+
+
 class TestSchemaRegistry:
     def test_register_and_get(self) -> None:
         SchemaRegistry.register("ICD-A", {"type": "object"})
@@ -300,6 +332,36 @@ class TestSchemaRegistry:
     def test_non_dict_raises_schema_parse_error(self) -> None:
         with pytest.raises(SchemaParseError):
             SchemaRegistry.register("ICD-BAD", "not a dict")  # type: ignore[arg-type]
+
+    def test_empty_dict_raises_schema_parse_error(self) -> None:
+        """F-037: empty schema {} has no structural keywords — rejected."""
+        with pytest.raises(SchemaParseError):
+            SchemaRegistry.register("ICD-EMPTY", {})
+
+    def test_anyof_schema_accepted(self) -> None:
+        """F-037: anyOf at top level is valid JSON Schema 2020-12."""
+        schema = {"anyOf": [{"type": "string"}, {"type": "integer"}]}
+        SchemaRegistry.register("ICD-ANYOF", schema)
+        assert SchemaRegistry.has("ICD-ANYOF")
+
+    def test_oneof_schema_accepted(self) -> None:
+        """F-037: oneOf at top level accepted."""
+        schema = {"oneOf": [{"type": "object"}, {"type": "null"}]}
+        SchemaRegistry.register("ICD-ONEOF", schema)
+        assert SchemaRegistry.has("ICD-ONEOF")
+
+    def test_ref_schema_accepted(self) -> None:
+        """F-037: $ref-rooted schema accepted."""
+        schema = {"$ref": "#/$defs/Payload", "$defs": {"Payload": {"type": "object"}}}
+        SchemaRegistry.register("ICD-REF", schema)
+        assert SchemaRegistry.has("ICD-REF")
+
+    def test_only_metadata_raises_schema_parse_error(self) -> None:
+        """F-037: schema with only $schema/$id but no structural keyword rejected."""
+        with pytest.raises(SchemaParseError):
+            SchemaRegistry.register(
+                "ICD-META", {"$schema": "https://json-schema.org/draft/2020-12/schema"}
+            )
 
     def test_thread_safety(self) -> None:
         """Concurrent register + get should not corrupt state."""

@@ -44,6 +44,7 @@ from typing import Any
 from jsonschema import Draft202012Validator  # type: ignore[import-untyped]
 
 from holly.kernel.exceptions import (
+    KernelInvariantError,
     PayloadTooLargeError,
     ValidationError,
 )
@@ -151,9 +152,13 @@ def k1_validate(
             payload_hash=_payload_hash(payload),
         )
 
-    # ── Post-validation immutability assertion ────────────
-    assert payload == payload_before, (
-        "K1 invariant violation: payload mutated during validation"
-    )
+    # ── Post-validation immutability check ────────────────
+    # Explicit exception rather than `assert` so the guard cannot be
+    # stripped by Python's -O / -OO optimise flags.
+    if payload != payload_before:
+        raise KernelInvariantError(
+            "payload_immutability",
+            "payload was mutated during JSON Schema validation",
+        )
 
     return payload
