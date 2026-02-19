@@ -1,6 +1,6 @@
 """K1 — Schema Validation gate.
 
-Task 3.7 — ICD contract enforcement.
+Tasks 3.7 & 16.3 — ICD contract enforcement + KernelContext integration.
 
 Validates an incoming payload against an ICD JSON Schema.  This is the
 runtime enforcement counterpart to the metadata-only ``@kernel_boundary``
@@ -8,14 +8,30 @@ decorator from Task 3.6.
 
 The gate implements the K1 state machine from Behavior Spec §1.2:
 
-    WAITING → RESOLVING → RESOLVED → VALIDATING → VALID (pass)
-                                                 → INVALID → FAULTED (raise)
-              → NOT_FOUND → FAULTED (raise)
+    WAITING -> RESOLVING -> RESOLVED -> VALIDATING -> VALID (pass)
+                                                   -> INVALID -> FAULTED (raise)
+               -> NOT_FOUND -> FAULTED (raise)
+
+Task 16.3 adds ``k1_gate``, a factory that returns a ``Gate``-compatible
+async callable for use within ``KernelContext``:
+
+    async with KernelContext(gates=[k1_gate(payload, "ICD-006")]) as ctx:
+        ...  # payload guaranteed schema-valid here
+
+When the gate fails, ``KernelContext.__aenter__`` catches the exception,
+advances ENTERING->FAULTED->IDLE (TLA+ liveness: EventuallyIdle), and
+re-raises — so the caller always sees the original ``KernelError``.
 
 Usage (standalone)::
 
     from holly.kernel.k1 import k1_validate
     validated = k1_validate(payload, "ICD-006")
+
+Usage (via KernelContext gate, Task 16.3)::
+
+    from holly.kernel.k1 import k1_gate
+    async with KernelContext(gates=[k1_gate(payload, "ICD-006")]) as ctx:
+        ...  # payload is guaranteed valid here
 
 Usage (via decorator)::
 
@@ -26,12 +42,15 @@ Usage (via decorator)::
 
 Design constraints
 ------------------
-- Payload is **never** mutated — deep-copy check is the caller's
+- Payload is **never** mutated - deep-copy check is the caller's
   responsibility (invariant 4 from Behavior Spec).
 - Schema is resolved **once** per call via SchemaRegistry (cached
   singleton; invariant 2).
 - Payload size checked **before** JSON Schema validation to avoid
   expensive traversal on oversized inputs.
+
+Traces to: Behavior Spec §1.2, TLA+ spec (14.1), KernelContext (15.4).
+SIL: 3
 """
 
 from __future__ import annotations
@@ -39,9 +58,14 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from jsonschema import Draft202012Validator  # type: ignore[import-untyped]
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
+    from holly.kernel.context import KernelContext
 
 from holly.kernel.exceptions import (
     KernelInvariantError,
@@ -162,3 +186,62 @@ def k1_validate(
         )
 
     return payload
+
+
+# ── K1 Gate adapter (KernelContext integration — Task 16.3) ──────────────
+
+
+def k1_gate(
+    payload: Any,
+    schema_id: str,
+    *,
+    max_bytes: int = MAX_PAYLOAD_BYTES,
+    max_depth: int = MAX_NESTING_DEPTH,
+) -> Callable[[KernelContext], Awaitable[None]]:
+    """Return a Gate that validates *payload* against schema *schema_id*.
+
+    The returned coroutine is compatible with the ``Gate`` protocol from
+    ``holly.kernel.context`` and participates in the KernelContext
+    IDLE->ENTERING->ACTIVE lifecycle::
+
+        async with KernelContext(gates=[k1_gate(payload, "ICD-006")]) as ctx:
+            ...  # payload is guaranteed schema-valid here
+
+    On failure the gate raises a subclass of ``KernelError``.  The
+    ``KernelContext.__aenter__`` catches it, advances the kernel state
+    ENTERING->FAULTED->IDLE, and re-raises — satisfying the TLA+ liveness
+    property ``EventuallyIdle: []<>(kstate = IDLE)``.
+
+    Parameters
+    ----------
+    payload:
+        The JSON-like object to validate.
+    schema_id:
+        ICD identifier registered in ``SchemaRegistry``
+        (e.g. ``"ICD-006"``).
+    max_bytes:
+        Serialised payload size ceiling in bytes (default 10 MB).
+    max_depth:
+        Maximum nesting depth (default 20 levels).
+
+    Returns
+    -------
+    Callable[[KernelContext], Awaitable[None]]
+        An async gate coroutine; pass it in ``KernelContext(gates=[...])``.
+
+    Raises (propagated through KernelContext)
+    -----------------------------------------
+    SchemaNotFoundError
+        If *schema_id* is not registered.
+    PayloadTooLargeError
+        If the payload exceeds *max_bytes* or *max_depth*.
+    ValidationError
+        If the payload violates the schema.
+
+    Traces to: Behavior Spec §1.2 K1, TLA+ spec §14.1, KernelContext §15.4.
+    """
+
+    async def _k1_gate(ctx: KernelContext) -> None:
+        k1_validate(payload, schema_id, max_bytes=max_bytes, max_depth=max_depth)
+
+    return _k1_gate

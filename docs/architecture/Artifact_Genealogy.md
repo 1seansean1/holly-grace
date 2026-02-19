@@ -524,6 +524,17 @@ These rules govern how new artifacts enter the genealogy:
                      tests/unit/test_kernel_context.py — lifecycle, gates, re-entrancy,
                      exception identity, Hypothesis property-based — 41 new tests
                      1591 total tests (+41 new)
+2026-02-19  Task 16.3: K1 schema validation gate — KernelContext integration
+                     holly/kernel/k1.py — k1_gate factory added: Gate-protocol async
+                     adapter wrapping k1_validate; all failure paths (ValidationError,
+                     SchemaNotFoundError, PayloadTooLargeError) advance ENTERING->FAULTED->IDLE
+                     satisfying TLA+ liveness EventuallyIdle; composes with other gates
+                     in KernelContext(gates=[k1_gate(payload, schema_id)]) (Slice 3: 5/19)
+                     holly/kernel/__init__.py — exports k1_gate
+                     tests/unit/test_k1_gate.py — structure, happy-path, gate-fail,
+                     schema-not-found, too-large, ordering, liveness, Hypothesis
+                     property-based (zero FP/FN) — 29 new tests
+                     1620 total tests (+29 new)
 ```
 
 ---

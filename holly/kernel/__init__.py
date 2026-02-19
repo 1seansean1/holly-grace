@@ -2,6 +2,7 @@
 
 Public API:
     - k1_validate           — standalone K1 schema validation gate
+    - k1_gate               — Gate-compatible K1 factory for KernelContext
     - k8_evaluate           — standalone K8 eval gate
     - SchemaRegistry        — ICD JSON Schema resolution singleton
     - ICDSchemaRegistry     — ICD Pydantic model resolution with TTL cache
@@ -35,7 +36,7 @@ from holly.kernel.icd_schema_registry import (
     ICDSchemaRegistry,
     ICDValidationError,
 )
-from holly.kernel.k1 import k1_validate
+from holly.kernel.k1 import k1_gate, k1_validate
 from holly.kernel.k8 import k8_evaluate
 from holly.kernel.predicate_registry import PredicateRegistry
 from holly.kernel.schema_registry import SchemaRegistry
@@ -55,6 +56,7 @@ __all__ = [
     "SchemaParseError",
     "SchemaRegistry",
     "ValidationError",
+    "k1_gate",
     "k1_validate",
     "k8_evaluate",
 ]

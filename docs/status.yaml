@@ -229,3 +229,17 @@ tasks:
   15.5: pending
   15.6: pending
   15.7: pending
+
+  # Step 16 — K1-K4 (schema, permissions, bounds, trace)
+  16.1: pending
+  16.2: pending
+  16.3:
+    status: done
+    date: "2026-02-19"
+    note: "k1_gate factory: Gate-protocol async adapter for KernelContext; wraps k1_validate; all failure paths end in IDLE (TLA+ EventuallyIdle); composes with other gates; property-based zero FP/FN tests (29 tests)"
+  16.4: pending
+  16.5: pending
+  16.6: pending
+  16.7: pending
+  16.8: pending
+  16.9: pending
