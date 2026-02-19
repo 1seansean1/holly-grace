@@ -6,7 +6,7 @@ _Generated: 2026-02-19_
 |------:|-------|-----:|------:|---------:|---------------|
 | 1 | Phase A Spiral (Steps 1, 2, 3, 3a) | 12 | 39 | 30% [###.......] | 12/12 |
 | 2 | Phase A Backfill (Steps 4–11) | 10 | 39 | 25% [##........] | 10/10 |
-| 3 | Phase B: Failure Analysis & Kernel (Step | 5 | 62 | 8% [..........] | 5/19 |
+| 3 | Phase B: Failure Analysis & Kernel (Step | 6 | 62 | 9% [..........] | 6/19 |
 | 4 | Phase C: Storage Layer (Steps 22–26) | 0 | 23 | 0% [..........] | 0/7 |
 | 5 | Phase D: Safety & Infra (Steps 27–33) | 0 | 33 | 0% [..........] | 0/10 |
 | 6 | Phase E: Core L2 (Steps 34–40) | 0 | 45 | 0% [..........] | 0/12 |
@@ -19,7 +19,7 @@ _Generated: 2026-02-19_
 | 13 | Phase L: Config (Steps 70–72) | 0 | 12 | 0% [..........] | 0/4 |
 | 14 | Phase M: Console L5 (Steps 73–78) | 0 | 18 | 0% [..........] | 0/7 |
 | 15 | Phase N: Deploy & Ops (Steps 79–86) | 0 | 29 | 0% [..........] | 0/14 |
-| **Σ** | **All** | **27** | **442** | **6%** | |
+| **Σ** | **All** | **28** | **442** | **6%** | |
 
 ## Task Detail
 
@@ -131,7 +131,7 @@ _Generated: 2026-02-19_
 | 16.1 | Map K1–K4 to monograph channel constraints | pending | 0.5d |  |  |
 | 16.2 | Review FMEA mitigations for K1–K4 | pending | 0.5d | 16.1 |  |
 | 16.3 | Implement K1 schema validation per TLA+ | done (crit) | 1.5d | 15.4, 16.2 |  |
-| 16.4 | Implement K2 permission gating per TLA+ | pending (crit) | 1.5d | 16.3 |  |
+| 16.4 | Implement K2 permission gating per TLA+ | done (crit) | 1.5d | 16.3 |  |
 | 16.5 | Implement K3 bounds checking per TLA+ | pending (crit) | 1.5d | 16.4 |  |
 | 16.6 | Implement K4 trace injection per TLA+ | pending (crit) | 1.5d | 16.5 |  |
 | 16.7 | Register K1–K4 in YAML, apply decorators | pending | 1d | 16.6 |  |

@@ -237,7 +237,10 @@ tasks:
     status: done
     date: "2026-02-19"
     note: "k1_gate factory: Gate-protocol async adapter for KernelContext; wraps k1_validate; all failure paths end in IDLE (TLA+ EventuallyIdle); composes with other gates; property-based zero FP/FN tests (29 tests)"
-  16.4: pending
+  16.4:
+    status: done
+    date: "2026-02-19"
+    note: "K2 RBAC permission gate: k2_check_permissions + k2_gate factory; PermissionRegistry singleton; RevocationCache protocol + NullRevocationCache + FailRevocationCache; JWTError/ExpiredTokenError/RevokedTokenError/PermissionDeniedError/RoleNotFoundError/RevocationCacheError; pre-decoded claims dict; fail-safe revocation deny; TLA+ liveness all paths IDLE; composes with k1_gate; property-based zero FP/FN (42 tests)"
   16.5: pending
   16.6: pending
   16.7: pending

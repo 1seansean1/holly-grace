@@ -535,6 +535,26 @@ These rules govern how new artifacts enter the genealogy:
                      schema-not-found, too-large, ordering, liveness, Hypothesis
                      property-based (zero FP/FN) — 29 new tests
                      1620 total tests (+29 new)
+2026-02-19  Task 16.4: K2 RBAC permission gate — KernelContext integration
+                     holly/kernel/exceptions.py — JWTError, ExpiredTokenError,
+                     RevokedTokenError, PermissionDeniedError, RoleNotFoundError,
+                     RevocationCacheError added to exception hierarchy
+                     holly/kernel/permission_registry.py — NEW: thread-safe class-level
+                     PermissionRegistry singleton; register_role / get_permissions /
+                     has_role / registered_roles / clear; RoleNotFoundError on miss
+                     holly/kernel/k2.py — NEW: RevocationCache Protocol +
+                     NullRevocationCache + FailRevocationCache; k2_check_permissions
+                     (pre-decoded claims dict; exp/jti/RBAC checks); k2_gate factory:
+                     Gate-protocol async adapter; all failure paths advance
+                     ENTERING->FAULTED->IDLE (TLA+ EventuallyIdle); composes with
+                     k1_gate; fail-safe revocation deny (Slice 3: 6/19)
+                     holly/kernel/__init__.py — exports k2_check_permissions, k2_gate,
+                     PermissionRegistry + K2 exception classes
+                     tests/unit/test_k2.py — NEW: structure, happy-path, permission-
+                     denied, missing-JWT, malformed-claims, expiry, revocation, role-
+                     not-found, ordering, PermissionRegistry unit, Hypothesis property-
+                     based (authorized/unauthorized/expired all IDLE) — 42 new tests
+                     1662 total tests (+42 new)
 ```
 
 ---

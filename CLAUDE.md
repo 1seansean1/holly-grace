@@ -49,9 +49,9 @@ After completing:
 - **Slice 1 critical path:** 1.5→1.6→1.7→1.8→2.6→2.7→2.8→3.6→3.7→3a.8→3a.10→3a.12 (COMPLETE)
 - **Slice 2 critical path:** 5.8→5.5→5.6→7.1→7.2→8.3→9.2→10.2→11.1→11.3 (COMPLETE)
 - **Slice 3 critical path:** 13.1→14.1→14.5→15.4→16.3→16.4→16.5→16.6→16.9→17.3→17.4→17.7→18.3→18.4→18.9→20.3→20.5→21.2→21.6
-- **Done:** Tasks 1.5, 1.6, 1.7, 1.8, 2.6, 2.7, 2.8, 3.6, 3.7, 3a.8, 3a.10, 3a.12, 5.8, 5.5, 5.6, 7.1, 7.2, 8.3, 9.2, 10.2, 11.1, 11.3, 13.1, 14.1, 14.5, 15.4, 16.3 (27 total, Slice 3: 5 of 19)
-- **Next:** Task 16.4 — K2 permission gating per TLA+
-- **Test count:** 1620
+- **Done:** Tasks 1.5, 1.6, 1.7, 1.8, 2.6, 2.7, 2.8, 3.6, 3.7, 3a.8, 3a.10, 3a.12, 5.8, 5.5, 5.6, 7.1, 7.2, 8.3, 9.2, 10.2, 11.1, 11.3, 13.1, 14.1, 14.5, 15.4, 16.3, 16.4 (28 total, Slice 3: 6 of 19)
+- **Next:** Task 16.5 — K3 bounds checking per TLA+
+- **Test count:** 1662
 - **Components:** 48
 - **Audit findings resolved:** F-001 through F-039 (F-036: k1 assert→KernelInvariantError; F-037: SchemaRegistry anyOf/$ref/$ref-rooted schemas accepted; F-038: cmd_gate test-count via :: line-count; F-039: audit.py C011 uses sys.executable not hardcoded "python")
 

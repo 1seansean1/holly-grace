@@ -1,6 +1,7 @@
 """Kernel-layer exception hierarchy.
 
-Tasks 3.7 & 3a.10 — ICD contract enforcement + K8 eval gate exceptions.
+Tasks 3.7, 3a.10 & 16.4 — ICD contract enforcement, K8 eval gate, K2 permission
+gate exceptions.
 
 All kernel exceptions inherit from ``KernelError`` to enable
 blanket ``except KernelError`` handling at boundary gateways.
@@ -195,3 +196,123 @@ class PredicateAlreadyRegisteredError(KernelError):
             f"Predicate {predicate_id!r} is already registered"
         )
         self.predicate_id = predicate_id
+
+
+# ── K2 Permission Gate exceptions (Task 16.4) ────────────────────────────
+
+
+class JWTError(KernelError):
+    """Raised when JWT claims are missing, malformed, or fail required-field checks.
+
+    Attributes
+    ----------
+    detail : str
+        Human-readable description of the malformed-claims condition.
+    """
+
+    __slots__ = ("detail",)
+
+    def __init__(self, detail: str) -> None:
+        super().__init__(f"JWT claims error: {detail}")
+        self.detail = detail
+
+
+class ExpiredTokenError(JWTError):
+    """Raised when the JWT ``exp`` claim is in the past.
+
+    Attributes
+    ----------
+    exp : int
+        The ``exp`` value (Unix timestamp) from the claims dict.
+    """
+
+    __slots__ = ("exp",)
+
+    def __init__(self, exp: int) -> None:
+        super().__init__(f"token expired at {exp}")
+        self.exp = exp
+
+
+class RevokedTokenError(JWTError):
+    """Raised when the JWT ``jti`` is found in the revocation cache.
+
+    Attributes
+    ----------
+    jti : str
+        The ``jti`` (JWT ID) that was revoked.
+    """
+
+    __slots__ = ("jti",)
+
+    def __init__(self, jti: str) -> None:
+        super().__init__(f"token {jti!r} has been revoked")
+        self.jti = jti
+
+
+class PermissionDeniedError(KernelError):
+    """Raised when required permissions are not a subset of granted permissions.
+
+    Attributes
+    ----------
+    granted : frozenset[str]
+        The full set of permissions the caller holds.
+    missing : frozenset[str]
+        Permissions that were required but not granted (``required - granted``).
+    required : frozenset[str]
+        The full set of permissions the gate required.
+    user_id : str
+        Subject identifier from the JWT claims (``sub`` field).
+    """
+
+    __slots__ = ("granted", "missing", "required", "user_id")
+
+    def __init__(
+        self,
+        *,
+        user_id: str,
+        required: frozenset[str],
+        granted: frozenset[str],
+        missing: frozenset[str],
+    ) -> None:
+        super().__init__(
+            f"user {user_id!r} missing permissions: {sorted(missing)}"
+        )
+        self.user_id = user_id
+        self.required = required
+        self.granted = granted
+        self.missing = missing
+
+
+class RoleNotFoundError(KernelError):
+    """Raised when a role has no entry in the PermissionRegistry.
+
+    Attributes
+    ----------
+    role : str
+        The role name that could not be resolved.
+    """
+
+    __slots__ = ("role",)
+
+    def __init__(self, role: str) -> None:
+        super().__init__(f"Role {role!r} not found in PermissionRegistry")
+        self.role = role
+
+
+class RevocationCacheError(KernelError):
+    """Raised when the revocation cache is unavailable.
+
+    The K2 gate applies fail-safe semantics: if revocation status cannot be
+    determined, access is denied.
+
+    Attributes
+    ----------
+    detail : str
+        Description of the cache failure.
+    """
+
+    __slots__ = ("detail",)
+
+    def __init__(self, detail: str) -> None:
+        super().__init__(f"Revocation cache unavailable: {detail}")
+        self.detail = detail
