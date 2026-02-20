@@ -607,4 +607,11 @@ tasks:
     note: 'MCP Registry: per-agent permission gates per K2, tool introspection, ICD-019/020
       error contract compliance; 41 unit + 18 integration tests (59 total)'
     commit: a3e231c
+  '43.3':
+    status: done
+    date: '2026-02-20'
+    commit: fc7d6ca
+    note: 'Goal-Dispatch Middleware: bridges goal hierarchy (Celestial L0-L4 predicates)
+      with lane/MCP dispatch; CelestialComplianceEvaluator, K2PermissionGate, GoalDispatcher;
+      52 unit tests (all pass)'
 version: '1.0'
