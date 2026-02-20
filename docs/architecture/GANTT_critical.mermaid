@@ -87,12 +87,12 @@ gantt
     44.5 Implement durable engine per ICD-021, saga, :done, t44_5, 2026-02-20, 0.5d
     45.2 Execute SIL-2 test suite :done, t45_2, 2026-02-20, 0.5d
     45.4 Phase F gate checklist :crit, t45_4, after t45_2, 0.5d
-    section Slice 8 (0%)
-    46.5 Build minimal container - no network, no Holly deps :crit, t46_5, after t45_4, 1d
-    47.3 Implement per TLA+ sandbox spec per Behavior Spec §2 :crit, t47_3, after t46_5, 1.5d
-    47.5 Validate gRPC Proto Constraints per ICD-022 :crit, t47_5, after t47_3, 1.5d
-    48.3 Implement per TLA+ isolation spec per Behavior Spec §2 :crit, t48_3, after t47_5, 1.5d
-    48.5 Verify Isolation Invariant Preservation per :crit, t48_5, after t48_3, 1.5d
+    section Slice 8 (50%)
+    46.5 Build minimal container - no network, no Holly deps :done, t46_5, 2026-02-20, 1d
+    47.3 Implement per TLA+ sandbox spec per Behavior Spec §2 :done, t47_3, 2026-02-20, 1.5d
+    47.5 Validate gRPC Proto Constraints per ICD-022 :done, t47_5, 2026-02-20, 1.5d
+    48.3 Implement per TLA+ isolation spec per Behavior Spec §2 :done, t48_3, 2026-02-20, 1.5d
+    48.5 Verify Isolation Invariant Preservation per :done, t48_5, 2026-02-20, 1.5d
     49.4 Implement production runtime configs per Behavior :crit, t49_4, after t48_5, 1d
     49.5 Adversarial Runtime Escape Testing per Behavior :crit, t49_5, after t49_4, 1.5d
     50.2 Execute SIL-3 test suite per Behavior Spec §2 :crit, t50_2, after t49_5, 0.5d
