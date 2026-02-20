@@ -543,4 +543,9 @@ tasks:
     date: '2026-02-20'
     commit: 9f29d6c
     note: 'T0–T3 task classification + Assembly Index per Goal Hierarchy; TaskLevel enum, TaskClassification/TaskClassifier, AssemblyStep/AssemblyIndexResult/GoalDecomposer; ICD-011 compliance (T0→L0, T3→all L0-L4); 102 tests (44 unit classification + 44 unit assembly + 14 integration)'
+  '37.7':
+    status: done
+    date: '2026-02-20'
+    commit: pending
+    note: 'APS Assembly Index Validator: APSValidator/APSValidationReport; monotonicity T0≤T1≤T2≤T3, ICD-011 bounds, consistency; 63 tests (39 unit + 24 integration)'
 version: '1.0'
