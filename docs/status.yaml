@@ -470,3 +470,8 @@ tasks:
     date: '2026-02-20'
     note: 12 integration tests for layer independence verification (Task 31.5)
     commit: 42015d4
+  '31.7':
+    status: done
+    date: '2026-02-20'
+    note: 'Egress filter pipeline guarantees: allowlist→redact→rate-limit→budget→audit→forward order verified, property-based short-circuit tests, ICD-030 compliance (26 tests: 8 order + 11 short-circuit + 4 idempotency + 4 ICD-030)'
+    commit: pending
