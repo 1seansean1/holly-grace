@@ -5,6 +5,14 @@
     \ D.G1-D.G4 verified (safety infra, ICD coverage, gate passed, SIL-2); 66 tests\
     \ (51 unit + 15 integration, all pass)"
   status: done
+'36.8':
+  commit: 371bbb6
+  date: '2026-02-20'
+  note: "L0\u2013L4 Celestial predicate functions: CelestialState/PredicateResult/L0SafetyPredicate\
+    \ through L4ConstitutionalPredicate/evaluate_celestial_chain/check_celestial_compliance;\
+    \ property-based testing over 50+ states; 114 tests (86 unit + 28 integration,\
+    \ all pass)"
+  status: done
 generated: '2026-02-18'
 tasks:
   1.1: pending
@@ -503,10 +511,10 @@ tasks:
       all 49 ICDs traceable; 44 tests (34 unit + 10 integration)'
     status: done
   '33.4':
-    status: done
+    commit: 37b59dc
     date: '2026-02-20'
     note: "Phase D\u2192E goal chain verification: PhaseGoal/PhaseGoalChain/PhaseTransitionVerifier;\
       \ validates D.G1-D.G4 preconditions; Phase E unlock gate; 66 tests (51 unit\
       \ + 15 integration)"
-    commit: 37b59dc
+    status: done
 version: '1.0'
