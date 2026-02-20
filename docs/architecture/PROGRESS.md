@@ -9,7 +9,7 @@ _Generated: 2026-02-20_
 | 3 | Phase B: Failure Analysis & Kernel (Step | 19 | 62 | 30% [###.......] | 19/19 |
 | 4 | Phase C: Storage Layer (Steps 22–26) | 7 | 23 | 30% [###.......] | 7/7 |
 | 5 | Phase D: Safety & Infra (Steps 27–33) | 12 | 33 | 36% [###.......] | 10/10 |
-| 6 | Phase E: Core L2 (Steps 34–40) | 6 | 45 | 13% [#.........] | 6/12 |
+| 6 | Phase E: Core L2 (Steps 34–40) | 7 | 45 | 15% [#.........] | 7/12 |
 | 7 | Phase F: Engine L3 (Steps 41–45) | 0 | 24 | 0% [..........] | 0/6 |
 | 8 | Phase G: Sandbox (Steps 46–50) | 0 | 29 | 0% [..........] | 0/10 |
 | 9 | Phase H: API & Auth (Steps 51–56) | 0 | 24 | 0% [..........] | 0/8 |
@@ -19,7 +19,7 @@ _Generated: 2026-02-20_
 | 13 | Phase L: Config (Steps 70–72) | 0 | 12 | 0% [..........] | 0/4 |
 | 14 | Phase M: Console L5 (Steps 73–78) | 0 | 18 | 0% [..........] | 0/7 |
 | 15 | Phase N: Deploy & Ops (Steps 79–86) | 0 | 29 | 0% [..........] | 0/14 |
-| **Σ** | **All** | **66** | **442** | **14%** | |
+| **Σ** | **All** | **67** | **442** | **15%** | |
 
 ## Task Detail
 
@@ -257,11 +257,11 @@ _Generated: 2026-02-20_
 | 38.1 | Map to monograph steering operators, assignment ma | pending | 0.5d |  |  |
 | 38.2 | Assign SIL-2 | pending | 0.5d | 38.1 |  |
 | 38.3 | FMEA: stale topology, eigenspectrum blind spot, st | pending | 0.5d | 38.2 |  |
-| 38.4 | Implement spawn/steer/dissolve, contracts, eigensp | done (crit) | 0.5d | 37.7, 38.3 | pending |
+| 38.4 | Implement spawn/steer/dissolve, contracts, eigensp | done (crit) | 0.5d | 37.7, 38.3 | d8a3e1c |
 | 38.5 | Register, decorate per ICD-012/015 | pending | 0.5d | 38.4 |  |
 | 38.6 | Link | pending | 0.5d | 38.5 |  |
 | 38.7 | Implement Eigenspectrum Monitor per Goal Hierarchy | pending | 0.5d | 38.6 |  |
-| 38.8 | Verify Steer Operations maintain Contract Satisfac | pending (crit) | 0.5d | 38.4, 38.7 |  |
+| 38.8 | Verify Steer Operations maintain Contract Satisfac | done (crit) | 0.5d | 38.4, 38.7 | pending |
 | 39.1 | Map to monograph K-scope crystallisation, memory t | pending | 0.5d |  |  |
 | 39.2 | Assign SIL-2 | pending | 0.5d | 39.1 |  |
 | 39.3 | FMEA: cross-tenant memory leak, crystallisation co | pending | 0.5d | 39.2 |  |

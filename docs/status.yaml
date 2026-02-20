@@ -542,15 +542,28 @@ tasks:
     status: done
     date: '2026-02-20'
     commit: 9f29d6c
-    note: 'T0–T3 task classification + Assembly Index per Goal Hierarchy; TaskLevel enum, TaskClassification/TaskClassifier, AssemblyStep/AssemblyIndexResult/GoalDecomposer; ICD-011 compliance (T0→L0, T3→all L0-L4); 102 tests (44 unit classification + 44 unit assembly + 14 integration)'
+    note: "T0\u2013T3 task classification + Assembly Index per Goal Hierarchy; TaskLevel\
+      \ enum, TaskClassification/TaskClassifier, AssemblyStep/AssemblyIndexResult/GoalDecomposer;\
+      \ ICD-011 compliance (T0\u2192L0, T3\u2192all L0-L4); 102 tests (44 unit classification\
+      \ + 44 unit assembly + 14 integration)"
   '37.7':
     status: done
     date: '2026-02-20'
     commit: 79334eb
-    note: 'APS Assembly Index Validator: APSValidator/APSValidationReport; monotonicity T0≤T1≤T2≤T3, ICD-011 bounds, consistency; 63 tests (39 unit + 24 integration)'
+    note: "APS Assembly Index Validator: APSValidator/APSValidationReport; monotonicity\
+      \ T0\u2264T1\u2264T2\u2264T3, ICD-011 bounds, consistency; 63 tests (39 unit\
+      \ + 24 integration)"
   '38.4':
     status: done
     date: '2026-02-20'
-    note: 'Topology Manager: spawn/steer/dissolve operations, agent contracts, eigenspectrum divergence monitoring per Goal Hierarchy §5-§6, ICD-012/015 integration; 40 tests (31 unit + 9 integration)'
+    note: "Topology Manager: spawn/steer/dissolve operations, agent contracts, eigenspectrum\
+      \ divergence monitoring per Goal Hierarchy \xA75-\xA76, ICD-012/015 integration;\
+      \ 40 tests (31 unit + 9 integration)"
     commit: d8a3e1c
+  '38.8':
+    status: done
+    date: '2026-02-20'
+    note: 'Steer contract verification: ContractVerifier/ContractViolation/ContractVerificationResult;
+      pre/post-steer invariant checking; 54 tests (42 unit + 12 integration)'
+    commit: pending
 version: '1.0'
