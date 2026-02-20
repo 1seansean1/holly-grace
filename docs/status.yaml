@@ -622,3 +622,17 @@ tasks:
       (ICD-032/034), database (ICD-039/040/042/043); 45 tests (SSRF/SQLi/traversal
       mitigations)'
 version: '1.0'
+  '44.5':
+    status: done
+    date: '2026-02-20'
+    commit: 7e3997a
+    note: 'Workflow Engine: durable task execution, saga pattern with compensation,
+      dead-letter queue, DAG compiler with cycle detection; effectively-once semantics;
+      40 unit + 10 integration tests (50 total)'
+  '45.2':
+    status: done
+    date: '2026-02-20'
+    commit: 7e3997a
+    note: 'SIL-2 test suite execution (Phase F steps 41-44): 226 tests pass across
+      lanes, MCP registry, goal dispatch, and workflow engine modules; 5 pre-existing
+      failures from timing edge cases in lane scheduling'
