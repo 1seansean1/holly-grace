@@ -8,7 +8,7 @@ _Generated: 2026-02-20_
 | 2 | Phase A Backfill (Steps 4–11) | 10 | 39 | 25% [##........] | 10/10 |
 | 3 | Phase B: Failure Analysis & Kernel (Step | 19 | 62 | 30% [###.......] | 19/19 |
 | 4 | Phase C: Storage Layer (Steps 22–26) | 7 | 23 | 30% [###.......] | 7/7 |
-| 5 | Phase D: Safety & Infra (Steps 27–33) | 10 | 33 | 30% [###.......] | 8/10 |
+| 5 | Phase D: Safety & Infra (Steps 27–33) | 12 | 33 | 36% [###.......] | 10/10 |
 | 6 | Phase E: Core L2 (Steps 34–40) | 0 | 45 | 0% [..........] | 0/12 |
 | 7 | Phase F: Engine L3 (Steps 41–45) | 0 | 24 | 0% [..........] | 0/6 |
 | 8 | Phase G: Sandbox (Steps 46–50) | 0 | 29 | 0% [..........] | 0/10 |
@@ -19,7 +19,7 @@ _Generated: 2026-02-20_
 | 13 | Phase L: Config (Steps 70–72) | 0 | 12 | 0% [..........] | 0/4 |
 | 14 | Phase M: Console L5 (Steps 73–78) | 0 | 18 | 0% [..........] | 0/7 |
 | 15 | Phase N: Deploy & Ops (Steps 79–86) | 0 | 29 | 0% [..........] | 0/14 |
-| **Σ** | **All** | **58** | **442** | **13%** | |
+| **Σ** | **All** | **60** | **442** | **13%** | |
 
 ## Task Detail
 
@@ -224,8 +224,8 @@ _Generated: 2026-02-20_
 | 33.1 | Aggregate FMEA results for D.27–D.32 | done (crit) | 0.5d | 31.7 | c4117bb |
 | 33.2 | Build structured safety argument | done (crit) | 1d | 33.1 | 53d4521 |
 | 33.3 | Link safety case to FMEA and test artifacts | pending | 0.5d | 33.2 |  |
-| 33.4 | Phase D gate checklist | pending (crit) | 0.5d | 33.5, 33.3 |  |
-| 33.5 | Integrate all 49 ICDs into Phase D Safety Case | pending (crit) | 0.5d | 33.2 |  |
+| 33.4 | Phase D gate checklist | done (crit) | 0.5d | 33.5, 33.3 | pending |
+| 33.5 | Integrate all 49 ICDs into Phase D Safety Case | done (crit) | 0.5d | 33.2 | fb37998 |
 | | **Slice 6** | | | | |
 | 34.1 | Map conversation to monograph channel theory | pending | 0.5d |  |  |
 | 34.2 | Assign SIL-2 | pending | 0.5d | 34.1 |  |
