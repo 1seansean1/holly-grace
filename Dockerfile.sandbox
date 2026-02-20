@@ -1,0 +1,39 @@
+# Minimal sandbox container per Behavior Spec §2
+# NO network utilities, NO Holly dependencies
+# Alpine Linux base with essential utilities only
+
+FROM alpine:3.19
+
+# Minimal sandbox container per Behavior Spec §2
+# NO network utilities, NO Holly dependencies
+
+# Update package lists
+RUN apk update && apk add --no-cache \
+    python3=~3.11 \
+    tini=~0.19 \
+    ca-certificates \
+    && rm -rf /var/cache/apk/*
+
+# Remove network utilities (if accidentally included)
+RUN apk del --no-cache curl wget netcat-openbsd ping telnet \
+    || true
+
+# Create unprivileged user
+RUN addgroup -g 1000 app && adduser -D -u 1000 -G app app
+
+# Setup minimal filesystem
+RUN mkdir -p /app /tmp /tmp/input /tmp/output \
+    && chmod 755 /app /tmp /tmp/input /tmp/output \
+    && chown -R app:app /app /tmp
+
+# Set read-only root filesystem mount point (host-enforced)
+VOLUME ["/rootfs_ro"]
+
+# Entrypoint: code executor (stage 2 image)
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["/app/executor"]
+
+LABEL sandbox_version="0.1.0" \
+      isolation_layers="pid,net,mnt,seccomp,cgroup" \
+      network_enabled="false" \
+      holly_free="true"
