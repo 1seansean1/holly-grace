@@ -1598,3 +1598,113 @@ Traceability:
 
 Next task:
 → 33.1: Model Validation Engine (continued critical path)
+
+## Task 33.1: Model Validation Engine
+
+**Date:** 2026-02-20
+
+**Artifacts:** 
+- `holly/validation/__init__.py` (22 lines)
+- `holly/validation/model_validator.py` (385 lines)
+- `tests/unit/test_model_validator.py` (640 lines)
+- `tests/integration/test_model_validator_integration.py` (512 lines)
+
+**Purpose:** Build Model Validation Engine for schema and semantic validation of data models. Implements ModelValidator protocol (runtime_checkable), ValidationResult/ValidationError dataclasses, SchemaValidationRule and SemanticValidationRule validators, ModelValidationPipeline for chaining, and validate_model() entry point per ICD spec.
+
+### Implementation
+
+Module structure:
+- **ValidationError (slots dataclass):** field, message, severity (critical/error/warning/info)
+- **ValidationResult (slots dataclass):** valid flag, errors list, warnings list with helper methods (add_error, add_warning, has_critical_errors, critical_errors, error_count)
+- **SeverityLevel (enum):** CRITICAL, ERROR, WARNING, INFO
+- **ModelValidator (protocol, runtime_checkable):** Interface with validate(model: dict) -> ValidationResult method
+- **SchemaValidationRule:** Validates against JSON schema using jsonschema.Draft7Validator
+- **SemanticValidationRule:** Applies custom business logic validators
+- **ModelValidationPipeline:** Chains validators with optional short-circuit on critical errors
+- **validate_model() function:** Primary entry point accepting optional schema and semantic validators
+
+### Key Features
+
+1. **Type Safety:**
+   - from __future__ import annotations for forward compatibility
+   - Full type annotations on all functions and parameters
+   - Protocol + runtime_checkable for interface definition
+   - Dataclass with __slots__ for memory efficiency
+
+2. **Error Handling:**
+   - Severity levels (critical/error/warning) for error classification
+   - Critical errors trigger short-circuit in pipeline
+   - Error aggregation across multiple validators
+   - Field-level error tracking with path support (e.g., "person.address.zip")
+
+3. **Validation Architecture:**
+   - SchemaValidationRule: JSON schema compliance (Draft 7)
+   - SemanticValidationRule: Business logic constraints via callables
+   - Pipeline pattern: chainable validators with stop-on-critical option
+   - Entry point function for simplified API usage
+
+4. **Code Quality:**
+   - Python 3.10 compatible (no StrEnum, datetime.UTC)
+   - Google-style docstrings on all classes/functions
+   - No bare except clauses
+   - Clear separation of concerns
+
+### Test Coverage
+
+Unit tests (58 tests):
+- **TestValidationError (5 tests):** Error object creation, severity validation, equality
+- **TestValidationResult (10 tests):** Result creation, error/warning addition, critical error filtering, counts
+- **TestSchemaValidation (8 tests):** Schema rule creation, valid/invalid models, type checking, nested objects
+- **SemanticValidation (6 tests):** Semantic rule creation, custom validators, business rules
+- **TestValidationPipeline (14 tests):** Pipeline creation, validator addition, result aggregation, short-circuit behavior
+- **TestValidateModelFunction (8 tests):** Entry point with various validator combinations
+- **TestFailureModes (7 tests):** Edge cases, large nested structures, null values, exceptions
+
+Integration tests (15 tests):
+- **TestRealWorldSchemas (3 tests):** API request, configuration, contract schemas
+- **TestComplexValidationChains (2 tests):** Multi-step user and order validation pipelines
+- **TestErrorAggregation (3 tests):** Multiple violations, mixed schema/semantic errors, severity levels
+- **TestValidatorInteroperability (7 tests):** Protocol compatibility, custom validators, pipeline ordering, validator composition
+
+Total: 73 tests (58 unit + 15 integration), all passing
+
+### Verification
+
+Acceptance criteria per Task Manifest:
+✓ Input artifacts: ICD specs (any validation-related), Behavior Specs (model handling)
+✓ Output artifacts: Validation module + 73 tests (58 unit + 15 integration)
+✓ Verification method: Unit + integration tests covering all classes/functions
+✓ Acceptance: "ModelValidator protocol, ValidationResult, SchemaValidationRule, SemanticValidationRule, ModelValidationPipeline all functional; 35+ tests pass"
+
+Implementation checklist:
+✓ ModelValidator protocol (runtime_checkable with validate() method)
+✓ ValidationResult dataclass with valid flag, errors list, warnings list
+✓ ValidationError dataclass with field, message, severity
+✓ SchemaValidationRule for JSON schema validation
+✓ SemanticValidationRule for business logic constraints
+✓ ModelValidationPipeline for chaining validators
+✓ validate_model() entry point with schema and semantic validators
+✓ 73 tests: 58 unit tests covering all classes and 15 integration tests with real-world scenarios
+
+Code quality:
+- Syntax: python -c "from holly.validation import ..." successful
+- Type annotations: Full coverage on all functions
+- Imports: from __future__ import annotations, no bare except
+- Compatibility: Python 3.10+ (no StrEnum, no datetime.UTC)
+- Documentation: Google-style docstrings on all classes and functions
+
+Updated documentation:
+- docs/status.yaml: Added 33.1 entry (status=done, date=2026-02-20, 73 tests)
+- docs/architecture/PROGRESS.md: Regenerated (Slice 5: 9/33 tasks done, 7/10 critical path)
+- README.md: Updated progress (Slice 5: 9/33, Σ: 57/442, 12%)
+- docs/architecture/Artifact_Genealogy.md: This entry
+
+Traceability:
+✓ Task 33.1 on critical path: 31.7 → 33.1 → 33.2
+✓ Acceptance criteria: All validation components implemented and tested
+✓ Test count: 73 new tests (58 unit + 15 integration), all pass
+✓ Code organization: New module holly/validation/ with __init__.py and model_validator.py
+✓ Dependencies: Uses jsonschema, dataclasses, enum (standard library)
+
+Next task:
+→ 33.2: Build structured safety argument (risk register → safety case per ISO 42010)
