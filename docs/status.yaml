@@ -14,7 +14,7 @@
     \ all pass)"
   status: done
 '36.9':
-  commit: pending
+  commit: 2d7b162
   date: '2026-02-20'
   note: "L0–L4 Predicate Validator: StateGenerator/PredicateValidator/validate_celestial_predicates;    \ 1000 states per level, 5000 total, zero false positives/negatives verified;    \ 57 tests (36 unit + 21 integration, all pass)"
   status: done
