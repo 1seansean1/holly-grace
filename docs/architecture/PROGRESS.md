@@ -10,7 +10,7 @@ _Generated: 2026-02-20_
 | 4 | Phase C: Storage Layer (Steps 22–26) | 7 | 23 | 30% [###.......] | 7/7 |
 | 5 | Phase D: Safety & Infra (Steps 27–33) | 12 | 33 | 36% [###.......] | 10/10 |
 | 6 | Phase E: Core L2 (Steps 34–40) | 11 | 45 | 24% [##........] | 11/12 |
-| 7 | Phase F: Engine L3 (Steps 41–45) | 3 | 24 | 12% [#.........] | 3/6 |
+| 7 | Phase F: Engine L3 (Steps 41–45) | 5 | 24 | 20% [##........] | 5/6 |
 | 8 | Phase G: Sandbox (Steps 46–50) | 0 | 29 | 0% [..........] | 0/10 |
 | 9 | Phase H: API & Auth (Steps 51–56) | 0 | 24 | 0% [..........] | 0/8 |
 | 10 | Phase I: Observability (Steps 57–61) | 0 | 21 | 0% [..........] | 0/7 |
@@ -19,7 +19,7 @@ _Generated: 2026-02-20_
 | 13 | Phase L: Config (Steps 70–72) | 0 | 12 | 0% [..........] | 0/4 |
 | 14 | Phase M: Console L5 (Steps 73–78) | 0 | 18 | 0% [..........] | 0/7 |
 | 15 | Phase N: Deploy & Ops (Steps 79–86) | 0 | 29 | 0% [..........] | 0/14 |
-| **Σ** | **All** | **74** | **442** | **16%** | |
+| **Σ** | **All** | **76** | **442** | **17%** | |
 
 ## Task Detail
 
@@ -291,10 +291,10 @@ _Generated: 2026-02-20_
 | 44.2 | Document saga vs orchestration trade-off | pending | 0.5d | 44.1 |  |
 | 44.3 | Assign SIL-2 | pending | 0.5d | 44.2 |  |
 | 44.4 | FMEA: saga partial failure, dead-letter overflow,  | pending | 0.5d | 44.3 |  |
-| 44.5 | Implement durable engine per ICD-021, saga, compen | pending (crit) | 0.5d | 43.3, 44.4 |  |
+| 44.5 | Implement durable engine per ICD-021, saga, compen | done (crit) | 0.5d | 43.3, 44.4 | 7e3997a |
 | 44.6 | Link | pending | 0.5d | 44.5 |  |
 | 45.1 | Assign SIL-2 verification methods | pending | 0.5d |  |  |
-| 45.2 | Execute SIL-2 test suite | pending (crit) | 0.5d | 44.5, 45.1 |  |
+| 45.2 | Execute SIL-2 test suite | done (crit) | 0.5d | 44.5, 45.1 | 7e3997a |
 | 45.3 | Validate RTM completeness | pending | 0.5d | 45.2 |  |
 | 45.4 | Phase F gate checklist | pending (crit) | 0.5d | 45.2, 45.3 |  |
 | | **Slice 8** | | | | |
