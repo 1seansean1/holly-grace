@@ -611,7 +611,14 @@ tasks:
     status: done
     date: '2026-02-20'
     commit: fc7d6ca
-    note: 'Goal-Dispatch Middleware: bridges goal hierarchy (Celestial L0-L4 predicates)
-      with lane/MCP dispatch; CelestialComplianceEvaluator, K2PermissionGate, GoalDispatcher;
-      52 unit tests (all pass)'
+    note: 'Goal-Dispatch Middleware (custom): bridges goal hierarchy (L0-L4) with
+      lane/MCP dispatch; K2PermissionGate, CelestialComplianceEvaluator, GoalDispatcher;
+      52 tests'
+  43.3_manifest:
+    status: done
+    date: '2026-02-20'
+    commit: d65f071
+    note: 'MCP Builtin Tools (manifest 43.3): code (ICD-022), web (ICD-031), filesystem
+      (ICD-032/034), database (ICD-039/040/042/043); 45 tests (SSRF/SQLi/traversal
+      mitigations)'
 version: '1.0'
