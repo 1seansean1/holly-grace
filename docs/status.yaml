@@ -534,7 +534,7 @@ tasks:
   '36.5':
     status: done
     date: '2026-02-20'
-    commit: pending
+    commit: 908398a
     note: 'Celestial goal-level predicates: GoalResult/GoalPredicateProtocol/check_L0_safety
       through check_L4_constitutional; evaluate_celestial_goals/celestial_goals_satisfied;
       47 tests (39 unit + 8 integration, all pass)'
