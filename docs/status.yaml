@@ -662,12 +662,12 @@ tasks:
   '48.3':
     status: done
     date: '2026-02-20'
-    commit: pending
+    commit: a7e811663bdf84f68c7666eb7945332f343d8635
     note: 'Isolation Implementation per TLA+ Spec (Behavior Spec §2): Namespace (PID/NET/MNT/UTS/IPC) isolation model, Seccomp filter policy with allowlist-only syscalls (41 allowed, 24 blocked), Cgroup resource enforcement (memory/CPU/PIDs), read-only rootfs, path normalization for traversal detection; IsolationConfig/IsolationChecker/SeccompPolicy/CgroupLimit/Namespace models with Protocol interfaces; 45 tests'
   '48.5':
     status: done
     date: '2026-02-20'
-    commit: pending
+    commit: a7e811663bdf84f68c7666eb7945332f343d8635
     note: 'Isolation Invariant Verification (Behavior Spec §2.2.8): Property-based tests (hypothesis, 100+ examples per test) for 5 invariants (no network egress, no filesystem escape, no process visibility, no syscall escape, no resource sharing); adversarial tests (path traversal, symlink, namespace escape, resource exhaustion); concurrent isolation; 74 tests total, all pass'
 
 version: '1.0'
